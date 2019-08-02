@@ -6,21 +6,21 @@ DA Symbosium 2019 Algorithm Design Contest
 ==========================================
 
 
-Attributes
+Variables
 ----------
 
 block : dict
-    key is tuple (type, index)
-    type is string, {'a', 'b', ... 'g'}
-    index is int, {0, 1, 2, 3}
-    value is list of string, block data.
+    - key is tuple (type, index)
+        - type is string, {'a', 'b', ... 'g'}
+        - index is int, {0, 1, 2, 3}
+    - value is list of string, block data.
 
 np_block : dict
     same as block, but value is numpy array
 
 block_color : dict
-    key is string, {'a', 'b', ... 'g'}
-    value is string, RGB color '#0123ab'
+    - key is string, {'a', 'b', ... 'g'}
+    - value is string, RGB color '#0123ab'
 """
 
 import numpy as np
@@ -210,8 +210,8 @@ def read_Q_file(file):
 
     Returns
     -------
-    data : tuple
-        see read_Q()
+    read_Q : tuple
+        see :py:meth:`adc2019.read_Q`
     """
     with open(file, 'r', newline=None) as f: # universal newlines mode
         s = f.read()
@@ -261,9 +261,9 @@ def read_Q(s):
     ============ =====================
     value        contents
     ============ =====================
-         -1      block without number
-          0      not block
-         others  block with number
+         -1      block cell without number
+          0      not block cell
+         others  block cell with number
     ============ =====================
 
     return value of block_type is tuple (type, index)
@@ -391,8 +391,8 @@ def read_A_file(file):
 
     Returns
     -------
-    data : tuple
-        see read_A()
+    read_A : tuple
+         see :py:meth:`adc2019.read_A`
     """
     with open(file, 'r', newline=None) as f: # universal newlines mode
         s = f.read()
@@ -868,7 +868,7 @@ def check_lines(ban_data, terminal, count, corner, n_lines):
 
 def bounding_box(a):
     """
-    get bounding box of array
+    ignore all-zero rows and columns and get bounding box of array
 
     Parameters
     ----------
@@ -912,6 +912,11 @@ def check(Q_file, A_file, report=False):
 
     A_file : None or [str]
         filename of A text file
+
+    Returns
+    -------
+    check_data : dict
+       see :py:meth:`adc2019.check_data`
     """
     global debug
     Q = None
