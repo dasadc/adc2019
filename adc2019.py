@@ -11,8 +11,8 @@ Variables
 
 block : dict
     - key is tuple (type, index)
-        - type is string, {'a', 'b', ... 'g'}
-        - index is int, {0, 1, 2, 3}
+        - type is string, {'a', 'b', ... 'g'}, see below :ref:`block type name <image-block-type>` image.
+        - index is int, {0, 1, 2, 3} means rotation 0, 90, 180, 270.
     - value is list of string, block data.
 
 np_block : dict
@@ -21,6 +21,15 @@ np_block : dict
 block_color : dict
     - key is string, {'a', 'b', ... 'g'}
     - value is string, RGB color '#0123ab'
+
+.. _image-block-type:
+
+block type name
+^^^^^^^^^^^^^^^
+- tetromino is 'a', 'b', 'c', 'd', 'e', 'f', 'g'.
+- monomino is 'z'.
+
+.. image:: ../_static/block_type.png
 """
 
 import numpy as np
