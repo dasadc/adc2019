@@ -595,7 +595,7 @@ def check_data(data_Q, data_A):
     Examples
     --------
 
-    >>> ban_data
+    >>> ban_data_A
     array([[ 0,  1,  1,  1,  1,  2,  2,  2,  2],
            [ 0,  0,  0,  0,  4,  0,  0,  0,  2],
            [ 0,  8,  8,  8,  4,  4,  4,  4,  2],
@@ -629,6 +629,16 @@ def check_data(data_Q, data_A):
            [-1],
            [ 8],
            [ 7]])
+
+    >>> ban_data_F
+    array([[ 0,  1,  1,  1,  1,  2,  2,  2,  2],
+           [ 0,  0,  0,  0,  4,  0,  0,  0,  2],
+           [ 0,  8,  8,  8,  4,  4,  4,  4,  2],
+           [ 0,  7,  7,  6, -1,  0,  0,  4,  2],
+           [10, 10, 10,  6,  0,  2,  0,  4,  2],
+           [ 0,  9,  5,  5, 11,  2,  2,  2,  2],
+           [ 3,  9,  0,  0, 11,  0,  0,  0,  0],
+           [ 3,  3,  3,  3,  3,  3,  3,  0,  0]])
     """
     size_Q, block_num_Q, block_size_Q, block_data_Q, block_type_Q, n_lines_Q = data_Q
     size_A, ban_data_A, block_pos_A = data_A
@@ -641,6 +651,7 @@ def check_data(data_Q, data_A):
     # check-QA2: numbers on blocks in the board must be same as defined blocks.
     # check-QA3: block must not be overlapped.
     ban_check3 = np.zeros(ban_data_A.shape, dtype=int)
+    ban_data_F = ban_data_A.copy() # care for Issues#17
     for b in range(1, block_num_A+1):
         key = block_type_Q[b]
         x, y = block_pos_A[b]
@@ -658,6 +669,10 @@ def check_data(data_Q, data_A):
         #print(tmp_block_Q)
         #print(tmp_block_ban_masked)
         #print(tmp_block_Q == tmp_block_ban_masked)
+        # set -1 where cells should be -1 rather than 0
+        block_ban_F = block_ban.copy()
+        block_ban_F[block_data_Q[b] == -1] = -1
+        ban_data_F[y:(y+h), x:(x+w)] = block_ban_F
         if not np.all(tmp_block_Q == tmp_block_ban_masked):
             raise RuntimeError('check-QA2: inconsistent numbers on block', b, (x,y), block_data_Q[b], block_ban_masked)
 
@@ -667,13 +682,15 @@ def check_data(data_Q, data_A):
     terminal = detect_terminal(n_lines_Q, block_data_Q, block_pos_A)
     ban_count, ban_corner, _, _, _, _ = count_neighbors(ban_data_A)
     line_length, line_corner = check_lines(ban_data_A, terminal, ban_count, ban_corner, n_lines_Q)
-    x0, y0, x1, y1 = bounding_box(ban_data_A)
+    x0, y0, x1, y1 = bounding_box(ban_data_F)
     info = {'terminal': terminal,
             'count': ban_count,
             'corner': ban_corner,
             'line_length': line_length,
             'line_corner': line_corner,
-            'area': (x1-x0)*(y1-y0)}
+            'area': (x1-x0)*(y1-y0),
+            'dim': (x0, y0, x1, y1),
+            'ban_data_F': ban_data_F}
     return info
 
 
