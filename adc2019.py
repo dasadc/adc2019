@@ -910,19 +910,19 @@ def bounding_box(a):
     """
     hi, wi = a.shape
     n = 1
-    while a[0:n].sum() == 0:
+    while np.all(a[0:n] == 0):
         n += 1
     y0 = n - 1  # nまで進んだらゼロ行列ではないので、1つ戻る(-1)
     s = 1
-    while a[(hi-s):hi].sum() == 0:
+    while np.all(a[(hi-s):hi] == 0):
         s += 1
     y1 = hi - (s-1)
     w = 1
-    while a[:, 0:w].sum() == 0:
+    while np.all(a[:, 0:w] == 0):
         w += 1
     x0 = w - 1
     e = 1
-    while a[:, (wi-e):wi].sum() == 0:
+    while np.all(a[:, (wi-e):wi] == 0):
         e += 1
     x1 = wi - (e-1)
     return x0, y0, x1, y1
