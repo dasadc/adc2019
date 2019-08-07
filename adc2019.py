@@ -943,7 +943,6 @@ def check(Q_file, A_file):
         A = read_A_file(A_file[0])
     if Q and A:
         return check_data(Q, A)
-    return None
 
 def main():
     """
