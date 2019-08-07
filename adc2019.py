@@ -944,6 +944,7 @@ def check(Q_file, A_file):
     if Q and A:
         return check_data(Q, A)
 
+
 def main():
     """
     command line interface
