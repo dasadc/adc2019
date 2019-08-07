@@ -943,7 +943,7 @@ def check(Q_file, A_file):
         A = read_A_file(A_file[0])
     if Q and A:
         return check_data(Q, A)
-
+    return None
 
 def main():
     """
@@ -974,7 +974,7 @@ def main():
             for i in e.args:
                 print(i)
             return False
-    if args.A_file is None:
+    if args.Q_file is None or args.A_file is None:
         return True
     quality = 1.0 / float(info['area'])
     print(quality)
