@@ -957,7 +957,7 @@ def main():
     parser.add_argument('--verbose', action='store_true', help='verbose message')
     parser.add_argument('--report', action='store_true', help='output detailed report')
     parser.add_argument('--Q-file', '-Q', nargs=1, help='Q filename')
-    parser.add_argument('--A-file', '-A', nargs=1, help='Q filename')
+    parser.add_argument('--A-file', '-A', nargs=1, help='A filename')
     args = parser.parse_args()
     # print(args); sys.exit(1)
     debug = args.debug
@@ -974,6 +974,8 @@ def main():
             for i in e.args:
                 print(i)
             return False
+    if args.A_file is None:
+        return True
     quality = 1.0 / float(info['area'])
     print(quality)
     if args.report:
