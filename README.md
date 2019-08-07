@@ -30,7 +30,7 @@ optional arguments:
   --Q-file Q_FILE, -Q Q_FILE
                         Q filename
   --A-file A_FILE, -A A_FILE
-                        Q filename
+                        A filename
 ```
 
 引数で、`-Q　file`、`-A file`の両方、もしくは、いずれか１つだけを指定する。
@@ -402,7 +402,7 @@ https://dasadc.github.io/adc2019/rule.html
 > 0,8,0
 > 7,6,+
 
-BLOCK 〜 BLOCKの間に、空行が無くても、`adc2019.py`は処理できることにする。
+BLOCK ? BLOCKの間に、空行が無くても、`adc2019.py`は処理できることにする。
 
 
 ### AデータのBLOCK位置記述
