@@ -31,11 +31,11 @@ def check_file():
 
 @app.route('/api/test_post', methods=['POST'])
 def test_post():
-    print('request=', request)
-    print('request.data=', request.data)
-    print('request.form=', request.form)
-    print('request.files=', request.files)
-    print('request.json=', request.json)
+    #print('request=', request)
+    #print('request.data=', request.data)
+    #print('request.form=', request.form)
+    #print('request.files=', request.files)
+    #print('request.json=', request.json)
     qdata = None
     adata = None
     Q = None
@@ -48,8 +48,8 @@ def test_post():
     if 'Afile' in request.files:
         adata = request.files['Afile'].read().decode('utf-8')
 
-    print('qdata\n', qdata)
-    print('adata\n', adata)
+    #print('qdata\n', qdata)
+    #print('adata\n', adata)
     try:
         if qdata:
             Q = adc2019.read_Q(qdata)
@@ -63,14 +63,14 @@ def test_post():
             return jsonify({'check_file': 'Q-ok'})
 
         info = adc2019.check_data(Q, A)
-        print(info)
+        #print(info)
         info2 = info.copy()
         for k in ['count', 'corner', 'line_length', 'line_corner', 'ban_data_F']:
             info2[k]  = str(info2[k])
         info2['check_file'] = 'ok'
         return jsonify(info2)
     except Exception as e:
-        traceback.print_exc()
+        #traceback.print_exc()
         errinfo = ['ADC2019 rule violation'] + [str(i) for i in e.args]
         info = {'error': errinfo, 'stack_trace': traceback.format_exc()}
         return jsonify(info)
@@ -85,7 +85,7 @@ def test_get():
     """
     test GET method
     """
-    print('request=', request)
+    #print('request=', request)
     return jsonify({'test': 'ok',
                     'value': 9876,
                     'msg': 'こんにちは世界'})
