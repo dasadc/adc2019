@@ -1,0 +1,19 @@
+button {
+  font-size: 20px;
+  font-family: Arial;
+  margin: 10px;
+  background-color: #ccc;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #cf88dc;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: auto;
+}
+

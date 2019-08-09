@@ -1,0 +1,9 @@
+<div class="center">
+    <ngx-file-drop dropZoneLabel="Drop files here" (onFileDrop)="dropped($event)"
+		   accept="txt" directory="false" [showBrowseBtn]="true" multiple="False">
+        <ng-template ngx-file-drop-content-tmp let-openFileSelector="openFileSelector">
+	  Drag and drop A-file here or select file &nbsp;
+	  <input type="file" accept="text/plain" id="my-file-2" #myfile2 (change)="onchangeFile(myfile2.files)" />
+        </ng-template>
+    </ngx-file-drop>
+</div>
