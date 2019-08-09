@@ -132,7 +132,9 @@ function drawBoard() {
     
     // draw board
     ctx.strokeStyle = 'gray';
+    ctx.fillStyle = 'white';
     ctx.lineWidth = 1;
+    ctx.fillRect(boardOrigX, boardOrigY, boardW * gridSize, boardH * gridSize);
     ctx.strokeRect(boardOrigX, boardOrigY, boardW * gridSize, boardH * gridSize);
     
     // draw grid
