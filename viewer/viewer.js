@@ -205,7 +205,7 @@ function parseQFile(text) {
 		parseBlock = false;
 	    }
 	    else {
-		blocks[n].push(line.replace('+', '-1').split(',').map(Number));
+		blocks[n].push(line.replace(/\+/g, '-1').split(',').map(Number));
 	    }
 	}
 	else if (m = /SIZE\s+(\d+)X(\d+)/.exec(line)) {
