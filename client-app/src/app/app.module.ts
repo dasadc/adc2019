@@ -13,6 +13,7 @@ import { FileViewComponent }  from './file-view/file-view.component';
 import { FileViewComponent2 } from './file-view/file-view2.component';
 import { FileCheckerComponent } from './file-checker/file-checker.component';
 import { ResultViewComponent } from './result-view/result-view.component';
+import { BoardViewComponent } from './board-view/board-view.component';
 
 @NgModule({
   declarations: [
@@ -22,7 +23,8 @@ import { ResultViewComponent } from './result-view/result-view.component';
     FileViewComponent,
     FileViewComponent2,
     FileCheckerComponent,
-    ResultViewComponent
+    ResultViewComponent,
+    BoardViewComponent
   ],
   imports: [
     BrowserModule,

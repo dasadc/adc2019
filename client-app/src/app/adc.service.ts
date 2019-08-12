@@ -3,8 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
-import { readFile } from './rx-file-reader'
-//import { MessageService } from './message.service'
+import { readFile } from './rx-file-reader';
+import { CheckResults } from './checkresults';
 
 const httpOptions = {
   headers: new HttpHeaders({ 'Content-Type': 'application/json' })
@@ -18,7 +18,6 @@ export class AdcService {
   text2: string; // A
   filename1: string;
   filename2: string;
-  //fileCheckResult: string;
 
   //constructor(private messageService: MessageService) { }
   constructor(private http: HttpClient) { }
@@ -58,13 +57,11 @@ export class AdcService {
   clearText1() {
     this.filename1 = undefined;
     this.text1 = undefined;
-    //this.fileCheckResult = undefined;
   }
   
   clearText2() {
     this.filename2 = undefined;
     this.text2 = undefined;
-    //this.fileCheckResult = undefined;
   }
 
   /** POST */
@@ -78,7 +75,6 @@ export class AdcService {
 	map((res: Object) => {
 	  //this.log(`checkFiles: res=${res}`);
 	  //console.log('AdcService: checkFiles', res);
-	  //this.fileCheckResult = JSON.stringify(res, null, 4);
 	  let txt = '';
 	  if ('error' in res) {
 	    txt += 'ERROR\n';
@@ -106,9 +102,7 @@ export class AdcService {
 	      }
 	    }
 	  }
-	  //this.fileCheckResult = txt;
-	  //console.log('checkResults', txt);
-	  return txt;
+	  return new CheckResults(txt, this.text1, this.text2);
 	}),
 	catchError(this.handleError<Object>('checkFiles'))
       );

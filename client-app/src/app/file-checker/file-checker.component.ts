@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 import { AdcService } from '../adc.service';
+import { CheckResults } from '../checkresults';
 
 @Component({
   selector: 'app-file-checker',
@@ -9,6 +10,7 @@ import { AdcService } from '../adc.service';
 })
 export class FileCheckerComponent implements OnInit {
   checkResults: string;
+  boardData: CheckResults;
   
   constructor(private adcService: AdcService) { }
 
@@ -17,14 +19,16 @@ export class FileCheckerComponent implements OnInit {
 
   checkFiles() {
     this.adcService.checkFiles()
-      .subscribe((txt: string) => {
-	//console.log('file-checker: checkFiles:', txt);
+      .subscribe((results: CheckResults) => {
+	let txt: string = results.info;
+	let qdata: string = results.qdata;
+	let adata: string = results.adata;
 	this.checkResults = txt;
+	this.boardData = results;
       });
   }
 
   onCleared(c: boolean) {
-    //console.log('onCleared: ', c);
     this.checkResults = undefined;
   }
 }
