@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 
 import { AdcService } from '../adc.service';
 
@@ -8,9 +8,9 @@ import { AdcService } from '../adc.service';
   styleUrls: ['./result-view.component.css']
 })
 export class ResultViewComponent implements OnInit {
+  @Input() checkResults: string;
 
-  constructor(public adcService: AdcService) { }
-  //constructor(private adcService: AdcService) { }
+  constructor(private adcService: AdcService) { }
 
   ngOnInit() {
   }

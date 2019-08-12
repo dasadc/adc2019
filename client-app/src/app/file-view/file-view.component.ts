@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 
 import { AdcService } from '../adc.service';
-//import { MessageService } from '../message.service';
 
 @Component({
   selector: 'app-file-view',
@@ -9,10 +8,10 @@ import { AdcService } from '../adc.service';
   styleUrls: ['./file-view.component.css']
 })
 export class FileViewComponent implements OnInit {
-
-  constructor(public adcService: AdcService) { }
-  //constructor(private adcService: AdcService) { }
-  //constructor(private messageService: MessageService) { }
+  @Input() text: string;
+  @Input() filename: string;
+  
+  constructor(private adcService: AdcService) { }
 
   ngOnInit() {
   }

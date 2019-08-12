@@ -3,18 +3,14 @@
 </div>
 
 <h3>Q-file</h3>
-<app-file></app-file>
-<app-file-view></app-file-view>
+<app-file (cleared)="onCleared($event)"></app-file>
 
 <h3>A-file</h3>
-<app-file2></app-file2>
-<app-file-view2></app-file-view2>
+<app-file2 (cleared)="onCleared($event)"></app-file2>
 
 <div>
-  <button title="clear" (click)="clearQ()">Clear Q</button>
-  <button title="clear" (click)="clearA()">Clear A</button>
   <button title="Check files" (click)="checkFiles()">Check files</button>
 </div>
 
 <h3>Check results</h3>
-<app-result-view></app-result-view>
+<app-result-view [checkResults]="checkResults"></app-result-view>

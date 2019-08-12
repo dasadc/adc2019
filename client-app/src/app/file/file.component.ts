@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, EventEmitter, Output } from '@angular/core';
 import { NgxFileDropEntry, FileSystemFileEntry, FileSystemDirectoryEntry } from 'ngx-file-drop';
 
 import { AdcService } from '../adc.service';
@@ -9,10 +9,10 @@ import { AdcService } from '../adc.service';
   styleUrls: ['./file.component.css']
 })
 export class FileComponent implements OnInit {
-
   text: string;
   filename: string;
-
+  @Output() cleared = new EventEmitter<boolean>();
+  
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
@@ -31,7 +31,9 @@ export class FileComponent implements OnInit {
 	  
           // Here you can access the real file
           //console.log(droppedFile.relativePath, file);
-	  this.adcService.readFile1(file);
+	  this.filename = file.name;
+	  this.adcService.readFile1(file)
+	    .subscribe(txt => this.text = txt);
 	  
           /**
            // You could upload it like this:
@@ -66,12 +68,12 @@ export class FileComponent implements OnInit {
     //console.log(event);
   }
 
-  onchangeFile(files: any) {
+  onchangeFile(files: FileList) {
     //console.log('files', files);
     for ( let i = 0; i < files.length; i ++ ) {
       this.filename = files[i].name;
-      this.adcService.readFile1(files[i]);
-      // .subscribe(txt => this.text = txt);
+      this.adcService.readFile1(files[i])
+	.subscribe(txt => this.text = txt);
 
       /*
       let file = files[i];
@@ -91,7 +93,17 @@ export class FileComponent implements OnInit {
   }
   */
 
+  /*
   public getText(): string { 
     return this.text;
+  }
+  */
+
+  clear_data() {
+    //console.log('file: clear_data()');
+    this.text = undefined;
+    this.filename = undefined;
+    this.adcService.clearText1();
+    this.cleared.emit(true);
   }
 }

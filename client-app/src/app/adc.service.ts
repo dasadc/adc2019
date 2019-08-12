@@ -14,18 +14,25 @@ const httpOptions = {
   providedIn: 'root'
 })
 export class AdcService {
-  public text1: string; // Q
-  public text2: string; // A
-  public filename1: string;
-  public filename2: string;
-  public fileCheckResult: string;
+  text1: string; // Q
+  text2: string; // A
+  filename1: string;
+  filename2: string;
+  //fileCheckResult: string;
 
   //constructor(private messageService: MessageService) { }
   constructor(private http: HttpClient) { }
 
   readFile1(file: File): Observable<string> {
     this.filename1 = file.name;
-    return readFile(file).subscribe(txt => this.text1 = txt);
+    return readFile(file)
+      .pipe(
+	tap((txt: string) => {
+	  this.text1 = txt;
+	  //console.log('readFile1', txt);
+	})
+      );
+    //return readFile(file).subscribe(txt => this.text1 = txt);
     //return readFile(file).subscribe((txt) => { this.txt = txt; console.log(txt); });
     /*
     return readFile(file)
@@ -38,19 +45,26 @@ export class AdcService {
 
   readFile2(file: File): Observable<string> {
     this.filename2 = file.name;
-    return readFile(file).subscribe(txt => this.text2 = txt);
+    //return readFile(file).subscribe(txt => this.text2 = txt);
+    return readFile(file)
+      .pipe(
+	tap((txt: string) => {
+	  this.text2 = txt;
+	  //console.log('readFile2', txt);
+	})
+      );
   }
 
   clearText1() {
     this.filename1 = undefined;
     this.text1 = undefined;
-    this.fileCheckResult = undefined;
+    //this.fileCheckResult = undefined;
   }
   
   clearText2() {
-    this.filename1 = undefined;
-    this.text1 = undefined;
-    this.fileCheckResult = undefined;
+    this.filename2 = undefined;
+    this.text2 = undefined;
+    //this.fileCheckResult = undefined;
   }
 
   /** POST */
@@ -59,42 +73,45 @@ export class AdcService {
 		A: this.text2};
     //console.log('data', data);
     //return this.http.post<Object>('http://127.0.0.1:4280/api/test_post', data, httpOptions).pipe( // !!CORS!!
-    return this.http.post<Object>('/api/check_file', data, httpOptions).pipe(
-      tap((res: Object) => {
-	//this.log(`checkFiles: res=${res}`);
-	//console.log('AdcService: checkFiles', res);
-	//this.fileCheckResult = JSON.stringify(res, null, 4);
-	let txt = '';
-	if ('error' in res) {
-	  txt += 'ERROR\n';
-	  let e: [string] = res['error']
-	  for (let i=0; i <e.length; i++) {
-	    txt += '[' + i + '] ' + e[i] + '\n';
-	  }
-	  txt += res['stack_trace'];
-	} else {
-	  ['check_file', 'area', 'dim', 'line_corner', 'line_length', 'ban_data', 'corner', 'count'].forEach(key => {
-	    if (key in res) {
-	      txt += '\n' + key + '\n' + res[key] + '\n';
+    return this.http.post<Object>('/api/check_file', data, httpOptions)
+      .pipe(
+	map((res: Object) => {
+	  //this.log(`checkFiles: res=${res}`);
+	  //console.log('AdcService: checkFiles', res);
+	  //this.fileCheckResult = JSON.stringify(res, null, 4);
+	  let txt = '';
+	  if ('error' in res) {
+	    txt += 'ERROR\n';
+	    let e: [string] = res['error']
+	    for (let i=0; i <e.length; i++) {
+	      txt += '[' + i + '] ' + e[i] + '\n';
 	    }
-	  });
-	  if ('terminal' in res) {
-	    txt += '\nterminal\n';
-	    let terminal: [[]] = res['terminal'];
-	    for (let i=0; i < terminal.length; i++) {
-	      txt += i + ':';
-	      for (let j=0; j < terminal[i].length; j++) {
-		txt += ' BLOCK ' + terminal[i][j]['block'];
-		txt += ' (' + terminal[i][j]['xy'][0] + ',' + terminal[i][j]['xy'][1] + ') ';
+	    txt += res['stack_trace'];
+	  } else {
+	    ['check_file', 'area', 'dim', 'line_corner', 'line_length', 'ban_data', 'corner', 'count'].forEach(key => {
+	      if (key in res) {
+		txt += key + '\n' + res[key] + '\n\n';
 	      }
-	      txt += '\n';
+	    });
+	    if ('terminal' in res) {
+	      txt += 'terminal\n';
+	      let terminal: [[]] = res['terminal'];
+	      for (let i=0; i < terminal.length; i++) {
+		txt += i + ':';
+		for (let j=0; j < terminal[i].length; j++) {
+		  txt += ' BLOCK ' + terminal[i][j]['block'];
+		  txt += ' (' + terminal[i][j]['xy'][0] + ',' + terminal[i][j]['xy'][1] + ') ';
+		}
+		txt += '\n';
+	      }
 	    }
 	  }
-	}
-	this.fileCheckResult = txt;
-      }),
-      catchError(this.handleError<Object>('checkFiles'))
-    );
+	  //this.fileCheckResult = txt;
+	  //console.log('checkResults', txt);
+	  return txt;
+	}),
+	catchError(this.handleError<Object>('checkFiles'))
+      );
   }
 
   /**

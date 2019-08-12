@@ -33,7 +33,7 @@ curl -X POST --form Qfile=@FILE1 --form Afile=@FILE2 http://127.0.0.1:4280/api/t
 
 
 
-# 2019-08-11
+# 初期設定
 
 ```
 npm init
@@ -90,3 +90,20 @@ http://localhost:4200/
 	gunicorn main:app
 
 http://127.0.0.1:8000/static/app/index.html
+
+
+## Google Cloud Platform
+
+初期設定
+
+```
+gcloud auth login
+gcloud config set project xxxxxx-xxxxxxx-xxx
+```
+
+deploy
+
+```
+cd server/
+gcloud app deploy
+```

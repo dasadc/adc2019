@@ -25,7 +25,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "$(npm bin)/ng build --prod --base-href=/static/app/index.html --output-path=../server/static/app/",
     "run": "cd ../server/; echo 'http://127.0.0.1:8000/static/app/index.html'; gunicorn main:app",
-    "test-run": "$(npm bin)/ng serve --proxy-config proxy.conf.json"
+    "test-run": "$(npm bin)/ng serve --proxy-config proxy.conf.json --live-reload --watch --poll=5000"
   },
   "author": "",
   "license": "ISC"

@@ -8,24 +8,23 @@ import { AdcService } from '../adc.service';
   styleUrls: ['./file-checker.component.css']
 })
 export class FileCheckerComponent implements OnInit {
-
+  checkResults: string;
+  
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
   }
 
-  clearQ() {
-    this.adcService.clearText1();
-  }
-
-  clearA() {
-    this.adcService.clearText2();
-  }
-
   checkFiles() {
     this.adcService.checkFiles()
-      .subscribe(info => {
-	//console.log('file-checker: checkFiles:', info);
+      .subscribe((txt: string) => {
+	//console.log('file-checker: checkFiles:', txt);
+	this.checkResults = txt;
       });
+  }
+
+  onCleared(c: boolean) {
+    //console.log('onCleared: ', c);
+    this.checkResults = undefined;
   }
 }

@@ -1,4 +1,6 @@
-# MyFileUpload
+see also [devel.md](../server/devel.md)
+
+# client-app
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.2.0.
 
