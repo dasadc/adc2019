@@ -14,6 +14,14 @@ export class FileCheckerComponent implements OnInit {
   ngOnInit() {
   }
 
+  clearQ() {
+    this.adcService.clearText1();
+  }
+
+  clearA() {
+    this.adcService.clearText2();
+  }
+
   checkFiles() {
     this.adcService.checkFiles()
       .subscribe(info => {

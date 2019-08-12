@@ -26,11 +26,6 @@ def check_file():
     2. server checks file(s)
     3. return check results.
     """
-    pass
-
-
-@app.route('/api/test_post', methods=['POST'])
-def test_post():
     #print('request=', request)
     #print('request.data=', request.data)
     #print('request.form=', request.form)
@@ -80,6 +75,11 @@ def test_post():
                     'msg': '生麦生米生卵'})
     
 
+@app.route('/api/test_post', methods=['POST'])
+def test_post():
+    pass
+
+
 @app.route('/api/test_get', methods=['GET'])
 def test_get():
     """
@@ -95,4 +95,4 @@ if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app. This
     # can be configured by adding an `entrypoint` to app.yaml.
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    app.run(host='127.0.0.1', port=4280, debug=True)
