@@ -1,0 +1,12 @@
+<div class="center">
+    <ngx-file-drop dropZoneLabel="Drop files here" (onFileDrop)="dropped($event)"
+		   accept="txt" directory="false" [showBrowseBtn]="true" multiple="False">
+        <ng-template ngx-file-drop-content-tmp let-openFileSelector="openFileSelector">
+	  Drag and drop Q-file here or select file &nbsp;
+	  <input type="file" accept="text/plain" id="my-file" #myfile (change)="onchangeFile(myfile.files)" />
+        </ng-template>
+    </ngx-file-drop>
+
+    <app-file-view [text]="text" [filename]="filename"></app-file-view>
+    <button *ngIf="text" title="clear Q" (click)="clear_data()">Clear Q</button>
+</div>

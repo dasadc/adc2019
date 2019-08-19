@@ -1,0 +1,18 @@
+<div style="text-align:center">
+  <h1>File Checker</h1>
+</div>
+
+<h3>Q-file</h3>
+<app-file (cleared)="onCleared($event)"></app-file>
+
+<h3>A-file</h3>
+<app-file2 (cleared)="onCleared($event)"></app-file2>
+
+<div>
+  <button title="Check files" (click)="checkFiles()">Check files</button>
+</div>
+
+<h3>Check results</h3>
+<app-result-view [checkResults]="checkResults"></app-result-view>
+
+<app-board-view [data]="boardData"></app-board-view>

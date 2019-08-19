@@ -272,6 +272,23 @@ check-A6: unknown line
 
 行列データの途中に空行が入ってるため、エラーにされた。
 
+### check-A6: syntax error
+
+これは、その他の理由で、ファイルの書式が正しくないときに出るエラー。
+
+```
+% ./adc2019.py -Q sampleQ0.txt -A sampleQ0.txt
+ADC2019 rule violation
+check-A6: syntax error
+2
+BLOCK_NUM 8
+```
+
+1. 2行目がエラー
+2. その行の内容
+
+行列データの途中に空行が入ってるため、エラーにされた。エラーになるのは、Aデータを指定するべきところに、Aデータのファイルを指定してるため。
+
 
 ### check-A7: BLOCK not found
 

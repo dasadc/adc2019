@@ -463,7 +463,10 @@ def read_A(s):
         if in_size:
             # Issues#17 https://github.com/dasadc/dasadc.github.io/issues/17
             line2 = line.replace('+', '-1')
-            ban_data.append([int(n) for n in line2.split(',')])
+            try:
+                ban_data.append([int(n) for n in line2.split(',')])
+            except ValueError:
+                raise RuntimeError('check-A6: syntax error', input_line_cnt, line)
             continue
 
         raise RuntimeError('check-A6: unknown line', input_line_cnt, line)
