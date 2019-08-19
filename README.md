@@ -419,7 +419,7 @@ https://dasadc.github.io/adc2019/rule.html
 > 0,8,0
 > 7,6,+
 
-BLOCK ? BLOCKの間に、空行が無くても、`adc2019.py`は処理できることにする。
+BLOCK ～ BLOCKの間に、空行が無くても、`adc2019.py`は処理できることにする。
 
 
 ### AデータのBLOCK位置記述
