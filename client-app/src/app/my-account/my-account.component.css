@@ -1,0 +1,14 @@
+[class*='msg-view'] {
+    white-space: pre-wrap;
+    /*
+    overflow-y: scroll;
+    height: 50px;
+    */
+    box-shadow: 2px 2px 4px;
+    padding: 2px 2px 2px 2px;
+    border: solid 1px lightgray;
+}
+
+button {
+  margin: 4px;
+}

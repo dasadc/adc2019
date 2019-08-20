@@ -1,0 +1,46 @@
+<div style="text-align:center">
+  <h1>My Account</h1>
+</div>
+
+<h3>Who am i</h3>
+
+<button title="whoami" (click)="doWhoami()">whoami</button>
+
+<div *ngIf="whoami" class="msg-view">{{whoami}}</div>
+
+
+<h3>Get user info</h3>
+
+<button title="get-user" (click)="doGetUser()">get-user</button>
+
+<div *ngIf="getUser" class="msg-view">{{getUser}}</div>
+
+
+<h3>Change password</h3>
+
+<p>Only administrator user can change any user's password. Otherwise, user can change own password only.</p>
+
+<div>User name:<br>
+  <input type="text" [(ngModel)]="username" #usernm>
+</div>
+<div>Current password:<br>
+  <input type="password" #passwd0>
+</div>
+<div>New password:<br>
+  <input type="password" #passwd1 (keyup.enter)="doChangePassword(passwd0.value, passwd1.value, passwd2.value)">
+</div>
+<div>New password again:<br>
+  <input type="password" #passwd2 (keyup.enter)="doChangePassword(passwd0.value, passwd1.value, passwd2.value)">
+</div>
+<div>
+  <button title="Change password" (click)="doChangePassword(passwd0.value, passwd1.value, passwd2.value)">Change password</button>
+</div>
+
+<div *ngIf="changePassword" class="msg-view">{{changePassword}}</div>
+
+
+<h3>Logout</h3>
+<div>
+  <button title="Logout" (click)="doLogout()">Logout</button>
+</div>
+<div *ngIf="logout" class="msg-view">{{logout}}</div>

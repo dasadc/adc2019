@@ -10,14 +10,16 @@ import * as Viewer from './viewer';
 })
 export class BoardViewComponent implements OnInit {
   @Input() data: CheckResults;
-  
+
   constructor() { }
 
   ngOnInit() {
   }
 
   ngOnChanges() {
-    if (this.data) {
+    //console.log('ngOnChanges: data=', this.data)
+    if (this.data && this.data.qdata && this.data.adata) {
+      // when all of data is available
       Viewer.update(this.data.qdata, this.data.adata);
     }
   }
