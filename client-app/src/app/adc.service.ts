@@ -131,14 +131,13 @@ export class AdcService {
     return (error: any): Observable<T> => {
 
       // TODO: リモート上のロギング基盤にエラーを送信する
-      console.error(error); // かわりにconsoleに出力
+      //console.error(error); // かわりにconsoleに出力
 
       // TODO: ユーザーへの開示のためにエラーの変換処理を改善する
       //this.log(`${operation} failed: ${error.message}`);
-      console.log(`${operation} failed: ${error.message}`);
+      //console.log(`${operation} failed: ${error.message}`);
       //console.log(`${operation} failed: ${error['msg']}`);
-      //result.msg = error.error.msg;
-      result['msg'] = error.error.msg;
+      result['msg'] = error.error.msg + '\n' + `${operation} failed: ${error.message}`;
 
       // 空の結果を返して、アプリを持続可能にする
       return of(result as T);
@@ -185,7 +184,7 @@ export class AdcService {
 	  this.access_token = r.token;
 	  return r;
 	}),
-	catchError(this.handleError<ResLogin>('loginADCservice'))
+	catchError(this.handleError<ResLogin>('loginADCservice', new ResLogin('', 'ERROR')))
       );
   }
 
@@ -242,7 +241,7 @@ export class AdcService {
     return this.http.post<Object>(`/api/user/${usernm}/password`, data, this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
-	  console.log('AdcService: changePassword', res);
+	  //console.log('AdcService: changePassword', res);
 	  return new ResMsgOnly(res['msg']);
 	}),
 	catchError(this.handleError<ResMsgOnly>('changePassword', new ResMsgOnly('')))

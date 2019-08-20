@@ -1,3 +1,10 @@
 button {
   margin: 10px;
 }
+
+[class*='msg'] {
+    white-space: pre-wrap;
+    box-shadow: 2px 2px 4px;
+    padding: 2px 2px 2px 2px;
+    border: solid 1px lightgray;
+}

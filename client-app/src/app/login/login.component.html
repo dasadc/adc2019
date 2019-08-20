@@ -12,7 +12,7 @@
   <button title="Login" (click)="doLogin()">Login</button>
 </div>
 
-<div *ngIf="loginMessage">{{loginMessage}}</div>
+<div *ngIf="loginMessage" class="msg">{{loginMessage}}</div>
 
 <div *ngIf="access_token">
   <button title="Logout" (click)="doLogout()">Logout</button>
