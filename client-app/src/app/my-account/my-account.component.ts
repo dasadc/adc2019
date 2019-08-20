@@ -57,11 +57,11 @@ export class MyAccountComponent implements OnInit {
     this.adcService.changePassword(this.username, passwd0, passwd1)
     .subscribe(
       (res: ResMsgOnly) => {
-        console.log('changePassword: res', res);
+        //console.log('changePassword: res', res);
         this.changePassword = res.msg;
       },
       (err) => {
-        console.log('changePassword: error', err);
+        //console.log('changePassword: error', err);
         this.changePassword = err['msg'];
       }
     );
@@ -70,10 +70,10 @@ export class MyAccountComponent implements OnInit {
 
 
   doLogout(): void {
-    console.log('doLogout:');
+    //console.log('doLogout:');
     this.adcService.logoutADCservice()
     .subscribe((res: ResLogout) => {
-      console.log('doLogout: res', res);
+      //console.log('doLogout: res', res);
       this.logout = res.msg;
     });
   }

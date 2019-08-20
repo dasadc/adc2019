@@ -176,5 +176,12 @@ deploy
 ```
 cd server/
 gcloud app deploy
+プロジェクト名を指定する場合
+gcloud app deploy --project=trusty-obelisk-631
 ```
 
+APIの疎通確認
+
+```
+curl -v https://trusty-obelisk-631.appspot.com/api/test_get
+```

@@ -108,7 +108,8 @@ class ADCClient:
             self.http_proxy = [True, proxy.hostname, proxy.port]
             if proxy.username is not None and proxy.password is not None:
                 # proxy認証がある場合
-                self.http_proxy_auth = 'Basic '+base64.b64encode('%s:%s' % (proxy.username, proxy.password))
+                tmp = '%s:%s' % (proxy.username, proxy.password)
+                self.http_proxy_auth = 'Basic ' + base64.b64encode(tmp.encode('utf-8')).decode('utf-8')
                 # ステータス407 Proxy Authentication Requiredを確認せずに、いきなりヘッダを送ってもいいのか？
 
 
