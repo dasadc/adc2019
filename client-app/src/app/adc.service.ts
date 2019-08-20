@@ -5,6 +5,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 
 import { readFile } from './rx-file-reader';
 import { CheckResults } from './checkresults';
+import { ResLogin, ResLogout, ResMsgOnly } from './apiresponse';
 
 const httpOptions = {
   headers: new HttpHeaders({ 'Content-Type': 'application/json' })
@@ -18,6 +19,10 @@ export class AdcService {
   text2: string; // A
   filename1: string;
   filename2: string;
+
+  // for ADC API
+  username: string;
+  access_token: string; // given from ADC server after login
 
   //constructor(private messageService: MessageService) { }
   constructor(private http: HttpClient) { }
@@ -58,10 +63,42 @@ export class AdcService {
     this.filename1 = undefined;
     this.text1 = undefined;
   }
-  
+
   clearText2() {
     this.filename2 = undefined;
     this.text2 = undefined;
+  }
+
+  /** checkFilesの後処理。テキストメッセージを整形する。 */
+  formatResultText(res: Object): string {
+    let txt = '';
+    if ('error' in res) {
+      txt += 'ERROR\n';
+      let e: [string] = res['error']
+      for (let i=0; i <e.length; i++) {
+	txt += '[' + i + '] ' + e[i] + '\n';
+      }
+      txt += res['stack_trace'];
+    } else {
+      ['check_file', 'area', 'dim', 'line_corner', 'line_length', 'ban_data', 'corner', 'count'].forEach(key => {
+	if (key in res) {
+	  txt += key + '\n' + res[key] + '\n\n';
+	}
+      });
+      if ('terminal' in res) {
+	txt += 'terminal\n';
+	let terminal: [[]] = res['terminal'];
+	for (let i=0; i < terminal.length; i++) {
+	  txt += i + ':';
+	  for (let j=0; j < terminal[i].length; j++) {
+	    txt += ' BLOCK ' + terminal[i][j]['block'];
+	    txt += ' (' + terminal[i][j]['xy'][0] + ',' + terminal[i][j]['xy'][1] + ') ';
+	  }
+	  txt += '\n';
+	}
+      }
+    }
+    return txt;
   }
 
   /** POST */
@@ -75,33 +112,7 @@ export class AdcService {
 	map((res: Object) => {
 	  //this.log(`checkFiles: res=${res}`);
 	  //console.log('AdcService: checkFiles', res);
-	  let txt = '';
-	  if ('error' in res) {
-	    txt += 'ERROR\n';
-	    let e: [string] = res['error']
-	    for (let i=0; i <e.length; i++) {
-	      txt += '[' + i + '] ' + e[i] + '\n';
-	    }
-	    txt += res['stack_trace'];
-	  } else {
-	    ['check_file', 'area', 'dim', 'line_corner', 'line_length', 'ban_data', 'corner', 'count'].forEach(key => {
-	      if (key in res) {
-		txt += key + '\n' + res[key] + '\n\n';
-	      }
-	    });
-	    if ('terminal' in res) {
-	      txt += 'terminal\n';
-	      let terminal: [[]] = res['terminal'];
-	      for (let i=0; i < terminal.length; i++) {
-		txt += i + ':';
-		for (let j=0; j < terminal[i].length; j++) {
-		  txt += ' BLOCK ' + terminal[i][j]['block'];
-		  txt += ' (' + terminal[i][j]['xy'][0] + ',' + terminal[i][j]['xy'][1] + ') ';
-		}
-		txt += '\n';
-	      }
-	    }
-	  }
+	  let txt = this.formatResultText(res);
 	  return new CheckResults(txt, this.text1, this.text2);
 	}),
 	catchError(this.handleError<Object>('checkFiles'))
@@ -117,13 +128,17 @@ export class AdcService {
    * @param result - observableな結果として返す任意の値
    */
   private handleError<T> (operation = 'operation', result?: T) {
-    return (error: Object): Observable<T> => {
+    return (error: any): Observable<T> => {
 
       // TODO: リモート上のロギング基盤にエラーを送信する
       console.error(error); // かわりにconsoleに出力
 
       // TODO: ユーザーへの開示のためにエラーの変換処理を改善する
       //this.log(`${operation} failed: ${error.message}`);
+      console.log(`${operation} failed: ${error.message}`);
+      //console.log(`${operation} failed: ${error['msg']}`);
+      //result.msg = error.error.msg;
+      result['msg'] = error.error.msg;
 
       // 空の結果を返して、アプリを持続可能にする
       return of(result as T);
@@ -134,5 +149,103 @@ export class AdcService {
   private log(message: string) {
     //console.log(`AdcService: ${message}`);
     console.log('AdcService:', message);
+  }
+
+  getUsername(): string {
+    return this.username;
+  }
+
+  getAccessToken(): string {
+    return this.access_token;
+  }
+
+
+  /** API呼び出し時に指定するHTTPヘッダー */
+  private apiHttpOptions(): Object {
+    let tmp = {'Content-Type': 'application/json'};
+    if (this.username && this.access_token) {
+      tmp['ADC-USER'] = this.username;
+      tmp['ADC-TOKEN'] = this.access_token;
+    }
+    return {headers: new HttpHeaders(tmp)};
+  }
+
+
+  /** ADCサービスにログインしてトークンをもらう */
+  loginADCservice(token:string, username:string, password:string): Observable<ResLogin> {
+    this.username = username;
+    this.access_token = token;
+    let data = {'username': username,
+		'password': password};
+    return this.http.post<Object>('/api/login', data, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: loginADCservice', res);
+	  let r = new ResLogin(res['msg'], res['token']);
+	  this.access_token = r.token;
+	  return r;
+	}),
+	catchError(this.handleError<ResLogin>('loginADCservice'))
+      );
+  }
+
+  /** ADCサービスからログアウトする */
+  logoutADCservice(): Observable<ResLogout> {
+    let data = {}; // dummy
+    return this.http.post<Object>('/api/logout', data, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: logoutADCservice', res);
+	  let r = new ResLogout(res['msg']);
+	  this.access_token = undefined;
+	  return r;
+	}),
+	catchError(this.handleError<ResLogout>('logoutADCservice'))
+      );
+  }
+
+  /** API, GET /api/whoamiを実行する */
+  whoami(): Observable<ResMsgOnly> {
+    return this.http.get<Object>('/api/whoami', this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: whoami', res);
+	  this.username = res['msg'];
+	  return new ResMsgOnly(res['msg']);
+	}),
+	catchError(this.handleError<ResMsgOnly>('whoami'))
+      );
+  }
+
+  /** API, GET /admin/user/<usernm> を実行する。ユーザー情報を取得する。 */
+  getUserInfo(): Observable<ResMsgOnly> {
+    return this.http.get<Object>(`/api/admin/user/${this.username}`, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: getUserInfo', res);
+	  return new ResMsgOnly(res['msg']);
+	}),
+	catchError(this.handleError<ResMsgOnly>('getUserInfo'))
+      );
+  }
+
+  /**
+   *  API, POST /user/<usernm>/password を実行する。パスワードを変更する。
+   *
+   *  @param passwd0  現在のパスワード。
+   *  @param passwd1  新しいパスワード。
+   *  @param usernm   ユーザー名。管理者は任意のユーザーのパスワードを変更可能なので、ユーザー名を引数で指定できる。
+   */
+  changePassword(usernm: string, passwd0: string, passwd1: string): Observable<ResMsgOnly> {
+    let data = {'password_old': passwd0,
+                'password_new': passwd1}
+    return this.http.post<Object>(`/api/user/${usernm}/password`, data, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  console.log('AdcService: changePassword', res);
+	  return new ResMsgOnly(res['msg']);
+	}),
+	catchError(this.handleError<ResMsgOnly>('changePassword', new ResMsgOnly('')))
+      );
   }
 }

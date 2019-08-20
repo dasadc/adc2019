@@ -1,0 +1,19 @@
+<div style="text-align:center">
+  <h1>Login</h1>
+</div>
+
+<div>Username:<br>
+  <input type="text" [(ngModel)]="username" placeholder="ADC-##" #usernm (keyup.enter)="doLogin()">
+</div>
+<div>Password:<br>
+  <input type="password" [(ngModel)]="password" #passwd (keyup.enter)="doLogin()">
+</div>
+<div>
+  <button title="Login" (click)="doLogin()">Login</button>
+</div>
+
+<div *ngIf="loginMessage">{{loginMessage}}</div>
+
+<div *ngIf="access_token">
+  <button title="Logout" (click)="doLogout()">Logout</button>
+</div>

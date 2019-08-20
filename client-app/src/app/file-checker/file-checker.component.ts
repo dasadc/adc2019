@@ -11,7 +11,7 @@ import { CheckResults } from '../checkresults';
 export class FileCheckerComponent implements OnInit {
   checkResults: string;
   boardData: CheckResults;
-  
+
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
@@ -20,15 +20,16 @@ export class FileCheckerComponent implements OnInit {
   checkFiles() {
     this.adcService.checkFiles()
       .subscribe((results: CheckResults) => {
-	let txt: string = results.info;
-	let qdata: string = results.qdata;
-	let adata: string = results.adata;
-	this.checkResults = txt;
-	this.boardData = results;
+	       let txt: string = results.info;
+	       let qdata: string = results.qdata;
+	       let adata: string = results.adata;
+	       this.checkResults = txt;
+         this.boardData = results;
       });
   }
 
   onCleared(c: boolean) {
     this.checkResults = undefined;
+    this.boardData = undefined;
   }
 }

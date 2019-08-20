@@ -6,7 +6,7 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'DAS2019 ADC';
+  title = 'DAS2019 Algorithm Design Contest (ADC2019)';
 
   check() {
     console.log('Check now');

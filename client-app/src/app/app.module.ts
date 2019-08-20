@@ -14,6 +14,8 @@ import { FileViewComponent2 } from './file-view/file-view2.component';
 import { FileCheckerComponent } from './file-checker/file-checker.component';
 import { ResultViewComponent } from './result-view/result-view.component';
 import { BoardViewComponent } from './board-view/board-view.component';
+import { LoginComponent } from './login/login.component';
+import { MyAccountComponent } from './my-account/my-account.component';
 
 @NgModule({
   declarations: [
@@ -24,7 +26,9 @@ import { BoardViewComponent } from './board-view/board-view.component';
     FileViewComponent2,
     FileCheckerComponent,
     ResultViewComponent,
-    BoardViewComponent
+    BoardViewComponent,
+    LoginComponent,
+    MyAccountComponent
   ],
   imports: [
     BrowserModule,
