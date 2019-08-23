@@ -658,17 +658,6 @@ def get_Q_all(html=False):
     return qla['text_user']
 
 
-def menu_post_A(username):
-    "回答ファイルをアップロードするフォームを返す"
-    qla = ndb.Key(QuestionListAll, 'master', parent=qdata_key()).get()
-    if qla is None:
-        return ''
-    out = ""
-    num=1
-    for i in qla.text_user.splitlines():
-        out += '<a href="/A/%s/Q/%d">post answer %s</a><br />\n' % (username, num, i)
-        num += 1
-    return out
 
 def post_A(username, atext, form):
     anum = (int)(form['anum'])
@@ -727,12 +716,15 @@ def query_a_data(a_num=None, username=None, projection=None):
 
     
 def put_A_data(a_num, username, text, cpu_sec=None, mem_byte=None, misc_text=None):
-    "回答データをデータベースに格納する"
-    msg = ""
+    """
+    回答データをデータベースに格納する
+    """
+    msg = ''
     # 出題データを取り出す
-    ret, q_text = get_Q_data_text(a_num)
-    if not ret:
-        msg = "Error in Q%d data: " % a_num + q_text
+    q_dat = get_Q_data(a_num)
+    q_text = q_dat.get('text')
+    if q_text is None:
+        msg = 'Error: Q%d data not found' % a_num
         return False, msg
     # 重複回答していないかチェック
     ret, q, root = get_A_data(a_num, username)
@@ -768,6 +760,7 @@ def put_A_data(a_num, username, text, cpu_sec=None, mem_byte=None, misc_text=Non
     a_key = a.put()
     return True, msg
 
+
 def put_A_info(a_num, username, info):
     "回答データの補足情報をデータベースに格納する"
     msg = ""
@@ -801,19 +794,17 @@ def get_or_delete_A_data(a_num=None, username=None, delete=False):
     return result
 
 
-def get_user_A_all(username, html=None):
-    "ユーザーを指定して、回答データの一覧リストを返す"
-    ret, q, root = get_A_data(username=username)
-    if not ret:
-        return False, q
-    text = ""
+def get_user_A_all(username):
+    """
+    ユーザーを指定して、回答データの一覧リストを返す
+    """
+    q = get_A_data(username=username)
+    text = ''
     for i in q:
-        if html:
-            text += '<a href="/A/%s/Q/%d">A%d</a> <a href="/A/%s/Q/%d/info">info</a><br />\n' % (username, i.anum, i.anum,  username, i.anum)
-        else:
-            text += 'A%d\n' % i.anum
-    return True, text
-    
+        text += 'A%d\n' % i.anum
+    return text
+
+
 def get_or_delete_A_info(a_num=None, username=None, delete=False):
     "回答データの補足情報をデータベースから、削除or取り出し"
     msg = ""
@@ -883,16 +874,7 @@ def get_Q_author_all():
         # q.qnum は、問題登録したときの番号であり、出題番号ではない
     return authors
 
-def get_Q_data_text(q_num, year=YEAR, fetch_num=5):
-    "問題のテキストを返す"
-    result = get_Q_data(q_num, year, fetch_num)
-    if result is not None:
-        text = result.text
-        ret = True
-    else: # result is None
-        text = "Error: data not found: Q%d" % q_num
-        ret = False
-    return ret, text
+
 
 
 def get_admin_Q_all():

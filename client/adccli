@@ -62,11 +62,11 @@ def main():
             f = sys.stdout
         else:
             f = open(cli.output_file, "w")
-        if len(args[1:]) == 0:
+        if len(args.arg) == 0:
             f.write(resx[6]['msg']+"\n")
         else:
             for res in resx:
-                f.write(res[6]['msg']+"\n")
+                f.write(res[6]['text']+"\n")
         if cli.output_file is not None:
             f.close()
 
@@ -155,10 +155,10 @@ def main():
         for res in res2:
             print(res[6]['msg'])
     elif a == 'get-q':
-        resx = cli.get_q(args[1:])
+        resx = cli.get_q(args.arg)
         output()
     elif a == 'get-a':
-        resx = cli.get_a(args[1:])
+        resx = cli.get_a(args.arg)
         output()
     elif a == 'delete-a':
         for i in args[1:]:
@@ -232,7 +232,7 @@ def main():
         res = cli.delete_admin_a_all(args[1:])
         #print res[6]['msg']
     elif a == 'get-admin-q-list':
-        res = cli.get_admin_q_list(args[1:])
+        res = cli.get_admin_q_list(args.arg)
         #print res[6]['msg']
     elif a == 'put-admin-q-list':
         res = cli.put_admin_q_list(args[1:])

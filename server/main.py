@@ -538,32 +538,24 @@ def admin_A_all():
 
 @app.route('/A/<usernm>', methods=['GET'])
 def admin_A_username(usernm):
-    "回答データの一覧リストを返す"
+    """
+    回答データの一覧リストを返す
+    """
     if not priv_admin():                        # 管理者ではない
         if ( app.config['TEST_MODE']==False or  # 本番モード
-             not username_matched(usernm) ):  # ユーザ名が一致しない
-            return adc_response("permission denied", request_is_json(), 403)
+             not username_matched(usernm) ):    # ユーザ名が一致しない
+            return adc_response('permission denied', 403)
     log_request(usernm)
-    html = from_browser()
-    ret, msg = get_user_A_all(usernm, html=html)
-    if ret:
-        if html:
-            return adc_response(Markup(msg), False)
-        else:
-            return adc_response_text(msg)
-    else:
-        return adc_response(msg, request_is_json(), 404)
+    msg = cds.get_user_A_all(usernm)
+    return adc_response_json({'msg': msg})
 
-@app.route('/A/<usernm>/Q', methods=['GET','POST'])
+
+@app.route('/A/<usernm>/Q', methods=['POST'])
 def a_q_menu(usernm):
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
-    if request.method=='GET':
-        return render_template('posta.html', url=url_for('a_q_menu', username=usernm))
-    # POSTの場合
-    f = request.files['afile']
-    atext = f.read() # すべて読み込む
-    ret, msg = post_A(usernm, atext, request.form)
+        return adc_response("not login yet", 401)
+    a_text   = request.json.get('A')
+    ret, msg = post_A(usernm, a_text, request.form)
     code = 200 if ret else 403
     return adc_response_text(msg, code)
 
@@ -658,7 +650,6 @@ def user_q(usernm, q_num):
     log_request(usernm)
     if request.method == 'GET':
         result = cds.get_user_Q_data(q_num, usernm)  # list
-        print('result', result)
         return adc_response_Q_data(result)
 
     elif request.method == 'PUT':
