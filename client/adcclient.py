@@ -454,6 +454,7 @@ class ADCClient:
             res2.append( self.create_user(u) )
         return res2
 
+
     def delete_user(self, username):
         self.parse_url()
         info = {'username': username}
@@ -461,6 +462,7 @@ class ADCClient:
         path = '/admin/user/%s' % username
         res = self.http_request('DELETE', path, json=False)
         return self.fin(res)
+
 
     def delete_users(self, args):
         res2 = []

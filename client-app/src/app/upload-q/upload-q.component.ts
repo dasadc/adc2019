@@ -42,6 +42,14 @@ uploadResults: string;
       })
   }
 
+  downloadQFile(i: number, filename: string) {
+    let username: string = this.adcService.getUsername();
+    this.adcService.getUserQ(username, i)
+      .subscribe(res => {
+          this.adcService.downloadFile(res, 'text/plain', filename);
+      })
+  }
+
   deleteQFile(i: number) {
     //console.log('deleteQFile', i);
     let username: string = this.adcService.getUsername();

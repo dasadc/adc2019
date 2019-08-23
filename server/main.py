@@ -102,8 +102,9 @@ def adc_response_Q_data(result):
     
     Parameters
     ==========
-    result : list
+    result : list of Q-data-dict
     """
+    # print('adc_response_Q_data', result)
     if len(result) == 0:
         code = 404
         text = "Not Found\r\n"
@@ -200,18 +201,18 @@ def username_matched(usernm):
 @app.before_request
 def before_request():
     new_state, old_state = cds.timekeeper_check()
-    if new_state != old_state: # 状態遷移したとき
+    if new_state != old_state:  # 状態遷移したとき
         if new_state == 'Qup':
             # 出題リストを削除する
-            msg = admin_Q_list_delete()
-            log('auto', msg)
+            msg = cds.admin_Q_list_delete()
+            cds.log('auto', 'delete Q list')
             # 回答データを削除する
-            get_or_delete_A_data(delete=True)
-            log('auto', 'delete A all')
-        if new_state in ('im1', 'Aup'):  #im1を通らずにいきなりAupに遷移することがある
+            cds.get_or_delete_A_data(delete=True)
+            cds.log('auto', 'delete A all')
+        if new_state in ('im1', 'Aup'):  # im1を通らずにいきなりAupに遷移することがある
             # 出題リストを決める
-            msg = admin_Q_list_create()
-            log('auto', 'admin_Q_list_create')
+            flag, msg, _ = cds.admin_Q_list_create()
+            cds.log('auto', 'admin_Q_list_create %s' % flag)
         
     g.state = new_state  # グローバル変数。なにこれ？
 
@@ -656,7 +657,8 @@ def user_q(usernm, q_num):
             return adc_response('deadline passed', 503)
     log_request(usernm)
     if request.method == 'GET':
-        result = cds.get_user_Q_data(q_num, usernm) # list
+        result = cds.get_user_Q_data(q_num, usernm)  # list
+        print('result', result)
         return adc_response_Q_data(result)
 
     elif request.method == 'PUT':
@@ -701,7 +703,7 @@ def user_alive(usernm):
     if not priv_admin():                        # 管理者ではない
         if not username_matched(usernm):      # ユーザ名が一致しない
             return adc_response("permission denied", request_is_json(), 403)
-    log(usernm, "alive: "+request.data)
+    cds.log(usernm, "alive: "+request.data)
     return adc_response_text("OK")
 
 @app.route('/user/<usernm>/log', methods=['GET','DELETE'])
@@ -757,44 +759,53 @@ def user_password(usernm):
 @app.route('/Q/<int:q_num>', methods=['GET'])
 def q_get(q_num):
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
+        return adc_response('not login yet', 401)
     if not priv_admin():
         if g.state != 'Aup':
-            return adc_response("deadline passed", request_is_json(), 503)
+            return adc_response('deadline passed', 503)
     log_request(username())
-    result = get_Q_data(q_num)
-    return adc_response_Q_data(result)
+    qdat = cds.get_Q_data(q_num)  # qdatはdict
+    return adc_response_Q_data([qdat])
+
 
 @app.route('/Q', methods=['GET'])
 def q_get_list():
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
+        return adc_response('not login yet', 401)
     if not priv_admin():
         if g.state != 'Aup':
-            return adc_response("deadline passed", request_is_json(), 503)
+            return adc_response('deadline passed', 503)
     log_request(username())
-    if from_browser():
-        msg = get_Q_all(html=True)
-        return adc_response(Markup(msg), False)
-    else:
-        msg = get_Q_all()
-        return adc_response_text(msg)
+    msg = cds.get_Q_all()
+    return adc_response_json({'msg': msg})
 
-@app.route('/Qcheck', methods=['GET','PUT','POST'])
+
+@app.route('/Qcheck', methods=['POST'])
 def q_check():
+    """
+    Qデータのみのチェックを行う。
+
+    see also
+    ========
+    check_file()
+    """
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
+        return adc_response('not login yet', 401)
     log_request(username())
-    if request.method == 'GET':
-        return render_template('qcheck.html')
-    elif request.method == 'POST':
-        # ここは、Webブラウザ向けの処理
-        f = request.files['qfile']
-        qtext = f.read() # すべて読み込む
-    else: # PUTの場合
-        qtext = request.data
-    msg, ok = Q_check(qtext)
-    return adc_response_text(msg)
+
+    if request.json:
+        qdata = request.json.get('Q')
+    if 'qfile' in request.files:
+        qdata = request.files['qfile'].read().decode('utf-8')
+    try:
+        if qdata:
+            Q = adc2019.read_Q(qdata)
+            return jsonify({'check_file': 'Q-ok'})
+    except Exception as e:
+        errinfo = ['ADC2019 rule violation'] + [str(i) for i in e.args]
+        info = {'error': errinfo, 'stack_trace': traceback.format_exc()}
+        return jsonify(info)
+    
 
 @app.route('/score/dump', methods=['GET'])
 def score_dump():
@@ -830,7 +841,7 @@ def get_score():
 @app.route('/%s/' % adcconfig.YEAR, methods=['GET'])
 def root():
     if not authenticated():
-        return adc_response("permission denied", 403)
+        return adc_response('permission denied', 403)
     log_request(username())
     msg = r"Hello world\n"
     msg += r"Test mode: %s\n" % app.config['TEST_MODE']

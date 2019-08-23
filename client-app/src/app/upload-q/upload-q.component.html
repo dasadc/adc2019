@@ -13,6 +13,7 @@
     <th>Filename</th>
     <th></th>
     <th></th>
+    <th></th>
   </tr>
   <tr *ngFor="let i of myQList">
     <td>{{i.qnum}}</td>
@@ -21,6 +22,7 @@
     <td>{{i.linenum}}</td>
     <td>{{i.date | date: 'yyyy-MM-dd HH:mm:ss'}}</td>
     <td>{{i.filename}}</td>
+    <td><button title="download file" (click)="downloadQFile(i.qnum, i.filename)">Download</button></td>
     <td><button title="view file" (click)="viewQFile(i.qnum, i.filename)">View</button></td>
     <td><button title="delete file" (click)="deleteQFile(i.qnum)">Delete</button></td>
   </tr>
