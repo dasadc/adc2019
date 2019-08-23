@@ -1,0 +1,39 @@
+<div style="text-align:center">
+  <h1>Manage my Q data</h1>
+</div>
+
+<h3>My Q list</h3>
+<table>
+  <tr>
+    <th>Q</th>
+    <th>SIZE</th>
+    <th>BLOCK_NUM</th>
+    <th>#lines</th>
+    <th>Timestamp</th>
+    <th>Filename</th>
+    <th></th>
+    <th></th>
+  </tr>
+  <tr *ngFor="let i of myQList">
+    <td>{{i.qnum}}</td>
+    <td>{{i.cols}} X {{i.rows}}</td>
+    <td>{{i.blocknum}}</td>
+    <td>{{i.linenum}}</td>
+    <td>{{i.date | date: 'yyyy-MM-dd HH:mm:ss'}}</td>
+    <td>{{i.filename}}</td>
+    <td><button title="view file" (click)="viewQFile(i.qnum, i.filename)">View</button></td>
+    <td><button title="delete file" (click)="deleteQFile(i.qnum)">Delete</button></td>
+  </tr>
+</table>
+<button title="refresh Q list" (click)="getUserQList()">Refresh Q list</button>
+
+<app-file-view [text]="myQText" [filename]="myQFilename"></app-file-view>
+
+<h3>Upload Q</h3>
+<app-file (cleared)="onCleared($event)" #uploadFile></app-file>
+<div *ngFor="let i of myQNumber">
+   <input type="radio" name="qnumber" [value]="i" [checked]="i == postQNumber" (change)="postQNumber = i">Q{{i}}
+</div>
+<button title="Start upload Q file" (click)="postQFile(uploadFile)">Start upload</button>
+
+<div *ngIf="uploadResults" class="msg-view">{{uploadResults}}</div>

@@ -376,6 +376,32 @@ def read_Q(s):
     return size, block_num, block_size, block_data, block_type, num_lines
 
 
+def generate_Q_data(Q):
+    """
+    問題のテキストデータを生成する。改行コードはCR+LFとする。
+
+    Parameters
+    ==========
+    Q : tuple
+        read_Q()の返り値
+
+    Returns
+    =======
+    txt : str
+        問題のテキストデータ
+    """
+    crlf = '\r\n'  # DOSの改行コード
+    size, block_num, block_size, block_data, block_type, num_lines = Q
+    txt = 'SIZE %dX%d%s' % (size[0], size[1], crlf)
+    txt += 'BLOCK_NUM %d%s' % (block_num, crlf)
+    for i in range(1, block_num+1):
+        txt += crlf
+        txt += 'BLOCK#%d %dX%d%s' % (i, block_size[i][0], block_size[i][1], crlf)
+        for row in block_data[i]:
+            txt += ','.join(['+' if n == -1 else str(n) for n in row]) + crlf
+
+    return txt
+
 def read_A_file(file):
     """
     read A file

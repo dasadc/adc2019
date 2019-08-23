@@ -1,0 +1,19 @@
+<p>
+  <span id="datetime" class="tooltip">{{datetime | date:'HH:mm:ss'}}
+    <span class="tooltiptext">Current time</span>
+  </span>
+  <span *ngIf="clk">
+    <span class="status-value tooltip">State: {{clk.state}}
+      <span class="tooltiptext">{{stateDescription}}</span>
+    </span>
+    <span class="status-value tooltip">Enabled: {{clk.enabled}}
+      <span class="tooltiptext">{{enabledDescription}}</span>
+    </span>
+    <span class="status-value tooltip">Last Update: {{clk.lastUpdate | date: 'yyyy-MM-dd HH:mm:ss ZZZZ'}}
+      <span class="tooltiptext">when state changed</span>
+    </span>
+    <span class="status-value tooltip">User: {{username}}
+      <span class="tooltiptext">{{usernameDescription}}</span>
+    </span>
+  </span>
+</p>

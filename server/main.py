@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 #
 # Copyright (C) 2019 DA Symposium
 
@@ -9,8 +9,8 @@ DAシンポジウム 2019
 RESTもどき API server
 """
 
-from flask import Flask, request, jsonify, session, json, render_template, make_response, escape, url_for
-#  redirect,  g, Markup
+from flask import Flask, request, jsonify, session, json, render_template, make_response, escape, url_for, g
+#  redirect,  Markup
 from werkzeug.wsgi import DispatcherMiddleware
 import traceback
 import datetime
@@ -19,7 +19,6 @@ import adc2019
 import adcconfig
 import adcusers
 import adcutil
-import timekeeper
 import conmgr_datastore as cds
 
 
@@ -83,7 +82,14 @@ def adc_response_text(body, code=200):
     return resp
 
 
-def adc_response_json(body, code=200):
+def adc_response_json(obj, code=200):
+    """
+    Parameters
+    ==========
+    obj : dict
+        dict to send client
+    """
+    body = json.dumps(obj)
     resp = make_response(body)
     resp.status_code = code
     resp.headers['Content-Type'] = 'application/json'
@@ -91,14 +97,24 @@ def adc_response_json(body, code=200):
 
 
 def adc_response_Q_data(result):
-    "問題テキストデータを返す"
-    if result is None:
+    """
+    問題テキストデータを返す
+    
+    Parameters
+    ==========
+    result : list
+    """
+    if len(result) == 0:
         code = 404
         text = "Not Found\r\n"
-    else:
+    elif len(result) == 1:
         code = 200
-        text = result.text
-    return adc_response_text(text, code)
+        text = result[0]['text']
+    else:
+        print('WARNING: adc_response_Q_data: too many data', len(result))
+        code = 200
+        text = result[0]['text']
+    return adc_response_json({'text': text}, code)
 
 
 def log_request(usernm):
@@ -112,6 +128,8 @@ def priv_admin():
     """
     if authenticated():
         info = adcutil.adc_get_user_info(username(), app.config['USERS'])
+        if info is None:
+            return False
         if info[4] == 0: # gid
             #print('priv_admin: True')
             return True
@@ -121,20 +139,25 @@ def priv_admin():
 
 
 def authenticated():
-    "ログインしてユーザ認証済のユーザか？"
+    """
+    ログインしてユーザ認証済のユーザか？
+    まず、sessionで確認して、つぎにtokenを確認する。
+    tokenの確認は、datastoreへのアクセスが発生するため、その順番にしている。
+    """
+    r = ('login' in session and session['login']==1 and 'token' in session)
+    # print('authenticated (session): r=', r)
+    if r:
+        return True
     user = request.headers.get('ADC-USER')
     token = request.headers.get('ADC-TOKEN')
-    #print('user:', user)
-    #print('token:', token)
+    # print('user:', user)
+    # print('token:', token)
     if user and token:
         r = cds.check_access_token(user, token)
-        #print('authenticated (token): r=', r)
+        # print('authenticated (token): r=', r)
         if r:
-            return r
-        # [fall through] tokenで認証できなかった場合は、旧方式のsessionを見る
-    r = ('login' in session and session['login']==1)
-    #print('authenticated (session): r=', r)
-    return r
+            return True
+    return False
 
 
 def adc_logout():
@@ -157,7 +180,7 @@ def username():
     user = request.headers.get('ADC-USER')
     if user:
         return user
-    return session['username']
+    return session.get('username')
 
 
 def username_matched(usernm):
@@ -173,6 +196,24 @@ def username_matched(usernm):
     print(session)
     return ('login' in session and session['login']==1 and session['username']==usernm)
 
+
+@app.before_request
+def before_request():
+    new_state, old_state = cds.timekeeper_check()
+    if new_state != old_state: # 状態遷移したとき
+        if new_state == 'Qup':
+            # 出題リストを削除する
+            msg = admin_Q_list_delete()
+            log('auto', msg)
+            # 回答データを削除する
+            get_or_delete_A_data(delete=True)
+            log('auto', 'delete A all')
+        if new_state in ('im1', 'Aup'):  #im1を通らずにいきなりAupに遷移することがある
+            # 出題リストを決める
+            msg = admin_Q_list_create()
+            log('auto', 'admin_Q_list_create')
+        
+    g.state = new_state  # グローバル変数。なにこれ？
 
 
 @app.route('/check_file', methods=['POST'])
@@ -250,20 +291,32 @@ def test_get():
 
 @app.route('/login', methods=['POST'])
 def login():
+    """
+    ログインする。
+    新規ログイン時に、トークンを新規生成して返す。
+    すでにログイン済みのときは、既存のトークンを返す。
+
+    TO DO
+    =====
+    旧バージョンでsessionを使っていたが、これは止めたい。
+    でもWebアプリのときは、ログイン状態を維持できるので、それなりに便利だ。
+    """
     if authenticated():
         if 'times' not in session:
             session['times'] = 0
         session['times'] += 1
         msg = "You are already logged-in, %s, %s, %d times" % (escape(username()), escape(session.get('displayName')), session.get('times'))
         log_request(username())
-        token = cds.get_access_token(username())
-        if token:
-            token_value = token.get('token')
-        else:
-            token_value = '(BUG) Internal Error'
-        txt = json.dumps({'msg': msg,
-                          'token': token_value})
-        return adc_response(txt, json_encoded=True)
+        token_value = session.get('token')
+        if token_value is None:
+            token = cds.get_access_token(username())
+            if token:
+                token_value = token.get('token')
+            else:
+                token_value = '(BUG) Internal Error'
+        res = {'msg': msg,
+               'token': token_value}
+        return adc_response_json(res)
 
     # print('request.json', request.json)
     usernm = request.json.get('username', '')
@@ -286,37 +339,50 @@ def login():
 
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
+    """
+    ログアウトする。セッション情報、トークンが削除される。
+    """
     if authenticated():
         log_request(username())
         adc_logout()
-        return adc_response("logout OK")
+        return adc_response('logout OK')
     else:
-        return adc_response("not login yet", 401)
+        return adc_response('not login yet', 401)
 
 
 @app.route('/whoami', methods=['GET'])
 def whoami():
+    """
+    ユーザー名を返す。動作確認、APIの疎通確認用。
+    """
     if authenticated():
         log_request(username())
         return adc_response(username())
     else:
-        return adc_response("not login yet", 401)
+        return adc_response('not login yet', 401)
 
 
 @app.route('/admin/user', methods=['GET'])
 def admin_user_list_get():
-    "ユーザー一覧リスト"
+    """
+    ユーザー一覧リストを取得する。
+    """
     if not authenticated():
         return adc_response("access forbidden", 403)
     res = adcutil.adc_get_user_list(app.config['USERS'])
     res.sort()
-    txt = json.dumps(res)
     log_request(username())
-    return adc_response(txt, json_encoded=True)
+    return adc_response_json(res)
 
 
 @app.route('/admin/user/<usernm>', methods=['GET'])
 def admin_user_get(usernm):
+    """
+    ユーザーの情報を取得する。
+
+    test-02:カメさんチーム:1002:1000
+    username:displayname:uid:gid
+    """
     if ( not authenticated() or
          (not priv_admin() and username() != usernm) ):
         return adc_response('access forbidden', 403)
@@ -382,14 +448,19 @@ def admin_Q_list():
         msg = admin_Q_list_delete()
         return adc_response_text(msg)
     else: # ありえない
-        return adc_response_text("unknown")
+        return adc_response_text('unknown')
+
 
 @app.route('/admin/log', methods=['GET','DELETE'])
 def admin_log():
-    "ログデータ"
-    if not priv_admin():
-        return adc_response("access forbidden", request_is_json(), 403)
-    return user_log_before(None, None, None)
+    """
+    ログデータを取得する
+    """
+    if priv_admin():
+        return user_log_before(None, None, None)
+    else:
+        return adc_response("access forbidden", 403)
+
     
 @app.route('/admin/log/<key>/<int:val>', methods=['GET','DELETE'])
 def admin_log_before(key, val):
@@ -398,34 +469,55 @@ def admin_log_before(key, val):
         return adc_response("access forbidden", request_is_json(), 403)
     return user_log_before(None, key, val)
     
+
 @app.route('/admin/timekeeper/enabled', methods=['GET','PUT'])
-def admin_timekeeper():
-    "timekeeperの有効、無効"
-    if not priv_admin():
-        return adc_response("access forbidden", request_is_json(), 403)
+def admin_timekeeper_enabled():
+    """
+    timekeeperの有効、無効の状態を取得する(GET)、状態を変更する(PUT)。
+    """
     if request.method == 'GET':
-        val = timekeeper.get_enabled()
-        msg = "enabled=" + str(val)
-        return adc_response(msg, request_is_json())
+        dat = {'enabled': cds.timekeeper_enabled()}
+        return adc_response_json(dat)
     # PUTの場合
-    val = request.data
-    if val.isdigit():
-        val = int(val)
-        ret = timekeeper.set_enabled(val)
-        msg = "enabled=" + str(ret)
-        return adc_response(msg, request_is_json())
+    if not priv_admin():
+        return adc_response('access forbidden. admin only', 403)
+    #print('request.headers=', request.headers)
+    val = request.json.get('enabled')
+    if val in (0, 1):
+        ret = cds.timekeeper_enabled(val)
+        dat = {'enabled': ret}
+        return adc_response_json(dat)
+    else:
+        return adc_response('Illeagal argument %s' % val, 400)
+
         
 @app.route('/admin/timekeeper/state', methods=['GET','PUT'])
 def admin_timekeeper_state():
-    "timekeeperのstate"
-    if not priv_admin():
-        return adc_response("access forbidden", request_is_json(), 403)
+    """
+    timekeeperのstate値を取得する(GET)、state値を変更する(PUT)。
+    """
     if request.method == 'GET':
-        val = timekeeper.get_state()
-    else: # PUTの場合
-        val = timekeeper.set_state(request.data)
-    msg = "state=" + val
-    return adc_response(msg, request_is_json())
+        dat = {'state': cds.timekeeper_state()}
+        return adc_response_json(dat)
+    # PUTの場合
+    if not priv_admin():
+        return adc_response('access forbidden. admin only', 403)
+    state = request.json.get('state')
+    state2 = cds.timekeeper_state(state)
+    dat = {'state': state2}
+    return adc_response_json(dat)
+
+    
+@app.route('/admin/timekeeper', methods=['GET'])
+def admin_timekeeper():
+    """
+    timekeeperのを取得する。
+    """
+    clk = cds.timekeeper_clk()
+    dat = dict(clk)
+    dat['lastUpdate'] = dat['lastUpdate'].isoformat() # datetime型をstring型へ変換
+    return adc_response_json(dat)
+
     
 @app.route('/A', methods=['GET','DELETE'])
 def admin_A_all():
@@ -532,76 +624,76 @@ def a_info_put(usernm, a_num):
         delete = True if request.method == 'DELETE' else False
         ret, msg, results = get_or_delete_A_info(a_num=a_num, username=usernm, delete=delete)
         tmp = {'msg': msg,  'results':results }
-        body = json.dumps(tmp)
-        return adc_response_json(body)
+        return adc_response_json(tmp)
 
 
 @app.route('/user/<usernm>/Q', methods=['GET'])
 def get_user_q_list(usernm):
-    # ユーザを指定して、問題データの一覧リストを返す
+    """
+    ユーザを指定して、問題データの一覧リストを返す
+    """
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
-    if session['gid'] != 0: # 管理者以外の場合
-        if username() != usernm: # ユーザ名チェック
-            return adc_response("permission denied", request_is_json(), 403)
+        return adc_response('not login yet', 401)
+    if not priv_admin():  # 管理者以外の場合
+        if not username_matched(usernm):  # ユーザ名チェック
+            return adc_response("permission denied. admin only", 403)
     log_request(usernm)
-    if from_browser():
-        msg = get_user_Q_all(usernm, html=True)
-        for i in range(1,4):
-            url = url_for('user_q', username=usernm, q_num=i)
-            msg += "<hr>\n" + render_template('postq.html', url=url, qnum=i)
-        return adc_response(Markup(msg), False)
-    else:
-        msg = get_user_Q_all(usernm)
-        return adc_response_text(msg)
-    
-@app.route('/user/<usernm>/Q/<int:q_num>', methods=['GET','PUT','POST','DELETE'])
+    result = cds.get_user_Q_list(usernm)
+    return adc_response_json(result)
+
+
+@app.route('/user/<usernm>/Q/<int:q_num>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 def user_q(usernm, q_num):
-    "ユーザを指定して、問題データを、ダウンロード、アップロード、削除"
-    if not priv_admin(): # 管理者以外の場合
-        if not username_matched(usernm): # ユーザ名チェック
-            return adc_response("permission denied", request_is_json(), 403)
-        if q_num <= 0 or 4 <= q_num: # 問題番号の範囲チェック
-            return adc_response("Q number is out of range", request_is_json(), 403)
-    if not priv_admin():
+    """
+    ユーザを指定して、問題データを、ダウンロード、アップロード、削除
+    """
+    if not priv_admin():  # 管理者以外の場合
+        if not username_matched(usernm):  # ユーザ名チェック
+            return adc_response('permission denied. admin only', 403)
+        if q_num <= 0 or 4 <= q_num:  # 問題番号の範囲チェック
+            return adc_response("Q number is out of range", 403)
         if g.state != 'Qup':
-            return adc_response("deadline passed", request_is_json(), 503)
+            return adc_response('deadline passed', 503)
     log_request(usernm)
     if request.method == 'GET':
-        result = get_user_Q_data(q_num, usernm)
+        result = cds.get_user_Q_data(q_num, usernm) # list
         return adc_response_Q_data(result)
+
     elif request.method == 'PUT':
-        qtext = request.data
-        (ok, num, size, line_num) = update_Q_data(q_num, qtext, usernm )
-        if ok:
-            msg = "PUT OK update %d %s Q%d size %dx%d line_num %d" % (num, usernm, q_num, size[0], size[1], line_num)
-        else:
-            errmsg = num
-            msg = "ERROR in Q data\n" + errmsg
-        return adc_response_text(msg)
-    elif request.method == 'POST':
-        # ここは、Webブラウザ向けの処理
-        #print "form=", request.form.items()
-        #print "files=", request.files.items()
-        f = request.files['qfile']
-        qtext = f.read() # すべて読み込む
-        delete = request.form.has_key('delete')
-        if delete:
-            msg = delete_user_Q_data(q_num, author=usernm)
+        # print('PUT: request.json=', request.json)
+        q_text   = request.json.get('Q')
+        filename = request.json.get('Q_filename')
+        flag, *args = cds.update_Q_data(q_num, q_text, author=usernm, filename=filename)
+        if flag:
+            msg, size, block_num, line_num = args
+            msg2 = 'PUT %s: %s Q%d size %dx%d block_num %d line_num %d' % (msg, usernm, q_num, size[0], size[1], block_num, line_num)
             code = 200
         else:
-            res = insert_Q_data(q_num, qtext, author=usernm)
-            if res[0]:
-                size, line_num = res[1:]
-                msg = "POST OK insert %s Q%d size %dx%d line_num %d" % (usernm, q_num, size[0], size[1], line_num)
-                code = 200
-            else:
-                msg = res[1]
-                code = 403
-        return adc_response_text(msg, code)
+            msg = args[0]
+            msg2 = 'PUT ' + msg
+            code = 403
+        return adc_response(msg2, code)
+
+    elif request.method == 'POST':
+        # print('POST: request.json=', request.json)
+        q_text   = request.json.get('Q')
+        filename = request.json.get('Q_filename')
+        flag, *args = cds.insert_Q_data(q_num, q_text, author=usernm, filename=filename)
+
+        if flag:
+            msg, size, block_num, line_num = args
+            msg2 = 'POST %s: insert %s Q%d size %dx%d block_num %d line_num %d' % (msg, usernm, q_num, size[0], size[1], block_num, line_num)
+            code = 200
+        else:
+            msg = args[0]
+            msg2 = 'POST ' + msg
+            code = 403
+        return adc_response(msg2, code)
+
     elif request.method == 'DELETE':
-        msg = delete_user_Q_data(q_num, author=usernm)
-        return adc_response_text(msg)
+        msg = cds.delete_user_Q_data(q_num, author=usernm)
+        return adc_response(msg)
+
 
 @app.route('/user/<usernm>/alive', methods=['PUT'])
 def user_alive(usernm):
@@ -617,13 +709,16 @@ def user_log(usernm):
     # ユーザを指定して、ログデータを返す
     return user_log_before(usernm, None, None)
 
+
 @app.route('/user/<usernm>/log/<key>/<int:val>', methods=['GET','DELETE'])
 def user_log_before(usernm, key, val):
-    "ログデータ"
-    if not priv_admin():                    # 管理者ではない
+    """
+    ログデータを取得する。
+    """
+    if not priv_admin():                  # 管理者ではない
         if not username_matched(usernm):  # ユーザ名が一致しない
-            return adc_response("permission denied", request_is_json(), 403)
-    log_request(username()) #やめたほうがいい？
+            return adc_response("permission denied", 403)
+    log_request(username()) # やめたほうがいい？
     if key == 'days':
         td = datetime.timedelta(days=val)
     elif key == 'seconds':
@@ -631,26 +726,24 @@ def user_log_before(usernm, key, val):
     elif key is None:
         td = None
     else:
-        return adc_response("time format error", request_is_json(), 404)
+        return adc_response('time format error', 404)
     if request.method == 'GET':
-        msg = request.path
-        results = log_get_or_delete(username=usernm, when=td)
-        tmp = {'msg': msg,  'results':results }
-        body = json.dumps(tmp)
-        return adc_response_json(body)
+        delete = False
     else: # DELETE
-        if not priv_admin():                    # 管理者ではない
-            return adc_response("permission denied", request_is_json(), 403)
-        msg = request.path
-        results = log_get_or_delete(username=usernm, when=td, delete=True)
-        tmp = {'msg': msg,  'results':results }
-        body = json.dumps(tmp)
-        return adc_response_json(body)
+        delete = True
+        if not priv_admin():              # 管理者ではない
+            return adc_response('permission denied', 403)
+    msg = request.path
+    results = cds.log_get_or_delete(username=usernm, when=td, delete=delete)
+    tmp = {'msg': msg,  'results':results }
+    return adc_response_json(tmp)
 
 
 @app.route('/user/<usernm>/password', methods=['POST'])
 def user_password(usernm):
-    "パスワードの変更"
+    """
+    パスワードを変更する。
+    """
     if not authenticated():
         return adc_response('access forbidden', 403)
     if not priv_admin():                  # 管理者ではない
@@ -659,6 +752,7 @@ def user_password(usernm):
     res, msg = adcutil.adc_change_password(app.config['SALT'], usernm, app.config['USERS'], request.json, priv_admin())
     code = 200 if res else 403
     return adc_response(msg, code)
+
 
 @app.route('/Q/<int:q_num>', methods=['GET'])
 def q_get(q_num):
@@ -732,17 +826,15 @@ def get_score():
     html = html_score_board(res[0])
     return adc_response_html(html)
     
+
 @app.route('/%s/' % adcconfig.YEAR, methods=['GET'])
 def root():
-    if authenticated() and not request_is_json():
-        log_request(username())
-        return cmd_panel(username())
-    if not authenticated() and from_browser():
-        return redirect(url_for('login'))
-    log_request('-')
+    if not authenticated():
+        return adc_response("permission denied", 403)
+    log_request(username())
     msg = r"Hello world\n"
     msg += r"Test mode: %s\n" % app.config['TEST_MODE']
-    return adc_response(msg, request_is_json())
+    return adc_response(msg)
 
 
 dummy_app = Flask('dummy')

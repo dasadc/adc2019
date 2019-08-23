@@ -16,6 +16,11 @@ import { ResultViewComponent } from './result-view/result-view.component';
 import { BoardViewComponent } from './board-view/board-view.component';
 import { LoginComponent } from './login/login.component';
 import { MyAccountComponent } from './my-account/my-account.component';
+import { StatusBarComponent } from './status-bar/status-bar.component';
+import { UploadQComponent } from './upload-q/upload-q.component';
+import { ContestComponent } from './contest/contest.component';
+import { ScoreComponent } from './score/score.component';
+import { AdminComponent } from './admin/admin.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +33,12 @@ import { MyAccountComponent } from './my-account/my-account.component';
     ResultViewComponent,
     BoardViewComponent,
     LoginComponent,
-    MyAccountComponent
+    MyAccountComponent,
+    StatusBarComponent,
+    UploadQComponent,
+    ContestComponent,
+    ScoreComponent,
+    AdminComponent
   ],
   imports: [
     BrowserModule,

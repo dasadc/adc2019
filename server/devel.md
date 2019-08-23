@@ -94,7 +94,7 @@ pip install -r requirements.txt
 
 ### 開発時＆実行時
 
-datastoreをdev_appserverでのぞき見するためにダミーアプリを実行しているが、そのプロジェクトがtest813なので、それと同じにしておく。
+datastoreをdev_appserver.pyでのぞき見するためにダミーアプリを実行しているが、そのプロジェクトがtest813なので、それと同じにしておく。
 
 ```
 gcloud config set project test813
@@ -115,6 +115,16 @@ $(gcloud beta emulators datastore env-init)
 
 
 # 開発中の実行方法
+
+## dev_appserver.py
+
+```
+dev_appserver.py --application=test813 --support_datastore_emulator=true --port=18080 app.yaml 
+```
+
+Datastore Viewer
+http://localhost:8000/datastore
+
 
 ## (backend) API server
 
@@ -161,6 +171,10 @@ npm run build
 - http://127.0.0.1:8000/static/app/index.html
 - http://127.0.0.1:28000/static/app/index.html
 
+もしも、開発中のdevelopment serverが動き続けているなら、それも使える。
+
+- http://127.0.0.1:4280/static/app/index.html
+
 
 ## Google Cloud Platform
 
@@ -179,6 +193,11 @@ gcloud app deploy
 プロジェクト名を指定する場合
 gcloud app deploy --project=trusty-obelisk-631
 ```
+
+```
+gcloud app deploy --project=das-adc
+```
+
 
 APIの疎通確認
 

@@ -10,6 +10,8 @@ import argparse
 import sys, os
 from adcclient import ADCClient
 from getpass import getpass
+from datetime import datetime
+
 
 def cmd_help():
     print("""
@@ -51,6 +53,7 @@ admin command:
   delete-log [NUMBER (seconds|days)]
   timekeeper-enabled [0|1]
   timekeeper-state [init|im0|Qup|im1|Aup|im2]
+  timekeeper
 """)
 
 def main():
@@ -77,6 +80,7 @@ def main():
     parser.add_argument('--verbose', action='store_true', help='verbose message')
     parser.add_argument('-c', '--config', metavar='FILE', default=cli.config, help='config file (default: %(default)s)')
     parser.add_argument('-u', '--username', default=cli.username, help='set username (default: %(default)s)')
+    parser.add_argument('--alt-username', help='set alternative username. admin only')
     parser.add_argument('-p', '--password', help='set password')
     parser.add_argument('-U', '--URL', default=cli.url, help='set server URL (default: %(default)s)')
     parser.add_argument('-o', '--output', metavar='FILE', default=cli.output_file, help='output file name (default: %(default)s)')
@@ -90,8 +94,8 @@ def main():
     cli.config = args.config
     cli.read_config()
     cli.output_file = args.output
-    if args.username:
-        cli.username = args.username
+    cli.username = args.username
+    cli.alt_username = args.alt_username
     if args.password:
         cli.password = args.password
     if args.URL:
@@ -180,25 +184,39 @@ def main():
         #print res[6]['msg']
         #for i in res[6]['results']: print i
     elif a == 'get-user-q':
-        resx = cli.get_user_q(args[1:])
-        if len(args[1:]) == 0:
-            print(resx[6]['msg'])
+        if len(args.arg) == 0:
+            res = cli.get_user_q_list()
+            # print(res)
+            for i in res:
+                size = 'SIZE %dX%d' % (i['cols'], i['rows'])
+                block_num = 'BLOCK_NUM %d' % i['blocknum']
+                line_num = 'LINE_NUM %d' % i['linenum']
+                date = datetime.fromtimestamp(i['date']/1e6).strftime('%c')
+                q = 'Q%d' % i['qnum']
+                tmp = '"%s" "%s" "%s" "%s" "%s" "%s"' % (q, size, block_num, line_num, date, i['filename'])
+                print(tmp)
         else:
-            for res in resx:
-                #print "status=", res[1]
-                print(res[6]['msg'])
+            for i in args.arg:
+                q_num = int(i)
+                res = cli.get_user_q(q_num)
+                # print('res=', res)
+                # print(res[6]['text'], end='')
+                filename = 'Q%d.%s.txt' % (q_num, cli.effective_username())
+                with open(filename, 'wb') as f:
+                    f.write(res[6]['text'].encode('utf-8'))
+                print('Write file', filename)
     elif a == 'post-user-q':
-        q_num = int(args[1])
-        q_file = args[2]
+        q_num = int(args.arg[0])
+        q_file = args.arg[1]
         res = cli.post_user_q(q_num, q_file)
         print(res[6]['msg'])
     elif a == 'put-user-q':
-        q_num = int(args[1])
-        q_file = args[2]
+        q_num = int(args.arg[0])
+        q_file = args.arg[1]
         res = cli.put_user_q(q_num, q_file)
         print(res[6]['msg'])
     elif a == 'delete-user-q':
-        for i in args[1:]:
+        for i in args.arg:
             res = cli.delete_user_q(int(i))
             print(res[6]['msg'])
     elif a == 'check-q':
@@ -229,7 +247,7 @@ def main():
         res = cli.get_root(args[1:])
         #print res[6]['msg']
     elif a in ('get-log', 'get-user-log', 'delete-log', 'delete-user-log'):
-        res = cli.get_or_delete_log(args[1:], a)
+        res = cli.get_or_delete_log(args.arg, a)
         delete = (a.split('-')[0] == 'delete')
         #print res[6]['msg']
         if 'results' in res[6]:
@@ -247,11 +265,14 @@ def main():
         #print "res=",res
         #print res[6]['msg']
     elif a == 'timekeeper-enabled':
-        res = cli.timekeeper_enabled(args[1:])
-        #print res[6]['msg']
+        res = cli.timekeeper_enabled(args.arg)
+        print(res[6])
     elif a == 'timekeeper-state':
-        res = cli.timekeeper_state(args[1:])
-        #print res[6]['msg']
+        res = cli.timekeeper_state(args.arg)
+        print(res[6])
+    elif a == 'timekeeper':
+        res = cli.timekeeper()
+        print(res[6])
     else:
         print("Error: Unknown command:", a)
     #

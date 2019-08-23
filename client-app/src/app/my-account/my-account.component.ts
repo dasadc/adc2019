@@ -18,6 +18,7 @@ export class MyAccountComponent implements OnInit {
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
+    this.username = this.adcService.getUsername();
   }
 
   doWhoami(): void {

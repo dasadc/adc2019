@@ -4,40 +4,15 @@
 アルゴリズムデザインコンテストのさまざまな処理
 """
 
-#import numberlink
-#from datastore import *
 import conmgr_datastore as cds
 
 from hashlib import sha1, sha256
-from flask import make_response, render_template
 import random
 import datetime
 from tz import gae_datetime_JST
 
 from adcconfig import YEAR
 
-
-
-def log_get_or_delete(username=None, fetch_num=100, when=None, delete=False):
-    query = Log.query(ancestor = log_key()).order(-Log.date)
-    if username is not None:
-        query = query.filter(Log.username == username)
-    if when is not None:
-        before = datetime.datetime.now() - when
-        #print "before=", before
-        query = query.filter(Log.date > before)
-    q = query.fetch(fetch_num)
-    results = []
-    for i in q:
-        if delete:
-            tmp = { 'date': gae_datetime_JST(i.date) }
-            i.key.delete()
-        else:
-            tmp = { 'date': gae_datetime_JST(i.date),
-                    'username': i.username,
-                    'what': i.what }
-        results.append( tmp )
-    return results
 
 
 def compare_password(salt, username, password, users):
@@ -149,73 +124,6 @@ def adc_get_user_list(users):
     res.extend(res2)
     return res
 
-def insert_Q_data(q_num, text, author="DASymposium", year=YEAR, uniq=True):
-    """
-    問題データをデータベースに登録する。
-    uniq==Trueのとき、q_numとauthorが重複する場合、登録は失敗する。
-    """
-    #重複チェック
-    if uniq:
-        q = get_user_Q_data(q_num, author, year)
-        if q is not None:
-            return (False, "Error: Q%d data already exists" % q_num) # 重複エラー
-    # 問題データのチェック
-    (size, line_num, line_mat, via_mat, via_dic, msg, ok) = numberlink.read_input_data(text)
-    if not ok:
-        return (False, "Error: syntax error in Q data\n"+msg)
-    # text2は、textを正規化したテキストデータ（改行コードなど）
-    text2 = numberlink.generate_Q_data(size, line_num, line_mat, via_mat, via_dic)
-    # rootエンティティを決める
-    userinfo = cds.get_userinfo(author)
-    if userinfo is None:
-        return (False, "Error: user not found: %s" % author)
-    else:
-        root = userinfo.key
-    # 問題データのエンティティ
-    q = Question( parent = root,
-                  id = str(q_num),
-                  qnum = q_num,
-                  text = text2,
-                  rows = size[1], # Y
-                  cols = size[0], # X
-                  linenum = line_num,
-                  author = author )
-    # 登録する
-    q.put()
-    #
-    return (True, size, line_num)
-
-def update_Q_data(q_num, text, author="DASymposium", year=YEAR):
-    "問題データを変更する"
-    # 問題データの内容チェック
-    (size, line_num, line_mat, via_mat, via_dic, msg, ok) = numberlink.read_input_data(text)
-    if not ok:
-        return (False, "Error: syntax error in Q data\n"+msg, None, None)
-
-    text2 = numberlink.generate_Q_data(size, line_num, line_mat, via_mat, via_dic)
-    # 既存のエンティティを取り出す
-    res = get_user_Q_data(q_num, author, year)
-    if res is None:
-        num = 0
-    else:
-        num = 1
-        res.text = text2
-        res.rows = size[1]
-        res.cols = size[0]
-        res.linenum = line_num
-        res.put()
-    return (True, num, size, line_num)
-
-def get_Q_data(q_num, year=YEAR, fetch_num=5):
-    "出題の番号を指定して、Question問題データをデータベースから取り出す"
-    qla = ndb.Key(QuestionListAll, 'master', parent=qdata_key()).get()
-    if qla is None:
-        return None
-    # q_numは1から始まる整数なので、配列のインデックスとは1だけずれる
-    qn = q_num-1
-    if qn < 0 or len(qla.qs) <= qn:
-        return None
-    return qla.qs[q_num-1].get()
 
 def get_Q_author_all():
     "出題の番号から、authorを引けるテーブルを作る"
@@ -242,15 +150,6 @@ def get_Q_data_text(q_num, year=YEAR, fetch_num=5):
         ret = False
     return ret, text
 
-def get_user_Q_data(q_num, author, year=YEAR, fetch_num=99):
-    "qnumとauthorを指定して問題データをデータベースから取り出す"
-    userinfo = cds.get_userinfo(author)
-    if userinfo is None:
-        root = qdata_key(year)
-    else:
-        root = userinfo.key
-    key = ndb.Key(Question, str(q_num), parent=root)
-    return key.get()
 
 def get_admin_Q_all():
     "データベースに登録されたすべての問題の一覧リスト"
@@ -348,37 +247,6 @@ def post_A(username, atext, form):
     print('A%d\n%f\n%d\n%s' % (anum, cpu_sec, mem_byte, misc_text.encode('utf-8')))
     return put_A_data(anum, username, atext, cpu_sec, mem_byte, misc_text)
 
-def get_user_Q_all(author, html=None):
-    "authorを指定して、問題データの一覧リストを返す"
-    userinfo = cds.get_userinfo(author)
-    if userinfo is None:
-        root = qdata_key()
-    else:
-        root = userinfo.key
-    query = Question.query( ancestor = root ).order(Question.qnum)
-    #query = query.filter(Question.author == author )
-    q = query.fetch()
-    num = len(q)
-    out = ""
-    for i in q:
-        if html is None:
-            out += "Q%d SIZE %dX%d LINE_NUM %d (%s)\n" % (i.qnum, i.cols, i.rows, i.linenum, i.author)
-        else:
-            url = '/user/%s/Q/%d' % (author, i.qnum)
-            out += '<a href="%s">Q%d SIZE %dX%d LINE_NUM %d (%s)</a><br />\n' % (url, i.qnum, i.cols, i.rows, i.linenum, i.author)
-    return out
-
-
-def delete_user_Q_data(q_num, author, year=YEAR):
-    "qnumとauthorを指定して、問題データをデータベースから削除する"
-    res = get_user_Q_data(q_num, author, year)
-    msg = ""
-    if res is None:
-        msg = "Q%d data not found" % q_num
-    else:
-        msg += "DELETE /user/%s/Q/%d\n" % (author, q_num)
-        res.key.delete()
-    return msg
 
 
 def get_admin_A_all():
