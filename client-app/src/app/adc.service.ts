@@ -387,4 +387,20 @@ export class AdcService {
 	})
       );
   }
+
+
+  /** ファイルをダウンロードさせる。 */
+  downloadFile(data: any, type: string, download: string) {
+    let blob = new Blob([data], { type: type});
+    let url = window.URL.createObjectURL(blob);
+
+    let a = document.createElement('a');
+    document.body.appendChild(a);
+    a.setAttribute('style', 'display: none');
+    a.href = url;
+    a.download = download;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
 }

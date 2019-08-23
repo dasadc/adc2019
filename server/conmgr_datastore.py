@@ -2,8 +2,32 @@
 #
 # Copyright (C) 2019 IPSJ DA Symposium
 
+"""
+Google Datastore
+================
+
+kind
+----
+
+'userinfo'
+
+'access_token'
+
+'q_data'
+
+'log'
+
+'clock'
+
+'q_list'
+
+'a_data'
+
+"""
+
 from google.cloud import datastore
 from datetime import datetime
+import random
 
 import adc2019
 import adcutil
@@ -310,16 +334,21 @@ def delete_user_Q_data(q_num, author):
     return msg
 
 
-def get_Q_data(q_num, year=YEAR, fetch_num=5):
-    "出題の番号を指定して、Question問題データをデータベースから取り出す"
-    qla = ndb.Key(QuestionListAll, 'master', parent=qdata_key()).get()
+def get_Q_data(q_num):
+    """
+    出題の番号を指定して、Question問題データをデータベースから取り出す
+    """
+    qla = admin_Q_list_get()
     if qla is None:
         return None
+
     # q_numは1から始まる整数なので、配列のインデックスとは1だけずれる
-    qn = q_num-1
-    if qn < 0 or len(qla.qs) <= qn:
+    qn = q_num - 1
+    q_key_list = qla['q_key_list']
+    if qn < 0 or len(q_key_list) <= qn:
         return None
-    return qla.qs[q_num-1].get()
+    key = q_key_list[qn]
+    return dict(client.get(key))
 
 
 def p_qdata_from_Q(q_num, author, Q, filename=''):
@@ -428,7 +457,7 @@ def timekeeper_prop(dt, s, e):
     return {'lastUpdate': dt, # datetime
             'state':      s,  # str
             'enabled':    e   # int  0=disabled, 1=enabled
-    };
+    }
 
 
 def timekeeper_clk():
@@ -549,3 +578,433 @@ def timekeeper_transition(prev, now, prev_state):
         new_state = 'BUG'
     #print('same_slot=%s, prev_state=%s, new_state=%s' % (same_slot, prev_state, new_state))
     return same_slot, new_state
+
+
+
+def admin_Q_list_get():
+    """
+    コンテストの出題リストを取り出す
+    """
+    key = client.key('q_list_all', 1)
+    qla = client.get(key)
+    return qla
+
+
+def admin_Q_list_create():
+    """
+    コンテスト用の出題リストを作成する。
+    """
+    qla = admin_Q_list_get()
+    if qla is not None:
+        return False, 'Cannot create Q list, because it already exists', qla
+
+    qlist = list(query_q_data(projection=['qnum', 'author']).fetch())
+    random.shuffle(qlist)
+    out = '%d\n' % len(qlist)
+    out_admin = ''
+    out_user = ''
+    qs = []
+    for j, ent in enumerate(qlist):
+        num = j + 1  # Q1 Q2 Q3  --- 1から始まる
+        qs.append(ent.key)
+        out_admin += 'Q%d %s %d\n' % (num, ent['author'], ent['qnum'])
+        out_user  += 'Q%d\n' % num
+        num += 1
+    out += out_admin
+    prop = {'q_key_list': qs,
+            'text_admin': out_admin,
+            'text_user':  out_user,
+            'date': datetime.utcnow()}
+    key = client.key('q_list_all', 1)
+    qla = datastore.Entity(key=key)
+    qla.update(prop)
+    client.put(qla)
+    return True, out_admin, qla
+
+
+def admin_Q_list_delete():
+    """
+    コンテストの出題リストを削除する。
+    """
+    key = client.key('q_list_all', 1)
+    client.delete(key)
+    return 'DELETE Q-list'
+
+
+
+def get_Q_all(html=False):
+    """
+    問題データの一覧リストを返す。
+
+    Returns
+    =======
+    text : string
+        ただのテキストデータ。
+
+    Examples
+    ========
+    Q1
+    Q2
+    Q3
+    Q4
+    Q5
+    Q6
+    Q7
+    Q8
+    """
+    qla = admin_Q_list_get()
+    if qla is None:
+        return ''
+    return qla['text_user']
+
+
+def menu_post_A(username):
+    "回答ファイルをアップロードするフォームを返す"
+    qla = ndb.Key(QuestionListAll, 'master', parent=qdata_key()).get()
+    if qla is None:
+        return ''
+    out = ""
+    num=1
+    for i in qla.text_user.splitlines():
+        out += '<a href="/A/%s/Q/%d">post answer %s</a><br />\n' % (username, num, i)
+        num += 1
+    return out
+
+def post_A(username, atext, form):
+    anum = (int)(form['anum'])
+    cpu_sec = 0
+    mem_byte = 0
+    try:
+        cpu_sec = (float)(form['cpu_sec'])
+        mem_byte = (int)(form['mem_byte'])
+    except ValueError:
+        # (float)'' がエラー
+        pass
+    misc_text = form['misc_text']
+    print('A%d\n%f\n%d\n%s' % (anum, cpu_sec, mem_byte, misc_text.encode('utf-8')))
+    return put_A_data(anum, username, atext, cpu_sec, mem_byte, misc_text)
+
+
+
+def get_admin_A_all():
+    "データベースに登録されたすべての回答データの一覧リスト"
+    #query = Answer.query(ancestor=userlist_key()).order(Answer.owner, Answer.anum)
+    query = Answer.query(ancestor=userlist_key())
+    q = query.fetch()
+    num = len(q)
+    out = str(num) + "\n"
+    for i in q:
+        dt = gae_datetime_JST(i.date)
+        out += "A%02d (%s) %s\n" % (i.anum, i.owner, dt)
+    return out
+
+    
+def get_A_data(a_num=None, username=None):
+    """
+    データベースから回答データを取り出す。
+    a_numがNoneのとき、複数のデータを返す。
+    a_numが数値のとき、その数値のデータを1つだけ返す。
+    """
+    query = query_a_data(a_num=a_num, username=username)
+    return query.fetch()
+
+    
+def query_a_data(a_num=None, username=None, projection=None):
+    """
+    a_dataエンティティを取得するためのクエリ
+
+    a_numがNoneのとき、複数のデータを返す。
+    a_numが数値のとき、その数値のデータを1つだけ返す。
+    """
+    query = client.query(kind='q_data')
+    if a_num:
+        query.add_filter('anum', '=', a_num)
+    if username:
+        query.add_filter('username', '=', username)
+    if projection:
+        query.projection = projection
+    return query
+
+    
+def put_A_data(a_num, username, text, cpu_sec=None, mem_byte=None, misc_text=None):
+    "回答データをデータベースに格納する"
+    msg = ""
+    # 出題データを取り出す
+    ret, q_text = get_Q_data_text(a_num)
+    if not ret:
+        msg = "Error in Q%d data: " % a_num + q_text
+        return False, msg
+    # 重複回答していないかチェック
+    ret, q, root = get_A_data(a_num, username)
+    if ret==True and q is not None:
+        msg += "ERROR: duplicated answer\n";
+        return False, msg
+    # 回答データのチェックをする
+    judges, msg = numberlink.check_A_data(text, q_text)
+    q = 0.0
+    na = len(judges)
+    if 1 < na: # 2015,2016年ルールでは、回答は1つだけ
+        msg += "Warning: too many answers(%d) in A%d. aceept first one only.\n" % (na, a_num)
+    if na==0 or judges[0][0] == False:
+        msg += "Error in answer A%d\n" % a_num
+        check_A = False
+    else:
+        check_A = True # 正解
+        q = judges[0][1]
+    # 解の品質
+    msg += "Quality factor = %1.19f\n" % q
+    # データベースに登録する。不正解でも登録する
+    a = Answer( parent = root,
+                id = str(a_num),
+                anum = a_num,
+                text = text,
+                owner = username,
+                cpu_sec = cpu_sec,
+                mem_byte = mem_byte,
+                misc_text = misc_text,
+                result = msg[-1499:],  # 長さ制限がある。末尾のみ保存。
+                judge = int(check_A),
+                q_factor = q )
+    a_key = a.put()
+    return True, msg
+
+def put_A_info(a_num, username, info):
+    "回答データの補足情報をデータベースに格納する"
+    msg = ""
+    # 回答データを取り出す。rootはUserInfoのkey、aはAnswer
+    ret, a, root = get_A_data(a_num, username)
+    if ret==False or a is None:
+        if ret==False: msg += a + "\n"
+        msg += "ERROR: A%d data not found" % a_num
+        return False, msg
+    a.cpu_sec = info['cpu_sec']
+    a.mem_byte = info['mem_byte']
+    a.misc_text = info['misc_text']
+    a.put()
+    msg += "UPDATE A%d info\n" % a_num
+    return True, msg
+
+
+def get_or_delete_A_data(a_num=None, username=None, delete=False):
+    """
+    回答データをデータベースから、削除する or 取り出する。
+    """
+    data = get_A_data(a_num=a_num, username=username)
+    result = []
+    for i in data:
+        if delete:
+            result.append('DELETE A%d' % i['anum'])
+            client.delete(i.key)
+        else: # GETの場合
+            result.append('GET A%d' % i['anum'])
+            result.append(i['text'])
+    return result
+
+
+def get_user_A_all(username, html=None):
+    "ユーザーを指定して、回答データの一覧リストを返す"
+    ret, q, root = get_A_data(username=username)
+    if not ret:
+        return False, q
+    text = ""
+    for i in q:
+        if html:
+            text += '<a href="/A/%s/Q/%d">A%d</a> <a href="/A/%s/Q/%d/info">info</a><br />\n' % (username, i.anum, i.anum,  username, i.anum)
+        else:
+            text += 'A%d\n' % i.anum
+    return True, text
+    
+def get_or_delete_A_info(a_num=None, username=None, delete=False):
+    "回答データの補足情報をデータベースから、削除or取り出し"
+    msg = ""
+    r, a, root = get_A_data(a_num, username)
+    if not r:
+        return False, a, None
+    if a_num is None:
+        q = a
+    else:
+        if a is None:
+            msg += "A%d not found" % a_num
+            return True, msg, []
+        q = [a]
+    results = []
+    num = 0
+    for i in q:
+        num += 1
+        if delete:
+            results.append({'anum': i.anum})
+            i.cpu_sec = None
+            i.mem_byte = None
+            i.misc_text = None
+            i.put()
+        else:
+            tmp = i.to_dict()
+            del tmp['text']
+            results.append( tmp )
+    method = 'DELETE' if delete else 'GET'
+    a_num2 = 0 if a_num is None else a_num
+    msg += "%s A%d info %d" % (method, a_num2, num)
+    return True, msg, results
+
+
+def hashed_password(username, password, salt):
+    """
+    ハッシュ化したパスワード
+    """
+    tmp = salt + username + password
+    return sha256(tmp.encode('utf-8')).hexdigest()
+
+
+
+def Q_check(qtext):
+    "問題ファイルの妥当性チェックを行う"
+    hr = '-'*40 + "\n"
+    (size, line_num, line_mat, via_mat, via_dic, msg, ok) = numberlink.read_input_data(qtext)
+    if ok:
+        q = numberlink.generate_Q_data(size, line_num, line_mat, via_mat, via_dic)
+        out = "OK\n" + hr + q + hr
+    else:
+        out = "NG\n" + hr + qtext + hr + msg
+    return out, ok
+
+
+
+def get_Q_author_all():
+    "出題の番号から、authorを引けるテーブルを作る"
+    qla = ndb.Key(QuestionListAll, 'master', parent=qdata_key()).get()
+    if qla is None:
+        return None
+    authors = ['']*(len(qla.qs)+1) # q_numは1から始まるので、+1しておく
+    qn = 1 # 出題番号
+    for q_key in qla.qs:
+        q = q_key.get()
+        authors[qn] = q.author
+        qn += 1
+        # q.qnum は、問題登録したときの番号であり、出題番号ではない
+    return authors
+
+def get_Q_data_text(q_num, year=YEAR, fetch_num=5):
+    "問題のテキストを返す"
+    result = get_Q_data(q_num, year, fetch_num)
+    if result is not None:
+        text = result.text
+        ret = True
+    else: # result is None
+        text = "Error: data not found: Q%d" % q_num
+        ret = False
+    return ret, text
+
+
+def get_admin_Q_all():
+    "データベースに登録されたすべての問題の一覧リスト"
+    #query = Question.query().order(Question.author, Question.qnum)
+    query = Question.query(ancestor=userlist_key()).order(Question.author, Question.qnum)
+    q = query.fetch()
+    num = len(q)
+    out = str(num) + "\n"
+    for i in q:
+        dt = gae_datetime_JST(i.date)
+        out += "Q%02d SIZE %dX%d LINE_NUM %d (%s) %s\n" % (i.qnum, i.cols, i.rows, i.linenum, i.author, dt)
+    return out
+    
+
+
+
+
+
+def calc_score_all():
+    "スコア計算"
+    authors = get_Q_author_all()
+    #print "authors=", authors
+    q_factors = {}
+    q_point = {}
+    ok_point = {}
+    bonus_point = {}
+    result = {}
+    misc = {}
+    query = Answer.query(ancestor=userlist_key())
+    q = query.fetch()
+    all_numbers = {}
+    all_users = {}
+    for i in q:
+        #anum = 'A%d' % i.anum
+        anum = 'A%02d' % i.anum
+        username = i.owner
+        all_numbers[anum] = 1
+        all_users[username] = 1
+        # 正解ポイント
+        if not(anum in ok_point):
+            ok_point[anum] = {}
+        ok_point[anum][username] = i.judge
+        # 品質ポイント
+        if not(anum in q_factors):
+            q_factors[anum] = {}
+        q_factors[anum][username] = i.q_factor
+        # 出題ボーナスポイント
+        if i.judge in (0,1) and authors[i.anum] == username:
+            #print "check_bonus:", i.anum, i.judge, authors[i.anum], username
+            if not(anum in bonus_point):
+                bonus_point[anum] = {}
+            bonus_point[anum][username] = i.judge
+        # result(ログメッセージ)
+        if not(anum in result):
+            result[anum] = {}
+        result[anum][username] = i.result
+        # (その他) date, cpu_sec, mem_byte, misc_text
+        if not(anum in misc):
+            misc[anum] = {}
+        misc[anum][username] = [i.date, i.cpu_sec, i.mem_byte, i.misc_text]
+    #print "ok_point=", ok_point
+    #print "bonus_point=", bonus_point
+    #print "q_factors=", q_factors
+    #print "result=\n", result
+    # 品質ポイントを計算する
+    q_pt = 10.0
+    for anum, values in q_factors.iteritems(): # 問題番号ごとに
+        #print "anum=", anum
+        qf_total = 0.0 # Q_factorの合計
+        for user, qf in values.iteritems():
+            #print "qf=", qf
+            qf_total += qf
+        #print "qf_total=", qf_total
+        for user, qf in values.iteritems():
+            if qf_total == 0.0:
+                tmp = 0.0
+            else:
+                tmp = q_pt * qf / qf_total
+            if not anum in q_point:
+                q_point[anum] = {}
+            q_point[anum][user] = tmp
+    #print "q_point=", q_point
+    # 集計する
+    tmp = ['']*(len(all_numbers) + 1)
+    i = 0
+    for anum in sorted(all_numbers.keys()):
+        tmp[i] = anum
+        i += 1
+    tmp[i] = 'TOTAL'
+    score_board = {'/header/': tmp} # 見出しの行
+    for user in sorted(all_users.keys()):
+        #print user
+        if not(user in score_board):
+            score_board[user] = [0]*(len(all_numbers) + 1)
+        i = 0
+        ptotal = 0.0
+        for anum in sorted(all_numbers.keys()):
+            #print anum
+            p = 0.0
+            if user in ok_point[anum]: p += ok_point[anum][user]
+            if user in q_point[anum]:  p += q_point[anum][user]
+            if anum in bonus_point and user in bonus_point[anum]:
+                    p += bonus_point[anum][user]
+            #print "p=", p
+            score_board[user][i] = p
+            ptotal += p
+            i += 1
+        score_board[user][i] = ptotal
+    #print "score_board=", score_board
+    return score_board, ok_point, q_point, bonus_point, q_factors, result, misc
+
+
+
+
