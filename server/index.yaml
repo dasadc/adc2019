@@ -4,20 +4,19 @@ indexes:
   properties:
   - name: author
   - name: qnum
-  - name: date
-
-- kind: userinfo
-  properties:
-  - name: username
-  - name: uid
-  - name: gid
 
 - kind: q_data
   properties:
-  - name: qnum
   - name: author
+  - name: qnum
+  - name: blocknum
+  - name: cols
+  - name: date
+  - name: filename
+  - name: linenum
+  - name: rows
 
 - kind: log
   properties:
   - name: timestamp
-  - name: usrename
+  - name: username

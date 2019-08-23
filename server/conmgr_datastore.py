@@ -396,7 +396,7 @@ def log_get_or_delete(username=None, fetch_num=100, when=None, delete=False):
     query = client.query(kind='log')
     query.order = ['-timestamp']
     if username:
-        query.add_fileter('username', '=', username)
+        query.add_filter('username', '=', username)
     if when:
         before = datetime.utcnow() - when
         print('before=', before)
