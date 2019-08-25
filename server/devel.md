@@ -1,3 +1,85 @@
+adc2019 API server
+==================
+
+初期設定
+--------
+
+```
+virtualenv --python=/usr/bin/python3 /work/venv36
+source /work/venv36/bin/activate
+pip install -r requirements.txt
+pip install gunicorn
+```
+
+実行する
+--------
+
+
+### 開発時
+
+datastoreをdev_appserver.pyでのぞき見するためにダミーアプリを実行しているが、そのプロジェクトがtest813なので、それと同じにしておく。
+
+```
+gcloud config set project test813
+```
+
+プロジェクト名を指定した後に、datastore emulatorを起動すべきである。
+そのあとで、datastoreを使うための環境設定をする。
+
+```
+source /work/venv36/bin/activate
+export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keyfile.json
+$(gcloud beta emulators datastore env-init)
+```
+
+dev_appserver.pyの立ち上げ方は、[../hello_world/README.md](../hello_world/README.md)を参照。
+
+Datastore Viewerは
+http://localhost:8000/datastore
+
+
+## (backend) API server
+
+```
+python main.py
+または
+gunicorn -b :4280 main:app
+アクセスログが見たいときは
+gunicorn -b :4280 --access-logfile '-' main:app
+```
+    
+http://127.0.0.1:4280/ で動いている。
+
+
+
+
+adc2019 API server
+==================
+
+
+
+deploy
+
+```
+cd server/
+gcloud app deploy
+プロジェクト名を指定する場合
+gcloud app deploy --project=trusty-obelisk-631
+```
+
+```
+gcloud app deploy --project=das-adc
+```
+
+
+APIの疎通確認
+
+```
+curl -v https://trusty-obelisk-631.appspot.com/api/test_get
+```
+
+
+
 curlを使って、APIサーバの動作確認を行う
 ---------------------------------------
 
@@ -55,152 +137,3 @@ $ curl -X POST --form Qfile=@sampleQ0.txt --form Afile=@sampleQ0.txt http://127.
 ```
 
 
-
-# 初期設定
-
-```
-npm init
-npm install @angular/cli
-npm install typescript
-npm install http-server
-npm install ngx-file-drop --save
-
-sh ~/Downloads/Miniconda3-latest-Linux-x86_64.sh 
-/opt/miniconda3 にインストールした
-bash
-conda config --set auto_activate_base false
-
-
-conda update -n base -c defaults conda
-conda create -n py37 python=3.7
-conda activate py37
-conda install Flask==1.0.2
-conda install numpy
-conda install gunicorn
-
-gunicorn main:app
-http://127.0.0.1:8000/static/app/index.html
-```
-
-## 2019-08-17
-
-### 初期設定
-
-```
-virtualenv --python=/usr/bin/python3 ~/adc2019/venv
-source ~/adc2019/venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 開発時＆実行時
-
-datastoreをdev_appserver.pyでのぞき見するためにダミーアプリを実行しているが、そのプロジェクトがtest813なので、それと同じにしておく。
-
-```
-gcloud config set project test813
-```
-
-プロジェクト名を指定した後に、datastore emulatorを起動すべきである。
-
-
-そのあとで、datastoreを使うための環境設定をする。
-
-
-```
-source ~/adc2019/venv/bin/activate
-export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/test813-570bf90326e3.json
-$(gcloud beta emulators datastore env-init)
-```
-
-
-
-# 開発中の実行方法
-
-## dev_appserver.py
-
-```
-dev_appserver.py --application=test813 --support_datastore_emulator=true --port=18080 app.yaml 
-```
-
-Datastore Viewer
-http://localhost:8000/datastore
-
-
-## (backend) API server
-
-```
-python main.py
-または
-gunicorn -b :4280 main:app
-アクセスログが欲しいときは
-gunicorn -b :4280 --access-logfile '-' main:app
-```
-    
-http://127.0.0.1:4280/ で動いている。
-
-
-## (frontend) Angular, development server
-
-```
-$(npm bin)/ng serve --proxy-config proxy.conf.json --live-reload --watch --poll 9999
-または
-npm run test-run
-```
-
-http://localhost:4200/
-
-
-## deploy前のテスト実行方法
-
-ビルドする。
-
-```
-cd client-app/
-$(npm bin)/ng build --prod --base-href=/static/app/index.html --output-path=../server/static/app/
-または
-npm run build
-```
-
-実行する。
-
-	cd server/
-	gunicorn main:app
-    ポート番号8000がすでに使われていて変更したいとき
-    gunicorn -b :28000 --access-logfile '-' main:app
-
-- http://127.0.0.1:8000/static/app/index.html
-- http://127.0.0.1:28000/static/app/index.html
-
-もしも、開発中のdevelopment serverが動き続けているなら、それも使える。
-
-- http://127.0.0.1:4280/static/app/index.html
-
-
-## Google Cloud Platform
-
-初期設定
-
-```
-gcloud auth login
-gcloud config set project xxxxxx-xxxxxxx-xxx
-```
-
-deploy
-
-```
-cd server/
-gcloud app deploy
-プロジェクト名を指定する場合
-gcloud app deploy --project=trusty-obelisk-631
-```
-
-```
-gcloud app deploy --project=das-adc
-```
-
-
-APIの疎通確認
-
-```
-curl -v https://trusty-obelisk-631.appspot.com/api/test_get
-```

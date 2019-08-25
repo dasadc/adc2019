@@ -13,6 +13,13 @@ from tz import gae_datetime_JST
 from adcconfig import YEAR
 
 
+def hashed_password(username, password, salt):
+    """
+    ハッシュ化したパスワード
+    """
+    tmp = salt + username + password
+    return sha256(tmp.encode('utf-8')).hexdigest()
+
 
 def compare_password(salt, username, password, users):
     """

@@ -14,7 +14,7 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'my-account', component: MyAccountComponent },
   { path: 'upload-q', component: UploadQComponent },
-  { path: 'contest', component: ContestComponent },
+  { path: 'arena', component: ContestComponent },
   { path: 'score', component: ScoreComponent },
   { path: 'admin', component: AdminComponent },
 ];

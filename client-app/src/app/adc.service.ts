@@ -5,7 +5,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 
 import { readFile } from './rx-file-reader';
 import { CheckResults } from './checkresults';
-import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList } from './apiresponse';
+import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList, QNumberList, QData, ANumberList } from './apiresponse';
 
 const httpOptions = {
   headers: new HttpHeaders({ 'Content-Type': 'application/json' })
@@ -266,7 +266,7 @@ export class AdcService {
 	  this.username = res['msg'];
 	  return new ResMsgOnly(res['msg']);
 	}),
-	catchError(this.handleError<ResMsgOnly>('whoami'))
+	  catchError(this.handleError<ResMsgOnly>('whoami', new ResMsgOnly('error')))
       );
   }
 
@@ -385,6 +385,75 @@ export class AdcService {
 	  //return 'ERROR ' + err['error']['msg'];
 	  throw new Error(err['error']['msg']);
 	})
+      );
+  }
+
+  /** 出題された問題データのリストを取得する。 */
+  getQNumberList(): Observable<QNumberList> {
+    return this.http.get<Object>('/api/Q', this.apiHttpOptions())
+      .pipe(
+	map((res: Object[]) => {
+	  // console.log('AdcService: getQList', res);
+	  return new QNumberList(res['msg'],
+				 res['qnum_list'],
+				 res['cols_list'],
+				 res['rows_list'],
+				 res['blocknum_list'],
+				 res['linenum_list']);
+	}),
+	catchError(this.handleError<QNumberList>('getQList'))
+      );
+  }
+
+  /** 出題された問題データを取得する。 */
+  getQ(qnum: number): Observable<QData> {
+    return this.http.get<Object>(`/api/Q/${qnum}`, this.apiHttpOptions())
+      .pipe(
+	map((res: Object[]) => {
+	  //console.log('AdcService: getQ', res);
+	  return new QData(res['author'],
+			   res['qnum'],
+			   res['filename'],
+			   res['date'],
+			   qnum,
+			   res['cols'],
+			   res['rows'],
+			   res['blocknum'],
+			   res['linenum'],
+			   res['text']);
+	}),
+	catchError(this.handleError<QData>('getQ'))
+      );
+  }
+
+  /** ユーザが回答データをアップロードする。 */
+  putA(usernm: string, anum: number, atext: string, afilename: string): Observable<string> {
+    let data = {'A': atext,
+		'A_filename': afilename};
+    return this.http.put<Object>(`/api/A/${usernm}/Q/${anum}`, data, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  console.log('AdcService: putA', res);
+	  return res['msg'];
+	}),
+	catchError((err) => {
+	  console.log('AdcService: putA ERROR', err);
+	  //return 'ERROR ' + err['error']['msg'];
+	  throw new Error(err['error']['msg']);
+	})
+      );
+  }
+
+  /** 出題された問題データのリストを取得する。 */
+  getANumberList(usernm: string): Observable<ANumberList> {
+    return this.http.get<Object>(`/api/A/${usernm}`, this.apiHttpOptions())
+      .pipe(
+	map((res: Object[]) => {
+	  console.log('AdcService: getANumberList', res);
+	  return new ANumberList(res['msg'],
+				 res['anum_list']);
+	}),
+	catchError(this.handleError<ANumberList>('getANumberList'))
       );
   }
 

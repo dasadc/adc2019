@@ -5,31 +5,30 @@
 a client library for ADC service
 """
 
-import os, stat, sys, json
-import http.client as httplib
-from urllib.parse import urlparse
-import urllib.request
-import urllib.error
 import http.cookies as Cookie
-import http_post
-import base64
+import json
+import os
+import stat
+import sys
+import urllib.error
+import urllib.request
 
 
 class ADCClient:
     def __init__(self):
-        self.config = os.path.join( os.path.expanduser('~'), 'adcclient.json' )
+        self.config = os.path.join(os.path.expanduser('~'), 'adcclient.json')
         self.debug = False
         self.verbose = False
         self.username = None
         self.alt_username = None
         self.password = None
         self.url = 'http://127.0.0.1:8080/'  # API server address
-        self.api_root = '/api'               # API server root path
+        self.api_root = '/api'  # API server root path
         self.cookie = None
         self.output_file = None
         self.token = None
         self.version = '2019.08.21'
-
+        self.year = 2019
 
     def effective_username(self):
         """
@@ -46,7 +45,6 @@ class ADCClient:
         else:
             return self.username
 
-
     def setup_access_token(self):
         """
         環境変数 ADC_USER, ADC_TOKEN を参照して、セットする。
@@ -58,7 +56,6 @@ class ADCClient:
         if t:
             self.token = t
 
-
     def read_config(self):
         """
         設定情報をファイルから読み出す。
@@ -67,7 +64,7 @@ class ADCClient:
         try:
             with open(self.config, "r") as f:
                 data = json.load(f)
-                #print "data=",data
+                # print("data=",data)
                 for i in ['username', 'cookie', 'url', 'token']:
                     if i in data and data[i] is not None:
                         self.__dict__[i] = data[i]
@@ -77,12 +74,11 @@ class ADCClient:
         except ValueError:
             # No JSON object could be decodedなどの場合
             r = False
-        except:
+        except Exception:
             print('Error:', sys.exc_info()[0])
             raise
-        self.setup_access_token() # 環境変数は設定情報をoverrideできる
+        self.setup_access_token()  # 環境変数は設定情報をoverrideできる
         return r
-
 
     def write_config(self):
         """
@@ -95,11 +91,10 @@ class ADCClient:
         try:
             with open(self.config, 'w') as f:
                 json.dump(data, f)
-            os.chmod(self.config, stat.S_IRUSR|stat.S_IWUSR)
-        except:
+            os.chmod(self.config, stat.S_IRUSR | stat.S_IWUSR)
+        except Exception:
             print('Error:', sys.exc_info()[0])
             raise
-
 
     def http_cookie_header(self, headers):
         """
@@ -113,8 +108,7 @@ class ADCClient:
             # C['session']['httponly']
             if 'session' in C:
                 value = 'session=' + C['session'].coded_value
-                headers['Cookie'] = value;
-
+                headers['Cookie'] = value
 
     def http_request(self, method='GET', path='/', params=None, headers={}):
         """
@@ -124,11 +118,11 @@ class ADCClient:
         urllib.requestを使わなかった理由が何かあった気がするが、思い出せない。
         """
         # 基本的には url = self.url + api_root + path だが、'//'を避けるため
-        if self.api_root[-1]=='/' and path[0]=='/':
+        if self.api_root[-1] == '/' and path[0] == '/':
             path = self.api_root + path[1:]
         else:
             path = self.api_root + path
-        if self.url[-1]=='/' and path[0]=='/':
+        if self.url[-1] == '/' and path[0] == '/':
             url = self.url + path[1:]
         else:
             url = self.url + path
@@ -141,19 +135,20 @@ class ADCClient:
         self.http_cookie_header(headers)
         if self.token:
             headers['ADC-TOKEN'] = self.token
-            headers['ADC-USER']  = self.username
+            headers['ADC-USER'] = self.username
         headers['User-Agent'] = 'adcclient/' + self.version
         if self.debug:
             print('method=', method)
             print('url=', url)
             print('params=', params)
-            print('headers=', headers);
+            print('headers=', headers)
         if method in ('POST', 'PUT'):
-            params = params.encode('utf-8') # bytes型にする
-        proxy_handler = urllib.request.ProxyHandler() # 環境変数http_proxyなどを参照して設定してくれる。http_proxy="http://USER:PASS@HOST:PORT/" のPROXY認証つきでもOKだった
+            params = params.encode('utf-8')  # bytes型にする
+        proxy_handler = urllib.request.ProxyHandler()
+        # 環境変数http_proxyなどを参照して設定してくれる。http_proxy="http://USER:PASS@HOST:PORT/" のPROXY認証つきでもOKだった
         proxy_auth_handler = urllib.request.ProxyBasicAuthHandler()
         opener = urllib.request.build_opener(proxy_handler, proxy_auth_handler)
-        #opener.addheaders = [(k, v) for k,v in headers.items()] # ここではContent-Typeを指定できなかった。Requestで指定すればよい
+        # opener.addheaders = [(k, v) for k,v in headers.items()] # ここではContent-Typeを指定できなかった。Requestで指定すればよい
         req = urllib.request.Request(url=url, data=params, method=method, headers=headers)
         try:
             with opener.open(req) as f:
@@ -162,7 +157,7 @@ class ADCClient:
                 rurl = f.geturl()
                 code = f.getcode()
                 data = f.read()
-                res = [f.version, # HTTP/1.0なら10、HTTP/1.1なら11
+                res = [f.version,  # HTTP/1.0なら10、HTTP/1.1なら11
                        f.status,  # 200とか
                        f.reason,  # 'OK'とか
                        f.getheader('Content-Type'),
@@ -174,7 +169,7 @@ class ADCClient:
             rurl = f.geturl()
             code = f.getcode()
             data = f.read()
-            res = [f.version, # HTTP/1.0なら10、HTTP/1.1なら11
+            res = [f.version,  # HTTP/1.0なら10、HTTP/1.1なら11
                    f.status,  # 200とか
                    f.reason,  # 'OK'とか
                    f.getheader('Content-Type'),
@@ -185,23 +180,22 @@ class ADCClient:
         # print('res=', res)
         return res
 
-
     def fin(self, res):
         """
         resの例
         [10, 200, 'OK', 'application/json', None, b'{"msg": "administrator"}']
         [10, 401, 'UNAUTHORIZED', 'application/json', None, b'{"msg": "not login yet"}']
         """
-        #print('adcclient.fin: res=', res)
+        # print('adcclient.fin: res=', res)
         if res[1] == 200:
             if self.debug:
-                print("Success", res[1], res[2], "\n") #, res[5]
+                print("Success", res[1], res[2], "\n")  # , res[5]
             if res[4] is not None:
                 self.cookie = res[4]
         else:
             if self.debug:
-                print("Failed", res[1], res[2], "\n") #, res[5]
-        #print('adcclient.fin: res[5]: ', type(res[5]), res[5])
+                print("Failed", res[1], res[2], "\n")  # , res[5]
+        # print('adcclient.fin: res[5]: ', type(res[5]), res[5])
         if res[3] is None:
             info = {'msg': res[5]}
         else:
@@ -215,23 +209,21 @@ class ADCClient:
         res.append(info)
         return res
 
-
-    def login(self, args):
+    def login(self):
         """
         serverにloginする
         """
         info = {'username': self.username,
-                'password': self.password }
+                'password': self.password}
         params = json.dumps(info)
         res = self.http_request('POST', '/login', params=params)
         info = json.loads(res[5])
-        #print(info)
+        # print(info)
         if 'token' in info:
             self.token = info['token']
         return self.fin(res)
 
-
-    def logout(self, args):
+    def logout(self):
         """
         serverからlogoutする
         """
@@ -239,14 +231,12 @@ class ADCClient:
         self.token = None
         return self.fin(res)
 
-
-    def whoami(self, args):
+    def whoami(self):
         """
         (動作確認用) サーバーからユーザー名を取得する
         """
         res = self.http_request('GET', '/whoami')
         return self.fin(res)
-
 
     def change_password(self, newpassword):
         """
@@ -258,9 +248,8 @@ class ADCClient:
         res = self.http_request('POST', '/user/%s/password' % self.effective_username(), params=params)
         return self.fin(res)
 
-
-    def get_root(self, args):
-        res = self.http_request('GET', '/2019/')
+    def get_root(self):
+        res = self.http_request('GET', '/%d/' % self.year)
         return self.fin(res)
 
     def put_user_alive(self, args):
@@ -268,7 +257,9 @@ class ADCClient:
         return self.fin(res)
 
     def get_or_delete_log(self, args, a):
-        "GET /admin/log"
+        """
+        GET /admin/log
+        """
         if a in ('get-log', 'delete-log'):
             path0 = '/admin'
         else:
@@ -286,14 +277,12 @@ class ADCClient:
         res = self.http_request(method, path)
         return self.fin(res)
 
-                
     def get_user_list(self):
         """
         サーバーから、ユーザー一覧リストを取得する。
         """
         res = self.http_request('GET', '/admin/user')
         return self.fin(res)
-
 
     def get_user_info(self, args):
         """
@@ -307,7 +296,6 @@ class ADCClient:
             res = self.http_request('GET', path)
             res2.append(self.fin(res))
         return res2
-
 
     def create_user(self, args):
         """
@@ -323,7 +311,6 @@ class ADCClient:
         res = self.http_request('POST', path, params=params)
         return self.fin(res)
 
-
     def create_users(self, file):
         """
         サーバ側のdatastoreに、ユーザーを登録する。
@@ -338,51 +325,53 @@ class ADCClient:
         exec(open(file).read(), glo)
         res2 = []
         for u in glo['USERS']:
-            res2.append( self.create_user(u) )
+            res2.append(self.create_user(u))
         return res2
 
-
     def delete_user(self, username):
-        info = {'username': username}
-        params = json.dumps(info)
+        # info = {'username': username}
+        # params = json.dumps(info)
         path = '/admin/user/%s' % username
-        res = self.http_request('DELETE', path, json=False)
+        res = self.http_request('DELETE', path)
         return self.fin(res)
-
 
     def delete_users(self, args):
         res2 = []
         for username in args:
-            res2.append( self.delete_user(username) )
+            res2.append(self.delete_user(username))
         return res2
 
-    def get_admin_q_all(self, args):
+    def get_admin_q_all(self):
         res = self.http_request('GET', '/admin/Q/all')
         return self.fin(res)
 
-    def get_admin_a_all(self, args):
+    def get_admin_a_all(self):
         res = self.http_request('GET', '/A')
+        print('res=', res)
         return self.fin(res)
 
-    def delete_admin_a_all(self, args):
+    def delete_admin_a_all(self):
         res = self.http_request('DELETE', '/A')
         return self.fin(res)
 
-    def get_admin_q_list(self, args):
+    def get_admin_q_list(self):
         res = self.http_request('GET', '/admin/Q/list')
+        # print('res=', res)
         return self.fin(res)
 
-    def put_admin_q_list(self, args):
-        res = self.http_request('PUT', '/admin/Q/list', params="dummy", json=False)
+    def put_admin_q_list(self):
+        params = json.dumps({'dummy': 0})
+        res = self.http_request('PUT', '/admin/Q/list', params=params)
         return self.fin(res)
 
-    def delete_admin_q_list(self, args):
-        res = self.http_request('DELETE', '/admin/Q/list', json=False)
+    def delete_admin_q_list(self):
+        res = self.http_request('DELETE', '/admin/Q/list')
         return self.fin(res)
 
     def get_q(self, args):
         if len(args) == 0:
             res = self.http_request('GET', '/Q')
+            # print('res=', res)
             return self.fin(res)
         else:
             res2 = []
@@ -396,12 +385,17 @@ class ADCClient:
         if len(args) == 0:
             path = '/A/%s' % self.effective_username()
             res = self.http_request('GET', path)
-            return self.fin(res)
+            """
+            print('res=', res)
+            res= [11, 200, 'OK', 'application/json', None, b'{"anum_list": [12], "msg": "A12\\n"}']
+            """
+            return [self.fin(res)]
         else:
             res2 = []
             for i in args:
                 path = '/A/%s/Q/%d' % (self.effective_username(), int(i))
                 res = self.http_request('GET', path)
+                # print(i, 'res=', res)
                 res2.append(self.fin(res))
             return res2
 
@@ -410,9 +404,11 @@ class ADCClient:
         a_num = int(args[0])
         a_file = args[1]
         path = '/A/%s/Q/%d' % (self.effective_username(), a_num)
-        with open(a_file, "r") as f:
+        with open(a_file, 'r') as f:
             a_text = f.read()
-        res = self.http_request('PUT', path, params=a_text, json=False)
+        info = {'A': a_text, 'A_filename': a_file}
+        params = json.dumps(info)
+        res = self.http_request('PUT', path, params=params)
         return self.fin(res)
 
     def put_a_info(self, args):
@@ -429,9 +425,8 @@ class ADCClient:
                 'mem_byte': mem_byte,
                 'misc_text': misc_text}
         params = json.dumps(info)
-        res = self.http_request('PUT', path, params=params, json=True)
+        res = self.http_request('PUT', path, params=params)
         return self.fin(res)
-
 
     def get_or_delete_a_info(self, args, delete=False):
         """
@@ -444,14 +439,13 @@ class ADCClient:
             a_num = 0
         path = '/A/%s/Q/%d/info' % (self.effective_username(), a_num)
         method = 'DELETE' if delete else 'GET'
-        res = self.http_request(method, path, json=True)
+        res = self.http_request(method, path)
         return self.fin(res)
-        #print "res=",
-        #for i in range(0,len(res)): print i, " ", res[i]
-        #print "results=", res[6]['results']
-        #for i in range(0, len(res[6]['results'])): print i, " ", res[6]['results'][i]
-        #print type(res[6]['results'][0])  # <type 'dict'>
-
+        # print "res=",
+        # for i in range(0,len(res)): print i, " ", res[i]
+        # print "results=", res[6]['results']
+        # for i in range(0, len(res[6]['results'])): print i, " ", res[6]['results'][i]
+        # print type(res[6]['results'][0])  # <type 'dict'>
 
     def get_user_q(self, q_num):
         """
@@ -461,14 +455,15 @@ class ADCClient:
         res = self.http_request('GET', path)
         return self.fin(res)
 
-
     def get_user_q_list(self):
         """
         GET /user/<username>/Q
 
         Examples
         ========
-        [{'blocknum': 8, 'cols': 10, 'date': 1566473404341960, 'filename': 'sampleQ0.txt', 'linenum': 11, 'qnum': 2, 'rows': 10}, {'blocknum': 8, 'cols': 10, 'date': 1566474951262141, 'filename': 'sampleQ0.txt', 'linenum': 11, 'qnum': 1, 'rows': 10}]
+        [{'blocknum': 8, 'cols': 10, 'date': 1566473404341960, 'filename': 'sampleQ0.txt', 'linenum': 11,
+         'qnum': 2, 'rows': 10}, {'blocknum': 8, 'cols': 10, 'date': 1566474951262141, 'filename': 'sampleQ0.txt',
+          'linenum': 11, 'qnum': 1, 'rows': 10}]
         """
         path = '/user/%s/Q' % self.effective_username()
         res = self.http_request('GET', path)
@@ -478,7 +473,6 @@ class ADCClient:
             return obj
         else:
             return None
-
 
     def post_user_q(self, q_num, q_file):
         """
@@ -496,7 +490,6 @@ class ADCClient:
         res = self.http_request('POST', path, params=params)
         return self.fin(res)
 
-        
     def put_user_q(self, q_num, q_file):
         """
         PUT /user/<username>/Q/<Q-number>
@@ -512,7 +505,6 @@ class ADCClient:
         res = self.http_request('PUT', path, params=params)
         return self.fin(res)
 
-
     def delete_user_q(self, q_num):
         """
         DELETE /user/<username>/Q/<Q-number>
@@ -522,30 +514,35 @@ class ADCClient:
         res = self.http_request('DELETE', path)
         return self.fin(res)
 
-
     def check_q(self, q_file):
-        "PUT /Qcheck"
-        with open(q_file, "r") as f:
+        """
+        POST /Qcheck
+        """
+        with open(q_file, 'r') as f:
             qtext = f.read()
-        path = "/Qcheck"
-        res = self.http_request('PUT', path, params=qtext, json=False)
+        path = '/Qcheck'
+        info = {'Q': qtext,
+                'Q_filename': q_file}
+        params = json.dumps(info)
+        res = self.http_request('POST', path, params=params)
+        # print('res=', res)
+        # [11, 200, 'OK', 'application/json', None, b'{"check_file":"Q-ok"}\n']
         return self.fin(res)
 
     def delete_a(self, a_num):
         path = "/A/%s/Q/%d" % (self.effective_username(), a_num)
-        res = self.http_request('DELETE', path, json=False)
+        res = self.http_request('DELETE', path)
         return self.fin(res)
 
     def score(self, args):
         path = '/score'
-        res = self.http_request('GET', path, json=True)
+        res = self.http_request('GET', path)
         return self.fin(res)
 
     def score_dump(self, args):
         path = '/score/dump'
-        res = self.http_request('GET', path, json=True)
+        res = self.http_request('GET', path)
         return self.fin(res)
-
 
     def timekeeper_enabled(self, args=None):
         """
@@ -561,7 +558,6 @@ class ADCClient:
             res = self.http_request('PUT', path, params=json.dumps(dat))
         return self.fin(res)
 
-
     def timekeeper_state(self, args=None):
         """
         timekeeperのstate値を取得する(GET)、state値を変更する(PUT)。
@@ -575,7 +571,6 @@ class ADCClient:
             dat = {'state': state}
             res = self.http_request('PUT', path, params=json.dumps(dat))
         return self.fin(res)
-
 
     def timekeeper(self):
         """

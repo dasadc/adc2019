@@ -28,6 +28,7 @@ kind
 from google.cloud import datastore
 from datetime import datetime
 import random
+import numpy as np
 
 import adc2019
 import adcutil
@@ -377,6 +378,45 @@ def p_qdata_from_Q(q_num, author, Q, filename=''):
             'date':     datetime.utcnow()}
 
 
+def p_adata_from_A(a_num, owner, A, a_text, check_result, quality, a_info):
+    """
+    回答データのプロパティを返す。
+
+    Parameters
+    ==========
+    a_num : int
+        問題番号
+    owner : str
+        ユーザー名
+    A : tuple
+        return value of adc2019.read_A()
+    check_result : bool
+        true = 正解
+    quality : float
+        階の品質
+    a_info : dict
+        key = 'cpu_sec', 'mem_byte', 'misc_text'
+    """
+    if A is None:
+        size, ban_data, block_pos = [], [[]], []
+    else:
+        size, ban_data, block_pos = A
+    size2 = list(size)
+    # ban_data2 = [row.tolist() for row in ban_data]  # list of list
+    ban_data2 = ban_data.ravel().tolist()  # list (flatten)
+    block_pos2 = np.array(block_pos[1:]).ravel().tolist() # list (flatten)
+    
+    return {'anum':      a_num,     # int
+            'text':      a_text,    # string
+            'owner':     owner,     # string
+            'size':      size2,     # [int, int]
+            'ban_data':  ban_data2,   # [[int, ...], [...], ... ]
+            'block_pos': block_pos2,  # [[int, int], [...], ...]
+            'quality':   quality,
+            'ainfo':     a_info,
+            'date':      datetime.utcnow()}
+
+
 class QuestionListAll():
     """
     コンテスト用の、出題問題リスト。Repeated Propetiyにしてみた
@@ -492,7 +532,7 @@ def timekeeper_check():
             clk['lastUpdate'] = now
             clk['state'] = new_state
             client.put(clk)
-            print('TimeKeeper: state change', clk)
+            # print('TimeKeeper: state change', clk)
     return new_state, old_state
 
 
@@ -598,25 +638,48 @@ def admin_Q_list_create():
     if qla is not None:
         return False, 'Cannot create Q list, because it already exists', qla
 
-    qlist = list(query_q_data(projection=['qnum', 'author']).fetch())
+    qlist = list(query_q_data(projection=['qnum', 'author', 'cols', 'rows', 'blocknum', 'linenum']).fetch())
     random.shuffle(qlist)
     out = '%d\n' % len(qlist)
     out_admin = ''
     out_user = ''
     qs = []
+    q_num = []
+    q_author = []
+    q_author_qnum = []
+    q_author = []
+    q_author_qnum = []
+    q_cols = []
+    q_rows = []
+    q_blocknum = []
+    q_linenum = []
     for j, ent in enumerate(qlist):
         num = j + 1  # Q1 Q2 Q3  --- 1から始まる
         qs.append(ent.key)
+        q_num.append(num)
+        q_author.append(ent['author'])
+        q_author_qnum.append(ent['qnum'])
+        q_cols.append(ent['cols'])
+        q_rows.append(ent['rows'])
+        q_blocknum.append(ent['blocknum'])
+        q_linenum.append(ent['linenum'])
         out_admin += 'Q%d %s %d\n' % (num, ent['author'], ent['qnum'])
         out_user  += 'Q%d\n' % num
         num += 1
     out += out_admin
     prop = {'q_key_list': qs,
+            'qnum_list': q_num,
+            'author_list': q_author,
+            'author_qnum_list': q_author_qnum,
             'text_admin': out_admin,
             'text_user':  out_user,
+            'cols_list': q_cols,
+            'rows_list': q_rows,
+            'blocknum_list': q_blocknum,
+            'linenum_list': q_linenum,
             'date': datetime.utcnow()}
     key = client.key('q_list_all', 1)
-    qla = datastore.Entity(key=key)
+    qla = datastore.Entity(key=key)  # qla means 'Q list all'
     qla.update(prop)
     client.put(qla)
     return True, out_admin, qla
@@ -676,88 +739,101 @@ def post_A(username, atext, form):
 
 
 def get_admin_A_all():
-    "データベースに登録されたすべての回答データの一覧リスト"
-    #query = Answer.query(ancestor=userlist_key()).order(Answer.owner, Answer.anum)
-    query = Answer.query(ancestor=userlist_key())
-    q = query.fetch()
-    num = len(q)
-    out = str(num) + "\n"
-    for i in q:
-        dt = gae_datetime_JST(i.date)
-        out += "A%02d (%s) %s\n" % (i.anum, i.owner, dt)
+    """
+    データベースに登録されたすべての回答データの一覧リスト
+    """
+    query = query_a_data()
+    alist = list(query.fetch())
+    out = '%d\n' % len(alist)
+    for i in alist:
+        print('i=', i)
+        dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
+        out += 'A%02d (%s) %s\n' % (i['anum'], i['owner'], dt)
     return out
 
-    
+
 def get_A_data(a_num=None, username=None):
     """
     データベースから回答データを取り出す。
     a_numがNoneのとき、複数のデータを返す。
     a_numが数値のとき、その数値のデータを1つだけ返す。
     """
-    query = query_a_data(a_num=a_num, username=username)
+    query = query_a_data(a_num=a_num, owner=username)
     return query.fetch()
 
-    
-def query_a_data(a_num=None, username=None, projection=None):
+
+def query_a_data(a_num=None, owner=None, projection=None):
     """
     a_dataエンティティを取得するためのクエリ
 
     a_numがNoneのとき、複数のデータを返す。
     a_numが数値のとき、その数値のデータを1つだけ返す。
     """
-    query = client.query(kind='q_data')
+    query = client.query(kind='a_data')
     if a_num:
         query.add_filter('anum', '=', a_num)
-    if username:
-        query.add_filter('username', '=', username)
+    if owner:
+        query.add_filter('owner', '=', owner)
     if projection:
         query.projection = projection
     return query
 
     
-def put_A_data(a_num, username, text, cpu_sec=None, mem_byte=None, misc_text=None):
+def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
     """
     回答データをデータベースに格納する
     """
     msg = ''
+    # 重複回答していないかチェック
+    adata = list(get_A_data(a_num=a_num, username=username))
+    # print('adata', adata)
+    if len(adata) != 0:
+        msg += 'ERROR: duplicated answer\n';
+        return False, msg
     # 出題データを取り出す
     q_dat = get_Q_data(a_num)
     q_text = q_dat.get('text')
     if q_text is None:
         msg = 'Error: Q%d data not found' % a_num
         return False, msg
-    # 重複回答していないかチェック
-    ret, q, root = get_A_data(a_num, username)
-    if ret==True and q is not None:
-        msg += "ERROR: duplicated answer\n";
-        return False, msg
-    # 回答データのチェックをする
-    judges, msg = numberlink.check_A_data(text, q_text)
-    q = 0.0
-    na = len(judges)
-    if 1 < na: # 2015,2016年ルールでは、回答は1つだけ
-        msg += "Warning: too many answers(%d) in A%d. aceept first one only.\n" % (na, a_num)
-    if na==0 or judges[0][0] == False:
-        msg += "Error in answer A%d\n" % a_num
-        check_A = False
-    else:
-        check_A = True # 正解
-        q = judges[0][1]
-    # 解の品質
-    msg += "Quality factor = %1.19f\n" % q
+    try:
+        Q = adc2019.read_Q(q_text)
+    except RuntimeError as e:
+        # 事前にチェック済みなので、ここでエラーになることはないはず
+        Q = None
+        return False, 'Error in Q%d\n' % a_num + str(e)
+    # 回答データを読み込む
+    try:
+        A = adc2019.read_A(a_text)
+    except RuntimeError as e:
+        print('e=', e)
+        A = None
+        msg = 'Error in A%d\n' % a_num + str(e)
+
+    check_A = False
+    quality = 0.0
+    if Q and A:
+        # 回答をチェック
+        try:
+            info = adc2019.check_data(Q, A)
+        except RuntimeError as e:
+            print('e=', e)
+            msg = 'Error A%d\n' % a_num + str(e)
+        else:
+            check_A = True # 正解
+            quality = 1.0 / float(info['area']) # 解の品質
+            msg += 'Quality factor = %1.19f\n' % quality
+
     # データベースに登録する。不正解でも登録する
-    a = Answer( parent = root,
-                id = str(a_num),
-                anum = a_num,
-                text = text,
-                owner = username,
-                cpu_sec = cpu_sec,
-                mem_byte = mem_byte,
-                misc_text = misc_text,
-                result = msg[-1499:],  # 長さ制限がある。末尾のみ保存。
-                judge = int(check_A),
-                q_factor = q )
-    a_key = a.put()
+    a_info = {'cpu_sec': cpu_sec,
+              'mem_byte': mem_byte,
+              'misc_text': misc_text}
+    prop_a = p_adata_from_A(a_num, username, A, a_text, check_A, quality, a_info)
+    # print('prop_a', prop_a)
+    key = client.key('a_data')
+    entity = datastore.Entity(key=key)
+    entity.update(prop_a)
+    client.put(entity)
     return True, msg
 
 
@@ -784,6 +860,7 @@ def get_or_delete_A_data(a_num=None, username=None, delete=False):
     """
     data = get_A_data(a_num=a_num, username=username)
     result = []
+    print('get_or_delete_A_data: data=', data)
     for i in data:
         if delete:
             result.append('DELETE A%d' % i['anum'])
@@ -800,9 +877,15 @@ def get_user_A_all(username):
     """
     q = get_A_data(username=username)
     text = ''
+    anum_list = []
     for i in q:
-        text += 'A%d\n' % i.anum
-    return text
+        """
+        print('i=', i)
+        i= <Entity('a_data', 517) {'anum': 12, 'ainfo': <Entity {'cpu_sec': 0, 'mem_byte': 0, 'misc_text': ''}>, 'owner': 'administrator', 'date': datetime.datetime(2019, 8, 25, 22, 28, 35, 353062, tzinfo=<UTC>), 'ban_data': [1, 1, 1, 2, 2, -1, -1, 2, -1, -1, 2, 2], 'quality': 0.08333333333333333, 'text': 'SIZE 3X4\r\n1,1,1\r\n2,2,+\r\n+,2,+\r\n+,2,2\r\nBLOCK#1 @(0,0)\r\nBLOCK#2 @(2,0)\r\n', 'size': [3, 4], 'block_pos': [0, 0, 2, 0]}>
+        """
+        text += 'A%d\n' % i['anum']
+        anum_list.append(i['anum'])
+    return text, anum_list
 
 
 def get_or_delete_A_info(a_num=None, username=None, delete=False):
@@ -838,15 +921,6 @@ def get_or_delete_A_info(a_num=None, username=None, delete=False):
     return True, msg, results
 
 
-def hashed_password(username, password, salt):
-    """
-    ハッシュ化したパスワード
-    """
-    tmp = salt + username + password
-    return sha256(tmp.encode('utf-8')).hexdigest()
-
-
-
 def Q_check(qtext):
     "問題ファイルの妥当性チェックを行う"
     hr = '-'*40 + "\n"
@@ -878,15 +952,17 @@ def get_Q_author_all():
 
 
 def get_admin_Q_all():
-    "データベースに登録されたすべての問題の一覧リスト"
-    #query = Question.query().order(Question.author, Question.qnum)
-    query = Question.query(ancestor=userlist_key()).order(Question.author, Question.qnum)
-    q = query.fetch()
-    num = len(q)
-    out = str(num) + "\n"
-    for i in q:
-        dt = gae_datetime_JST(i.date)
-        out += "Q%02d SIZE %dX%d LINE_NUM %d (%s) %s\n" % (i.qnum, i.cols, i.rows, i.linenum, i.author, dt)
+    """
+    データベースに登録されたすべての問題の一覧リストを返す。
+    """
+    query = query_q_data(projection=['qnum', 'author', 'cols', 'rows', 'blocknum', 'linenum', 'date'])
+    query.order = ['author', 'qnum']
+    qlist = list(query.fetch())
+    out = '%d\n' % len(qlist)
+    for i in qlist:
+        # print('i=', i)
+        dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
+        out += 'Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], dt)
     return out
     
 

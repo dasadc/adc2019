@@ -426,30 +426,61 @@ def admin_user_post(usernm):
 
 @app.route('/admin/Q/all', methods=['GET'])
 def admin_Q_all():
-    "データベースに登録されたすべての問題の一覧リスト"
+    """
+    データベースに登録されたすべての問題の一覧リストを返す。
+    """
     if not priv_admin():
         return adc_response("access forbidden", request_is_json(), 403)
     log_request(username())
-    msg = get_admin_Q_all()
-    return adc_response_text(msg)
+    msg = cds.get_admin_Q_all()
+    return adc_response_json({'msg': msg})
 
 @app.route('/admin/Q/list', methods=['GET','PUT','DELETE'])
 def admin_Q_list():
-    "コンテストの出題リスト"
+    """
+    コンテストの出題リストを管理する。
+    """
     if not priv_admin():
-        return adc_response("access forbidden", request_is_json(), 403)
+        return adc_response('access forbidden', 403)
     log_request(username())
     if request.method == 'GET':
-        msg = admin_Q_list_get()
-        return adc_response_text(msg)
+        qla = cds.admin_Q_list_get()  # Q list all
+        # print('qla', qla)
+        if qla is None:
+            msg = 'Not found. Admin must run "adccli put-admin-q-list"'
+            qnum_list = []
+            author_list = []
+            author_qnum_list = []
+            cols_list = []
+            rows_list = []
+            blocknum_list = []
+            linenum_list = []
+        else:
+            msg = qla['text_admin']
+            qnum_list = qla['qnum_list']
+            author_list = qla['author_list']
+            author_qnum_list = qla['author_qnum_list']
+            cols_list = qla['cols_list']
+            rows_list = qla['rows_list']
+            blocknum_list = qla['blocknum_list']
+            linenum_list = qla['linenum_list']
+        info = {'msg': msg,
+                'qnum_list': qnum_list,
+                'author_list': author_list,
+                'author_qnum_list': author_qnum_list,
+                'cols_list': cols_list,
+                'rows_list': rows_list,
+                'blocknum_list': blocknum_list,
+                'linenum_list': linenum_list}
+        return adc_response_json(info)
     elif request.method == 'PUT':
-        msg = admin_Q_list_create()
-        return adc_response_text(msg)
+        flag, msg, qla = cds.admin_Q_list_create()
+        return adc_response_json({'msg': msg})
     elif request.method == 'DELETE':
-        msg = admin_Q_list_delete()
-        return adc_response_text(msg)
+        msg = cds.admin_Q_list_delete()
+        return adc_response(msg)
     else: # ありえない
-        return adc_response_text('unknown')
+        return adc_response('unknown')
 
 
 @app.route('/admin/log', methods=['GET','DELETE'])
@@ -520,20 +551,25 @@ def admin_timekeeper():
     return adc_response_json(dat)
 
     
-@app.route('/A', methods=['GET','DELETE'])
+@app.route('/A', methods=['GET', 'DELETE'])
 def admin_A_all():
-    "データベースに登録されたすべての回答データの一覧リスト"
+    """
+    データベースに登録されたすべての回答データの一覧リスト
+    """
     if not priv_admin():
-        return adc_response("access forbidden", request_is_json(), 403)
+        return adc_response('access forbidden', 403)
     log_request(username())
     if request.method=='GET':
-        msg = get_admin_A_all()
-        return adc_response_text(msg)
+        msg = cds.get_admin_A_all()
+        dat = {'msg': msg}
+        return adc_response_json(dat)
     else:
-        ret,result = get_or_delete_A_data(delete=True)
-        #print "ret=",ret," result=",result
-        msg = "\n".join(result)
-        return adc_response_text(msg)
+        # DELETE
+        result = cds.get_or_delete_A_data(delete=True)
+        print('ret=', ret, ' result=', result)
+        msg = '\n'.join(result)
+        dat = {'msg': msg}
+        return adc_response_json(dat)
         
 
 @app.route('/A/<usernm>', methods=['GET'])
@@ -541,55 +577,55 @@ def admin_A_username(usernm):
     """
     回答データの一覧リストを返す
     """
-    if not priv_admin():                        # 管理者ではない
-        if ( app.config['TEST_MODE']==False or  # 本番モード
-             not username_matched(usernm) ):    # ユーザ名が一致しない
+    if not priv_admin():                    # 管理者ではない
+        if not username_matched(usernm):    # ユーザ名が一致しない
             return adc_response('permission denied', 403)
     log_request(usernm)
-    msg = cds.get_user_A_all(usernm)
-    return adc_response_json({'msg': msg})
+    msg, anum_list = cds.get_user_A_all(usernm)
+    return adc_response_json({'msg': msg,
+                              'anum_list': anum_list})
 
 
 @app.route('/A/<usernm>/Q', methods=['POST'])
 def a_q_menu(usernm):
     if not authenticated():
-        return adc_response("not login yet", 401)
+        return adc_response('not login yet', 401)
     a_text   = request.json.get('A')
     ret, msg = post_A(usernm, a_text, request.form)
     code = 200 if ret else 403
     return adc_response_text(msg, code)
 
-@app.route('/A/<usernm>/Q/<int:a_num>', methods=['PUT','GET','DELETE'])
+@app.route('/A/<usernm>/Q/<int:a_num>', methods=['PUT', 'GET', 'DELETE'])
 def a_put(usernm, a_num):
-    "回答データを、登録する、取り出す、削除する"
+    """
+    回答データを、登録する、取り出す、削除する
+    """
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
-    if not priv_admin():                        # 管理者ではない
-        if ( not username_matched(usernm) ):  # ユーザ名が一致しない
-            return adc_response("permission denied", request_is_json(), 403)
-    if not priv_admin():
+        return adc_response('not login yet', 401)
+    if not priv_admin():                      # 管理者ではない
+        if not username_matched(usernm):  # ユーザ名が一致しない
+            return adc_response('permission denied', 403)
         if g.state != 'Aup':
-            return adc_response("deadline passed", request_is_json(), 503)
+            return adc_response('deadline passed', 503)
     log_request(usernm)
     if request.method=='PUT':
-        atext = request.data
-        result = put_A_data(a_num, usernm, atext)
-        if result[0]:
+        # print('request.json=', request.json)
+        atext = request.json.get('A')
+        flag, msg = cds.put_A_data(a_num, usernm, atext)
+        if flag:
             code = 200
         else:
             code = 403
-        return adc_response_text(result[1], code)
+        return adc_response_json({'msg': msg}, code)
     # GET, DELETEの場合
     if app.config['TEST_MODE']==False:  # 本番モード
         return adc_response("permission denied", request_is_json(), 403)
     delete = True if request.method=='DELETE' else False
-    ret, result = get_or_delete_A_data(a_num=a_num, username=usernm, delete=delete)
-    if not ret:
-        return adc_response_text("answer data A%d not found\n" % a_num, 404)
+    result = cds.get_or_delete_A_data(a_num=a_num, username=usernm, delete=delete)
     if len(result) == 0:
-        return adc_response_text("answer data A%d not found" % a_num, 404)
-    text = "\n".join(result)
-    return adc_response_text(text)
+        return adc_response("answer data A%d not found" % a_num, 404)
+    text = '\n'.join(result)
+    return adc_response_json({'msg': text})
 
 @app.route('/A/<usernm>/Q/<int:a_num>/info', methods=['GET','PUT','DELETE'])
 def a_info_put(usernm, a_num):
@@ -767,8 +803,24 @@ def q_get_list():
         if g.state != 'Aup':
             return adc_response('deadline passed', 503)
     log_request(username())
-    msg = cds.get_Q_all()
-    return adc_response_json({'msg': msg})
+    # msg = cds.get_Q_all()
+    # qnum_list = [int(q[1:]) for q in msg.splitlines()]  # q='Q1'
+    qla = cds.admin_Q_list_get()
+    if qla is None:
+        info = {'msg': 'Not found. Admin must run "adccli put-admin-q-list"',
+                'qnum_list': [],
+                'cols_list':  [],
+                'rows_list':  [],
+                'blocknum_list':  [],
+                'linenum_list':  []}
+    else:
+        info = {'msg': qla['text_user'],
+                'qnum_list': qla['qnum_list'],
+                'cols_list': qla['cols_list'],
+                'rows_list': qla['rows_list'],
+                'blocknum_list': qla['blocknum_list'],
+                'linenum_list': qla['linenum_list']}
+    return adc_response_json(info)
 
 
 @app.route('/Qcheck', methods=['POST'])
@@ -780,6 +832,7 @@ def q_check():
     ========
     check_file()
     """
+    print('q_check', request.json)
     if not authenticated():
         return adc_response('not login yet', 401)
     log_request(username())
