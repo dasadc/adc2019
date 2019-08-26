@@ -963,3 +963,19 @@ adccli timekeeper-state im1
 adccli timekeeper-state Aup
 adccli timekeeper-state im2
 ```
+
+### timekeeperのモードと状態を確認する、設定する
+
+enbaledとstateを2つをまとめて扱える。
+
+確認する
+
+```
+adccli timekeeper
+```
+
+設定する
+
+```
+adccli timekeeper モード 状態
+```

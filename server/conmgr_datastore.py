@@ -572,6 +572,23 @@ def timekeeper_state(new_value=None):
         return clk['state']
 
 
+def timekeeper_set(value):
+    """
+    timekeepedのstate, enabledの値を、設定する。
+    """
+    clk = timekeeper_clk()
+    state = value.get('state')
+    if state in ('init', 'im0', 'Qup', 'im1', 'Aup', 'im2'):
+        clk['state'] = state
+    enabled = value.get('enabled')
+    if enabled != 0:
+        enabled = 1
+    clk['enabled'] = enabled
+    clk['lastUpdate'] = datetime.utcnow()
+    client.put(clk)
+    return dict(clk)
+
+
 def timekeeper_transition(prev, now, prev_state):
     """
     時刻に基づいて、状態遷移する。

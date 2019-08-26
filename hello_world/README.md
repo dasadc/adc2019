@@ -40,8 +40,16 @@ $(gcloud beta emulators datastore env-init)
 dev_appserver.py --application=test813 --support_datastore_emulator=true app.yaml 
 ```
 
-アプリは http://localhost:8080
+デフォルトでは
+アプリは http://localhost:8080  
 admin serverが http://localhost:8000/
+
+
+あまりよくないが、admin serverに他から接続可能にするには、
+
+```
+dev_appserver.py --application=test813 --support_datastore_emulator=true app.yaml --admin_host 0.0.0.0 --admin_port 8000 --enable_host_checking=False
+```
 
 
 **(注意)**

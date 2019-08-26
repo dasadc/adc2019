@@ -52,7 +52,7 @@ admin command:
   delete-log [NUMBER (seconds|days)]
   timekeeper-enabled [0|1]
   timekeeper-state [init|im0|Qup|im1|Aup|im2]
-  timekeeper
+  timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2]]
 """)
 
 
@@ -311,7 +311,7 @@ def main():
         res = cli.timekeeper_state(args.arg)
         print(res[6])
     elif a == 'timekeeper':
-        res = cli.timekeeper()
+        res = cli.timekeeper(args.arg)
         print(res[6])
     else:
         print("Error: Unknown command:", a)

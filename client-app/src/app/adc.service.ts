@@ -346,6 +346,20 @@ export class AdcService {
       );
   }
 
+  /** timekeeperの値を変更する。lastUpdateは無視される。 */
+  setTimekeeper(obj: ResTimekeeper): Observable<ResTimekeeper> {
+    let dat1: Object = {'enabled': obj.enabled};
+    let dat2: Object = {'state': obj.state};
+    return this.http.put<Object>('/api/admin/timekeeper', dat1, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: setTimekeeper', res);
+	  return obj;
+	}),
+	catchError(this.handleError<ResTimekeeper>('setTimekeeper'))
+      );
+  }
+    
 
   getUserQList(usernm: string): Observable<ResUserQList> {
     return this.http.get<Object[]>(`/api/user/${usernm}/Q`, this.apiHttpOptions())
@@ -490,7 +504,6 @@ export class AdcService {
 	catchError(this.handleError<ANumberList>('getANumberList'))
       );
   }
-
 
   /** ファイルをダウンロードさせる。 */
   downloadFile(data: any, type: string, download: string) {

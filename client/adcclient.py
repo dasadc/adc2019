@@ -584,10 +584,26 @@ class ADCClient:
             res = self.http_request('PUT', path, params=json.dumps(dat))
         return self.fin(res)
 
-    def timekeeper(self):
+    def timekeeper(self, args=None):
         """
-        timekeeperの値を取得する。
+        timekeeperの値を取得する(GET)、変更する(PUT)。
+        
+        Parameters
+        ==========
+        args : list of str
+            enabled = args[0]
+            state   = args[1]
         """
         path = '/admin/timekeeper'
-        res = self.http_request('GET', path)
-        return self.fin(res)
+        if args is None:
+            res = self.http_request('GET', path)
+            return self.fin(res)
+        else:
+            enabled = int(args[0])
+            assert enabled in (0, 1)
+            state = args[1]
+            assert state in ('init', 'im0', 'Qup', 'im1', 'Aup', 'im2')
+            dat = {'enabled': enabled,
+                   'state': state}
+            res = self.http_request('PUT', path, params=json.dumps(dat))
+            return self.fin(res)

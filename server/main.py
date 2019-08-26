@@ -534,15 +534,26 @@ def admin_timekeeper_state():
     return adc_response_json(dat)
 
     
-@app.route('/admin/timekeeper', methods=['GET'])
+@app.route('/admin/timekeeper', methods=['GET', 'PUT'])
 def admin_timekeeper():
     """
-    timekeeperのを取得する。
+    timekeeperのを取得する(GET)、または、設定する(PUT)。
     """
-    clk = cds.timekeeper_clk()
-    dat = dict(clk)
-    dat['lastUpdate'] = dat['lastUpdate'].isoformat()  # datetime型をstring型へ変換
-    return adc_response_json(dat)
+    if request.method == 'GET':
+        clk = cds.timekeeper_clk()
+        dat = dict(clk)
+        dat['lastUpdate'] = dat['lastUpdate'].isoformat()  # datetime型をstring型へ変換
+        return adc_response_json(dat)
+    else:  # PUTの場合
+        e = request.json.get('enabled')
+        s = request.json.get('state')
+        dat = {}
+        if e is not None:
+            dat['enabled'] = e
+        if s is not None:
+            dat['state'] = s
+        r = cds.timekeeper_set(dat)
+        return adc_response_json(r)
 
     
 @app.route('/A', methods=['GET', 'DELETE'])
