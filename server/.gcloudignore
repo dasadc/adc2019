@@ -5,4 +5,5 @@ local/
 app27.yaml
 conmgr.sh
 devel.md
+devel_secret.md
 .#*

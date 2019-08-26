@@ -15,11 +15,19 @@ export class ContestComponent implements OnInit {
   qFilename: string;
   uploadResults: string;
   aNumberList: ANumberList;
+  aPosted: boolean[];
 
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
     this.getQNumberList();
+    // ?????
+    let n = 50;
+    this.aPosted = Array(n);
+    for (let i=0; i<n; i++) {
+      this.aPosted[i] = false;
+    }
+    this.getANumberList();
   }
 
   getQNumberList() {
@@ -36,8 +44,22 @@ export class ContestComponent implements OnInit {
     let username: string = this.adcService.getUsername();
     this.adcService.getANumberList(username)
       .subscribe(res => {
-        console.log('getANumberList: res=', res);
+        //console.log('getANumberList: res=', res);
+        if (res === void 0) {
+          return;
+        }
         this.aNumberList = res;
+        let n = this.qNumberList.qnum_list.length;
+        this.aPosted = Array(n);
+        for (let i=0; i<n; i++) {
+          this.aPosted[i] = false;
+        }
+        for (let i=0; i<this.aNumberList.anum_list.length; i++) {
+          let qnum = this.aNumberList.anum_list[i];
+          this.aPosted[qnum] = true;
+          //console.log(i, qnum);
+        }
+        //console.log('aPosted', this.aPosted);
       });
   }
 
@@ -62,9 +84,9 @@ export class ContestComponent implements OnInit {
 
   /** adccli put-a相当の処理を行う */
   putAFile(f: Object) {
-    console.log('putAFile', this.aNumber);
-    console.log('filename', f['filename']);
-    console.log('text', f['text']);
+    //console.log('putAFile', this.aNumber);
+    //console.log('filename', f['filename']);
+    //console.log('text', f['text']);
     if (f['filename'] === void 0 || f['text'] === void 0) {
       return;
     }
@@ -72,12 +94,12 @@ export class ContestComponent implements OnInit {
     this.adcService.putA(username, this.aNumber, f['text'], f['filename'])
       .subscribe(
         (res: string) => {
-        console.log('res=', res);
+        //console.log('res=', res);
         this.uploadResults = res;
-        //this.getUserAList();
+        this.getANumberList();
       },
       (res: string) => {
-        console.log('ERROR', res);
+        //console.log('ERROR', res);
         this.uploadResults = res;
       });
   }

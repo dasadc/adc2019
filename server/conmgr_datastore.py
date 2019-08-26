@@ -860,7 +860,7 @@ def get_or_delete_A_data(a_num=None, username=None, delete=False):
     """
     data = get_A_data(a_num=a_num, username=username)
     result = []
-    print('get_or_delete_A_data: data=', data)
+    # print('get_or_delete_A_data: data=', data)
     for i in data:
         if delete:
             result.append('DELETE A%d' % i['anum'])

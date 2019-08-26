@@ -24,6 +24,8 @@ export class AdcService {
   username: string;
   access_token: string; // given from ADC server after login
   dummy_login_failed: boolean = false;
+  not_login: number = 0;
+  whoami_error_count: number = 0;
 
   //constructor(private messageService: MessageService) { }
   constructor(private http: HttpClient) { }
@@ -139,7 +141,9 @@ export class AdcService {
       //console.log(`${operation} failed: ${error.message}`);
       //console.log(`${operation} failed: ${error['msg']}`);
       console.log('handleError: result=', result);
-      result['msg'] = error.error.msg + '\n' + `${operation} failed: ${error.message}`;
+      if (result !== void 0) {
+	result['msg'] = error.error.msg + '\n' + `${operation} failed: ${error.message}`;
+      }
 
       // 空の結果を返して、アプリを持続可能にする
       return of(result as T);
@@ -152,12 +156,25 @@ export class AdcService {
     console.log('AdcService:', message);
   }
 
+  getUsernameCurrent(): string {
+    return this.username;
+  }
+
   getUsername(): string {
     if (this.username === void 0) {
+      if (this.dummy_login_failed && 5 < this.not_login) {
+	console.log('Please login');
+      }
       this.whoami()
-	.subscribe((res: ResMsgOnly) => {
-	  this.username = res.msg;
-	});
+	.subscribe(
+	  (res: ResMsgOnly) => {
+	    this.username = res.msg;
+	  },
+	  (err) => {
+	    console.log('getUsername ERROR:', err['message']);
+	    //throw new Error('getUsername ERROR');
+	  }
+	);
     } // 非同期処理なので、おそらく１発めはundefinedのまま。ダメじゃん…
     return this.username;
   }
@@ -176,8 +193,16 @@ export class AdcService {
     }
   }
 
+  getAccessTokenCurrent(): string {
+    return this.access_token;
+  }
+
   getAccessToken(): string {
-    //console.log(this.access_token, this.dummy_login_failed == false);
+    //console.log('AdcService: getAccessToken', this.access_token, this.dummy_login_failed, this.not_login);
+    if (this.dummy_login_failed && 5 < this.not_login) {
+      return undefined;
+    }
+    this.not_login ++;
     if (this.access_token === void 0 && this.dummy_login_failed == false) {
       // ダミーのloginを行い、もしもsessionによって認証されたら、tokenがもらえる
       let data = {'username': 'dummy',
@@ -186,7 +211,7 @@ export class AdcService {
 	.subscribe((res: Object) => {
 	  this.access_token = res['token'];
 	}, (err) => {
-	  console.log('AdcService: getAccessToken ERROR', err);
+	  console.log('AdcService: getAccessToken ERROR', err['message']);
 	  this.dummy_login_failed = true;
 	});
     } // 非同期処理なので、おそらく１発めはundefinedのまま。ダメじゃん…
@@ -259,6 +284,7 @@ export class AdcService {
 
   /** API, GET /api/whoamiを実行する */
   whoami(): Observable<ResMsgOnly> {
+    //console.log('AdcService: whoami', this.whoami_error_count);
     return this.http.get<Object>('/api/whoami', this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
@@ -266,7 +292,13 @@ export class AdcService {
 	  this.username = res['msg'];
 	  return new ResMsgOnly(res['msg']);
 	}),
-	  catchError(this.handleError<ResMsgOnly>('whoami', new ResMsgOnly('error')))
+	catchError((err) => {
+	  //this.handleError<ResMsgOnly>('whoami', new ResMsgOnly('error'))
+	  console.log('Error whoami', err['message']);
+	  this.whoami_error_count ++;
+	  //throw new Error(err['error']['msg']);
+	  throw new Error('whoami error');
+	})
       );
   }
 
@@ -321,15 +353,17 @@ export class AdcService {
 	map((res: Object[]) => {
 	  //console.log('AdcService: getUserQList', res);
 	  let tmp: UserQEntry[] = []
-	  for (let i=0; i<res.length; i++) {
-	    let e = new UserQEntry(res[i]['qnum'],
-				   res[i]['cols'],
-				   res[i]['rows'],
-				   res[i]['blocknum'],
-				   res[i]['linenum'],
-				   new Date(res[i]['date']/1000), // UTCを指定すべきところに、localtimeを指定してる
-				   res[i]['filename']);
-	    tmp.push(e);
+	  if (res !== void 0) {
+	    for (let i=0; i<res.length; i++) {
+	      let e = new UserQEntry(res[i]['qnum'],
+				     res[i]['cols'],
+				     res[i]['rows'],
+				     res[i]['blocknum'],
+				     res[i]['linenum'],
+				     new Date(res[i]['date']/1000), // UTCを指定すべきところに、localtimeを指定してる
+				     res[i]['filename']);
+	      tmp.push(e);
+	    }
 	  }
 	  return new ResUserQList(tmp);
 	}),
@@ -433,7 +467,7 @@ export class AdcService {
     return this.http.put<Object>(`/api/A/${usernm}/Q/${anum}`, data, this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
-	  console.log('AdcService: putA', res);
+	  //console.log('AdcService: putA', res);
 	  return res['msg'];
 	}),
 	catchError((err) => {
@@ -449,7 +483,7 @@ export class AdcService {
     return this.http.get<Object>(`/api/A/${usernm}`, this.apiHttpOptions())
       .pipe(
 	map((res: Object[]) => {
-	  console.log('AdcService: getANumberList', res);
+	  //console.log('AdcService: getANumberList', res);
 	  return new ANumberList(res['msg'],
 				 res['anum_list']);
 	}),

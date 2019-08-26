@@ -3,7 +3,7 @@
 </div>
 
 <h3>Q list</h3>
-<div *ngIf="qNumberList">
+<div *ngIf="qNumberList && aPosted">
   <table>
     <tr>
       <th>Q</th>
@@ -15,7 +15,7 @@
     </tr>
     <tr *ngFor="let i of qNumberList.qnum_list">
       <td>
-        <input type="radio" name="pANumber"
+        <input *ngIf="aPosted && !aPosted[i]" type="radio" name="pANumber"
          [value]="i" [checked]="i == aNumber" (change)="aNumber = i">
          Q{{i}}
       </td>

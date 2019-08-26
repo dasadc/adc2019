@@ -16,6 +16,25 @@ indexes:
   - name: linenum
   - name: rows
 
+- kind: q_data
+  properties:
+  - name: author
+  - name: qnum
+  - name: blocknum
+  - name: cols
+  - name: date
+  - name: linenum
+  - name: rows
+
+- kind: q_data
+  properties:
+  - name: author
+  - name: blocknum
+  - name: cols
+  - name: linenum
+  - name: qnum
+  - name: rows
+
 - kind: log
   properties:
   - name: timestamp

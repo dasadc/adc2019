@@ -445,7 +445,7 @@ def admin_Q_list():
     log_request(username())
     if request.method == 'GET':
         qla = cds.admin_Q_list_get()  # Q list all
-        # print('qla', qla)
+        # print('qla=', qla)
         if qla is None:
             msg = 'Not found. Admin must run "adccli put-admin-q-list"'
             qnum_list = []

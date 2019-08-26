@@ -27,7 +27,9 @@ uploadResults: string;
     this.adcService.getUserQList(username)
       .subscribe(res => {
         //console.log('getUserQList: res=', res);
-        this.myQList = res.entries;
+        if (res !== void 0) {
+          this.myQList = res.entries;
+        }
       });
   }
 

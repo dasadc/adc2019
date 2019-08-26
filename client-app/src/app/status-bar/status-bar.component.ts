@@ -29,6 +29,7 @@ export class StatusBarComponent implements OnInit {
     'Aup': 'You can upload A data.',
     'im2': 'intermission (2)',
   }
+  updateUsername_error_count: number = 0;
 
   constructor(private adcService: AdcService) { }
 
@@ -45,21 +46,48 @@ export class StatusBarComponent implements OnInit {
             (m==0 || m==3 || m==15 || m==20 || m==55)) {
           this.getTimekeeper();
         }
-        if (s % 5 == 0) { // きっとうまい方法があるはず
+        if (s % 10 == 0) { // きっとうまい方法があるはず
           this.updateUsername();
         }
       });
   }
 
   updateUsername(): void { // なんか変な処理
-    //console.log('updateUserName (A)')
+    /*
+    // Do not call API here !!!
+    //console.log('updateUserName', 'username', this.username, 'authenticated', this.authenticated)
+    if (this.username === void 0) {
+      this.username = this.adcService.getUsernameCurrent()
+    }
+    if (this.authenticated === void 0 || !this.authenticated) {
+      let token: string = this.adcService.getAccessTokenCurrent();
+      if (token === void 0) {
+        this.authenticated = false;
+        this.usernameDescription = 'not authenticated. Please login';
+      } else {
+        this.authenticated = true;
+        this.usernameDescription = 'authenticated';
+      }
+    }
+    */
+
+    //console.log('updateUserName (A)', this.updateUsername_error_count, 'username', this.username, 'authenticated', this.authenticated)
+    if (5 < this.updateUsername_error_count) {
+      return;
+    }
+    this.updateUsername_error_count ++;
     if (this.username === void 0) {
       this.usernameDescription = 'Please login';
       this.adcService.whoami()
-        .subscribe((res: ResMsgOnly) => {
+        .subscribe(
+          (res: ResMsgOnly) => {
           this.username = res.msg;
-        });
-        //console.log('updateUserName (B)')
+        },
+        (err) => {
+          console.log('updateUserName (C)', err['message']);
+        }
+      );
+      //console.log('updateUserName (B)')
     }
     if (this.authenticated === void 0 || !this.authenticated) {
       let token: string = this.adcService.getAccessToken();
@@ -68,6 +96,7 @@ export class StatusBarComponent implements OnInit {
         this.usernameDescription = 'not authenticated. Please login';
       } else {
         this.authenticated = true;
+        //console.log('token=', token)
         this.usernameDescription = 'authenticated';
       }
       //console.log('updateUserName (C)')
@@ -77,6 +106,7 @@ export class StatusBarComponent implements OnInit {
       this.authenticated = false;
       this.username = this.adcService.getUsername();
     }
+
   }
 
   getTimekeeper() {

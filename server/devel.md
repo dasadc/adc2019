@@ -79,6 +79,25 @@ curl -v https://trusty-obelisk-631.appspot.com/api/test_get
 ```
 
 
+datastoreのインデックス更新
+---------------------------
+
+App Engineにdeployしたあと、Loggingにて、"no matching index found. recommended index is:" 〜〜〜 というエラーログがでるときは、index.yamlを更新する。
+
+```
+gcloud datastore indexes create index.yaml --project=das-adc
+```
+
+確認方法
+
+Google Cloud Platform >> Datastore >> インデックス
+
+`https://console.cloud.google.com/datastore/indexes?hl=ja&project=das-adc`
+
+また、`dev_appserver.py`が自動作成した`index.yaml`が以下にある。これをコピペして使うのが正解かもしれない。ただし、コードのバグのせいで、実際には使われないインデックスが含まれていることがある（nameをtypoしてたりする）。
+
+`$HOME/.config/gcloud/emulators/datastore/WEB-INF/index.yaml`
+
 
 curlを使って、APIサーバの動作確認を行う
 ---------------------------------------
@@ -137,3 +156,26 @@ $ curl -X POST --form Qfile=@sampleQ0.txt --form Afile=@sampleQ0.txt http://127.
 ```
 
 
+テスト用問題データのアップロード
+--------------------------------
+
+ローカルのテスト用サイトを選択すること。
+
+```
+adccli --URL http://127.0.0.1:4280/ --username administrator whoami
+
+cd ../sample_hiromoto_1-12_mod/
+
+adccli post-user-q 1 sample_hiromoto_1_Q.txt
+adccli post-user-q 2 sample_hiromoto_2_Q.txt
+adccli post-user-q 3 sample_hiromoto_3_Q.txt
+adccli post-user-q 4 sample_hiromoto_4_Q.txt
+adccli post-user-q 5 sample_hiromoto_5_Q.txt
+adccli post-user-q 6 sample_hiromoto_6_Q.txt
+adccli post-user-q 7 sample_hiromoto_7_Q.txt
+adccli post-user-q 8 sample_hiromoto_8_Q.txt
+adccli post-user-q 9 sample_hiromoto_9_Q.txt
+adccli post-user-q 10 sample_hiromoto_10_Q.txt
+adccli post-user-q 11 sample_hiromoto_11_Q.txt
+adccli post-user-q 12 sample_hiromoto_12_Q.txt
+```
