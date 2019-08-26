@@ -378,7 +378,7 @@ def p_qdata_from_Q(q_num, author, Q, filename=''):
             'date':     datetime.utcnow()}
 
 
-def p_adata_from_A(a_num, owner, A, a_text, check_result, quality, a_info):
+def p_adata_from_A(a_num, owner, A, a_text, check_result, quality, ainfo):
     """
     回答データのプロパティを返す。
 
@@ -394,7 +394,7 @@ def p_adata_from_A(a_num, owner, A, a_text, check_result, quality, a_info):
         true = 正解
     quality : float
         階の品質
-    a_info : dict
+    ainfo : dict
         key = 'cpu_sec', 'mem_byte', 'misc_text'
     """
     if A is None:
@@ -412,8 +412,9 @@ def p_adata_from_A(a_num, owner, A, a_text, check_result, quality, a_info):
             'size':      size2,     # [int, int]
             'ban_data':  ban_data2,   # [[int, ...], [...], ... ]
             'block_pos': block_pos2,  # [[int, int], [...], ...]
+            'judge':     check_result,
             'quality':   quality,
-            'ainfo':     a_info,
+            'ainfo':     ainfo,
             'date':      datetime.utcnow()}
 
 
@@ -743,11 +744,15 @@ def get_admin_A_all():
     データベースに登録されたすべての回答データの一覧リスト
     """
     query = query_a_data()
+    query.order = ['owner', 'anum']
     alist = list(query.fetch())
     out = '%d\n' % len(alist)
     for i in alist:
         print('i=', i)
-        dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
+        if type(i['date']) is datetime:
+            dt = gae_datetime_JST(i['date'])
+        else:
+            dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
         out += 'A%02d (%s) %s\n' % (i['anum'], i['owner'], dt)
     return out
 
@@ -825,10 +830,10 @@ def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
             msg += 'Quality factor = %1.19f\n' % quality
 
     # データベースに登録する。不正解でも登録する
-    a_info = {'cpu_sec': cpu_sec,
-              'mem_byte': mem_byte,
-              'misc_text': misc_text}
-    prop_a = p_adata_from_A(a_num, username, A, a_text, check_A, quality, a_info)
+    ainfo = {'cpu_sec': cpu_sec,
+             'mem_byte': mem_byte,
+             'misc_text': misc_text}
+    prop_a = p_adata_from_A(a_num, username, A, a_text, check_A, quality, ainfo)
     # print('prop_a', prop_a)
     key = client.key('a_data')
     entity = datastore.Entity(key=key)
@@ -838,30 +843,35 @@ def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
 
 
 def put_A_info(a_num, username, info):
-    "回答データの補足情報をデータベースに格納する"
-    msg = ""
-    # 回答データを取り出す。rootはUserInfoのkey、aはAnswer
-    ret, a, root = get_A_data(a_num, username)
-    if ret==False or a is None:
-        if ret==False: msg += a + "\n"
-        msg += "ERROR: A%d data not found" % a_num
-        return False, msg
-    a.cpu_sec = info['cpu_sec']
-    a.mem_byte = info['mem_byte']
-    a.misc_text = info['misc_text']
-    a.put()
-    msg += "UPDATE A%d info\n" % a_num
-    return True, msg
+    """
+    回答データの補足情報をデータベースに格納する。
+    """
+    msg = ''
+    # 回答データを取り出す
+    adata = list(get_A_data(a_num, username))
+    if 0 == len(adata):
+        return False, 'ERROR: put_A_info: record not found. A%d, %s' % (a_num, username)
+    if 1 <  len(adata):
+        # 複数が、条件にマッチした。>>> バグってる
+        return False, 'BUG: put_A_info: %d record matched. A%d, %s' % (len(adata), a_num, username)
+
+    a = adata[0]
+    adata[0]['ainfo'] = {'cpu_sec': info.get('cpu_sec'),
+                         'mem_byte': info.get('mem_byte'),
+                         'misc_text': info.get('misc_text')}
+    client.put(a)
+    return True, 'UPDATE A%d info' % a_num
+
 
 
 def get_or_delete_A_data(a_num=None, username=None, delete=False):
     """
-    回答データをデータベースから、削除する or 取り出する。
+    回答データをデータベースから、取得する、または、削除する。
     """
     data = get_A_data(a_num=a_num, username=username)
     result = []
-    # print('get_or_delete_A_data: data=', data)
     for i in data:
+        # print('get_or_delete_A_data: i=', i)
         if delete:
             result.append('DELETE A%d' % i['anum'])
             client.delete(i.key)
@@ -881,61 +891,41 @@ def get_user_A_all(username):
     for i in q:
         """
         print('i=', i)
-        i= <Entity('a_data', 517) {'anum': 12, 'ainfo': <Entity {'cpu_sec': 0, 'mem_byte': 0, 'misc_text': ''}>, 'owner': 'administrator', 'date': datetime.datetime(2019, 8, 25, 22, 28, 35, 353062, tzinfo=<UTC>), 'ban_data': [1, 1, 1, 2, 2, -1, -1, 2, -1, -1, 2, 2], 'quality': 0.08333333333333333, 'text': 'SIZE 3X4\r\n1,1,1\r\n2,2,+\r\n+,2,+\r\n+,2,2\r\nBLOCK#1 @(0,0)\r\nBLOCK#2 @(2,0)\r\n', 'size': [3, 4], 'block_pos': [0, 0, 2, 0]}>
+        i= <Entity('a_data', 517)
+           {'anum': 12,
+            'ainfo': <Entity {'cpu_sec': 0, 'mem_byte': 0, 'misc_text': ''}>,
+            'owner': 'administrator',
+            'date': datetime.datetime(2019, 8, 25, 22, 28, 35, 353062, tzinfo=<UTC>),
+            'ban_data': [1, 1, 1, 2, 2, -1, -1, 2, -1, -1, 2, 2],
+            'quality': 0.08333333333333333,
+            'text': 'SIZE 3X4\r\n1,1,1\r\n2,2,+\r\n+,2,+\r\n+,2,2\r\nBLOCK#1 @(0,0)\r\nBLOCK#2 @(2,0)\r\n',
+            'size': [3, 4],
+            'block_pos': [0, 0, 2, 0]}>
         """
-        text += 'A%d\n' % i['anum']
-        anum_list.append(i['anum'])
+        text += 'A%d\n' % i['anum']  # 'A12\n'
+        anum_list.append(i['anum'])  # i['anum'] == 12
     return text, anum_list
 
 
 def get_or_delete_A_info(a_num=None, username=None, delete=False):
-    "回答データの補足情報をデータベースから、削除or取り出し"
-    msg = ""
-    r, a, root = get_A_data(a_num, username)
-    if not r:
-        return False, a, None
-    if a_num is None:
-        q = a
-    else:
-        if a is None:
-            msg += "A%d not found" % a_num
-            return True, msg, []
-        q = [a]
-    results = []
-    num = 0
-    for i in q:
-        num += 1
+    """
+    回答データの補足情報をデータベースから、取得する or 削除する。
+    """
+    data  = get_A_data(a_num, username)
+    result = {}
+    for i in data:
+        # print('get_or_delete_A_info: i=', i)  # i = Entity
+        result[i['anum']] = i.get('ainfo')
         if delete:
-            results.append({'anum': i.anum})
-            i.cpu_sec = None
-            i.mem_byte = None
-            i.misc_text = None
-            i.put()
-        else:
-            tmp = i.to_dict()
-            del tmp['text']
-            results.append( tmp )
-    method = 'DELETE' if delete else 'GET'
-    a_num2 = 0 if a_num is None else a_num
-    msg += "%s A%d info %d" % (method, a_num2, num)
-    return True, msg, results
-
-
-def Q_check(qtext):
-    "問題ファイルの妥当性チェックを行う"
-    hr = '-'*40 + "\n"
-    (size, line_num, line_mat, via_mat, via_dic, msg, ok) = numberlink.read_input_data(qtext)
-    if ok:
-        q = numberlink.generate_Q_data(size, line_num, line_mat, via_mat, via_dic)
-        out = "OK\n" + hr + q + hr
-    else:
-        out = "NG\n" + hr + qtext + hr + msg
-    return out, ok
+            if 'ainfo' in i:
+                del i['ainfo']
+            client.put(i)
+    return result
 
 
 
 def get_Q_author_all():
-    "出題の番号から、authorを引けるテーブルを作る"
+    "出題の番号から、authorを引けるテーブルを作る ---> もともとq_list_allに入ってるから不要"
     qla = ndb.Key(QuestionListAll, 'master', parent=qdata_key()).get()
     if qla is None:
         return None
@@ -967,73 +957,60 @@ def get_admin_Q_all():
     
 
 
-
-
-
 def calc_score_all():
-    "スコア計算"
-    authors = get_Q_author_all()
-    #print "authors=", authors
-    q_factors = {}
-    q_point = {}
-    ok_point = {}
-    bonus_point = {}
-    result = {}
-    misc = {}
-    query = Answer.query(ancestor=userlist_key())
-    q = query.fetch()
-    all_numbers = {}
-    all_users = {}
-    for i in q:
-        #anum = 'A%d' % i.anum
-        anum = 'A%02d' % i.anum
-        username = i.owner
+    """
+    スコア計算
+    """
+    qla = admin_Q_list_get()
+    adata = query_a_data().fetch()
+
+    authors = [None] + qla.get('author_list')  # Q1から始まるので1つずらす
+
+    ok_point = {}     # ok_point   [番号][ユーザ名] = 0, 1
+    q_factors = {}    # q_factors  [番号][ユーザ名] = 小数の値
+    q_point = {}      # q_point    [番号][ユーザ名] = 値
+    bonus_point = {}  # bonus_point[番号][ユーザ名] = 0, 1=出題ボーナスをもらえる
+    misc = {}         # misc       [番号][ユーザ名] = list
+    all_numbers = {}  # すべて数え上げる
+    all_users = {}    # すべて数え上げる
+
+    for i in adata:
+        anum = 'A%02d' % i['anum']
+        username = i['owner']
         all_numbers[anum] = 1
         all_users[username] = 1
         # 正解ポイント
-        if not(anum in ok_point):
+        if anum not in ok_point:
             ok_point[anum] = {}
-        ok_point[anum][username] = i.judge
+        ok_point[anum][username] = int(i['judge'])  # True, False --> 1, 0
         # 品質ポイント
-        if not(anum in q_factors):
+        if anum not in q_factors:
             q_factors[anum] = {}
-        q_factors[anum][username] = i.q_factor
+        q_factors[anum][username] = i['quality']
         # 出題ボーナスポイント
-        if i.judge in (0,1) and authors[i.anum] == username:
-            #print "check_bonus:", i.anum, i.judge, authors[i.anum], username
-            if not(anum in bonus_point):
+        if int(i['judge']) in (0, 1) and authors[i['anum']] == username:
+            # print('check_bonus:', i['anum'], i['judge'], authors[i['anum']], username)
+            if anum not in bonus_point:
                 bonus_point[anum] = {}
-            bonus_point[anum][username] = i.judge
-        # result(ログメッセージ)
-        if not(anum in result):
-            result[anum] = {}
-        result[anum][username] = i.result
+            bonus_point[anum][username] = int(i['judge'])
         # (その他) date, cpu_sec, mem_byte, misc_text
         if not(anum in misc):
             misc[anum] = {}
-        misc[anum][username] = [i.date, i.cpu_sec, i.mem_byte, i.misc_text]
-    #print "ok_point=", ok_point
-    #print "bonus_point=", bonus_point
-    #print "q_factors=", q_factors
-    #print "result=\n", result
+        ainfo = i['ainfo']
+        misc[anum][username] = [i['date'], ainfo['cpu_sec'], ainfo['mem_byte'], ainfo['misc_text']]
     # 品質ポイントを計算する
     q_pt = 10.0
-    for anum, values in q_factors.iteritems(): # 問題番号ごとに
-        #print "anum=", anum
-        qf_total = 0.0 # Q_factorの合計
-        for user, qf in values.iteritems():
-            #print "qf=", qf
-            qf_total += qf
-        #print "qf_total=", qf_total
-        for user, qf in values.iteritems():
+    for anum, values in q_factors.items():  # 問題番号ごとに
+        qf_total = sum(values.values())  # Q_factorの合計
+        for user, qf in values.items():
             if qf_total == 0.0:
                 tmp = 0.0
             else:
                 tmp = q_pt * qf / qf_total
+            # 品質ポイントをセットする
             if not anum in q_point:
                 q_point[anum] = {}
             q_point[anum][user] = tmp
-    #print "q_point=", q_point
     # 集計する
     tmp = ['']*(len(all_numbers) + 1)
     i = 0
@@ -1043,26 +1020,18 @@ def calc_score_all():
     tmp[i] = 'TOTAL'
     score_board = {'/header/': tmp} # 見出しの行
     for user in sorted(all_users.keys()):
-        #print user
         if not(user in score_board):
             score_board[user] = [0]*(len(all_numbers) + 1)
         i = 0
         ptotal = 0.0
-        for anum in sorted(all_numbers.keys()):
-            #print anum
+        for anum in sorted(all_numbers.keys()):  # ['A13', 'A15', 'A16']
             p = 0.0
-            if user in ok_point[anum]: p += ok_point[anum][user]
-            if user in q_point[anum]:  p += q_point[anum][user]
-            if anum in bonus_point and user in bonus_point[anum]:
-                    p += bonus_point[anum][user]
-            #print "p=", p
+            p += ok_point[anum].get(user, 0)
+            p += q_point[anum].get(user, 0)
+            p += bonus_point.get(anum, {}).get(user, 0)
             score_board[user][i] = p
             ptotal += p
             i += 1
         score_board[user][i] = ptotal
     #print "score_board=", score_board
-    return score_board, ok_point, q_point, bonus_point, q_factors, result, misc
-
-
-
-
+    return score_board, ok_point, q_point, bonus_point, q_factors, misc

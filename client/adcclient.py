@@ -189,12 +189,12 @@ class ADCClient:
         # print('adcclient.fin: res=', res)
         if res[1] == 200:
             if self.debug:
-                print("Success", res[1], res[2], "\n")  # , res[5]
+                print('Success', res[1], res[2], '\n')  # , res[5]
             if res[4] is not None:
                 self.cookie = res[4]
         else:
             if self.debug:
-                print("Failed", res[1], res[2], "\n")  # , res[5]
+                print('Failed', res[1], res[2], '\n')  # , res[5]
         # print('adcclient.fin: res[5]: ', type(res[5]), res[5])
         if res[3] is None:
             info = {'msg': res[5]}
@@ -252,12 +252,20 @@ class ADCClient:
         res = self.http_request('GET', '/%d/' % self.year)
         return self.fin(res)
 
+
     def put_user_alive(self, args):
-        res = self.http_request('PUT', '/user/%s/alive' % self.effective_username(), params=args[0])
+        """
+        aliveメッセージをサーバに送信する。
+        """
+        info = {'alive': args}
+        params = json.dumps(info)
+        res = self.http_request('PUT', '/user/%s/alive' % self.effective_username(), params=params)
         return self.fin(res)
+
 
     def get_or_delete_log(self, args, a):
         """
+        ログを取得する、または、削除する。
         GET /admin/log
         """
         if a in ('get-log', 'delete-log'):
@@ -271,7 +279,7 @@ class ADCClient:
         if 1 < len(args):
             key = args[1]
             val = int(args[0])
-            path = "%s/log/%s/%d" % (path0, key, val)
+            path = '%s/log/%s/%d' % (path0, key, val)
         else:
             path = '%s/log' % path0
         res = self.http_request(method, path)
@@ -412,7 +420,10 @@ class ADCClient:
         return self.fin(res)
 
     def put_a_info(self, args):
-        "PUT /A/<username>/Q/<Q-number>/info"
+        """
+        回答の補足情報をアップロードする。
+        PUT /A/<username>/Q/<Q-number>/info
+        """
         a_num = int(args[0])
         cpu_sec = float(args[1])
         mem_byte = int(args[2])
@@ -430,6 +441,7 @@ class ADCClient:
 
     def get_or_delete_a_info(self, args, delete=False):
         """
+        回答の補足情報を取得する、または、削除する。
         GET    /A/<username>/Q/<Q-number>/info
         DELETE /A/<username>/Q/<Q-number>/info
         """

@@ -37,14 +37,6 @@ state_str = {'init': 'initial',
              'im2': 'intermediate_2'}
 
 
-def request_is_json():
-    if ('Accept' in request.headers and
-        request.headers['Accept'] == 'application/json'):
-        return True
-    else:
-        return False
-
-
 def adc_response(msg, code=200, json_encoded=False):
     """
     クライアントへ応答データを作る
@@ -430,7 +422,7 @@ def admin_Q_all():
     データベースに登録されたすべての問題の一覧リストを返す。
     """
     if not priv_admin():
-        return adc_response("access forbidden", request_is_json(), 403)
+        return adc_response('access forbidden', 403)
     log_request(username())
     msg = cds.get_admin_Q_all()
     return adc_response_json({'msg': msg})
@@ -483,7 +475,7 @@ def admin_Q_list():
         return adc_response('unknown')
 
 
-@app.route('/admin/log', methods=['GET','DELETE'])
+@app.route('/admin/log', methods=['GET', 'DELETE'])
 def admin_log():
     """
     ログデータを取得する
@@ -494,15 +486,17 @@ def admin_log():
         return adc_response("access forbidden", 403)
 
     
-@app.route('/admin/log/<key>/<int:val>', methods=['GET','DELETE'])
+@app.route('/admin/log/<key>/<int:val>', methods=['GET', 'DELETE'])
 def admin_log_before(key, val):
-    "ログデータ"
+    """
+    ログデータ
+    """
     if not priv_admin():
-        return adc_response("access forbidden", request_is_json(), 403)
+        return adc_response('access forbidden', 403)
     return user_log_before(None, key, val)
     
 
-@app.route('/admin/timekeeper/enabled', methods=['GET','PUT'])
+@app.route('/admin/timekeeper/enabled', methods=['GET', 'PUT'])
 def admin_timekeeper_enabled():
     """
     timekeeperの有効、無効の状態を取得する(GET)、状態を変更する(PUT)。
@@ -523,7 +517,7 @@ def admin_timekeeper_enabled():
         return adc_response('Illeagal argument %s' % val, 400)
 
         
-@app.route('/admin/timekeeper/state', methods=['GET','PUT'])
+@app.route('/admin/timekeeper/state', methods=['GET', 'PUT'])
 def admin_timekeeper_state():
     """
     timekeeperのstate値を取得する(GET)、state値を変更する(PUT)。
@@ -547,7 +541,7 @@ def admin_timekeeper():
     """
     clk = cds.timekeeper_clk()
     dat = dict(clk)
-    dat['lastUpdate'] = dat['lastUpdate'].isoformat() # datetime型をstring型へ変換
+    dat['lastUpdate'] = dat['lastUpdate'].isoformat()  # datetime型をstring型へ変換
     return adc_response_json(dat)
 
     
@@ -559,7 +553,7 @@ def admin_A_all():
     if not priv_admin():
         return adc_response('access forbidden', 403)
     log_request(username())
-    if request.method=='GET':
+    if request.method == 'GET':
         msg = cds.get_admin_A_all()
         dat = {'msg': msg}
         return adc_response_json(dat)
@@ -619,7 +613,7 @@ def a_put(usernm, a_num):
         return adc_response_json({'msg': msg}, code)
     # GET, DELETEの場合
     if app.config['TEST_MODE']==False:  # 本番モード
-        return adc_response("permission denied", request_is_json(), 403)
+        return adc_response('permission denied. GET, DELETE are allowed in test mode only', 403)
     delete = True if request.method=='DELETE' else False
     result = cds.get_or_delete_A_data(a_num=a_num, username=usernm, delete=delete)
     if len(result) == 0:
@@ -627,32 +621,36 @@ def a_put(usernm, a_num):
     text = '\n'.join(result)
     return adc_response_json({'msg': text})
 
-@app.route('/A/<usernm>/Q/<int:a_num>/info', methods=['GET','PUT','DELETE'])
+
+@app.route('/A/<usernm>/Q/<int:a_num>/info', methods=['GET', 'PUT', 'DELETE'])
 def a_info_put(usernm, a_num):
-    "回答データの補足情報を、登録する、取り出す、削除する"
+    """
+    回答データの補足情報を、登録する、取り出す、削除する
+    """
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
+        return adc_response('not login yet', 401)
     if not priv_admin():                        # 管理者ではない
         if not username_matched(usernm):        # ユーザ名が一致しない
-            return adc_response("permission denied", request_is_json(), 403)
+            return adc_response('permission denied', 403)
     if not priv_admin():
-        if g.state != 'Aup':
-            return adc_response("deadline passed", request_is_json(), 503)
+        if request.methods != 'GET' and g.state != 'Aup':
+            return adc_response('deadline passed', 503)
     log_request(usernm)
     if request.method == 'PUT':
-        info = json.loads(request.data)
-        result = put_A_info(a_num, usernm, info)
-        if result[0]:
+        flag, msg = cds.put_A_info(a_num, usernm, request.json)
+        if flag:
             code = 200
         else:
             code = 403
-        return adc_response_text(result[1], code)
-    else: # GET or DELETE
-        if a_num == 0: a_num = None
-        if usernm == '*': usernm = None
+        return adc_response_json({'msg': msg}, code)
+    else:  # GET or DELETE
+        if a_num == 0:
+            a_num = None
+        if usernm == '*':
+            usernm = None
         delete = True if request.method == 'DELETE' else False
-        ret, msg, results = get_or_delete_A_info(a_num=a_num, username=usernm, delete=delete)
-        tmp = {'msg': msg,  'results':results }
+        results = cds.get_or_delete_A_info(a_num=a_num, username=usernm, delete=delete)
+        tmp = {'msg': request.method,  'results': results}
         return adc_response_json(tmp)
 
 
@@ -665,7 +663,7 @@ def get_user_q_list(usernm):
         return adc_response('not login yet', 401)
     if not priv_admin():  # 管理者以外の場合
         if not username_matched(usernm):  # ユーザ名チェック
-            return adc_response("permission denied. admin only", 403)
+            return adc_response('permission denied. admin or self-access only', 403)
     log_request(usernm)
     result = cds.get_user_Q_list(usernm)
     return adc_response_json(result)
@@ -680,7 +678,7 @@ def user_q(usernm, q_num):
         if not username_matched(usernm):  # ユーザ名チェック
             return adc_response('permission denied. admin only', 403)
         if q_num <= 0 or 4 <= q_num:  # 問題番号の範囲チェック
-            return adc_response("Q number is out of range", 403)
+            return adc_response('Q number is out of range', 403)
         if g.state != 'Qup':
             return adc_response('deadline passed', 503)
     log_request(usernm)
@@ -726,12 +724,18 @@ def user_q(usernm, q_num):
 
 @app.route('/user/<usernm>/alive', methods=['PUT'])
 def user_alive(usernm):
-    # ユーザを指定して、生きていることを報告
+    """
+    ユーザを指定して、生きていることを報告する
+    """
     if not priv_admin():                        # 管理者ではない
         if not username_matched(usernm):      # ユーザ名が一致しない
-            return adc_response("permission denied", request_is_json(), 403)
-    cds.log(usernm, "alive: "+request.data)
-    return adc_response_text("OK")
+            return adc_response('permission denied', 403)
+    alive = request.json.get('alive')
+    print('alive=', alive)
+    cds.log(usernm, 'alive: %s' % json.dumps(alive))
+    tmp = {'msg': 'OK', 'alive': alive}
+    return adc_response_json(tmp)
+
 
 @app.route('/user/<usernm>/log', methods=['GET','DELETE'])
 def user_log(usernm):
@@ -746,7 +750,7 @@ def user_log_before(usernm, key, val):
     """
     if not priv_admin():                  # 管理者ではない
         if not username_matched(usernm):  # ユーザ名が一致しない
-            return adc_response("permission denied", 403)
+            return adc_response('permission denied', 403)
     log_request(username()) # やめたほうがいい？
     if key == 'days':
         td = datetime.timedelta(days=val)
@@ -855,9 +859,9 @@ def q_check():
 def score_dump():
     "スコア計算"
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
+        return adc_response('not login yet', 401)
     if not priv_admin():                    # 管理者ではない
-        return adc_response("access forbidden", request_is_json(), 403)
+        return adc_response('access forbidden', 403)
     log_request(username())
     import cPickle as pickle
     import base64
@@ -870,14 +874,9 @@ def score_dump():
 def get_score():
     "スコア計算"
     if not authenticated():
-        return adc_response("not login yet", request_is_json(), 401)
+        return adc_response('not login yet', 401)
     log_request(username())
     res = calc_score_all()
-    # if request_is_json():
-    #     #txt = json.dumps(res[0])
-    #     txt = str(res[0])
-    #     print "txt=",txt
-    #     return adc_response(txt, False) # なんかうまくいかない
     html = html_score_board(res[0])
     return adc_response_html(html)
     
@@ -887,8 +886,8 @@ def root():
     if not authenticated():
         return adc_response('permission denied', 403)
     log_request(username())
-    msg = r"Hello world\n"
-    msg += r"Test mode: %s\n" % app.config['TEST_MODE']
+    msg = r'Hello world\n'
+    msg += r'Test mode: %s\n' % app.config['TEST_MODE']
     return adc_response(msg)
 
 
