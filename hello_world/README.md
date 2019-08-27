@@ -8,7 +8,7 @@ https://github.com/GoogleCloudPlatform/python-docs-samples/tree/master/appengine
 
 ### datastore emuldatorを実行する
 
-    不要？
+    不要？ <<<< どうも必要らしい。なぜかわからん。
     export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keyfile.json
 
 ```
@@ -24,17 +24,18 @@ gcloud beta emulators datastore --data-dir /work/datastore start
 
 ```
 sudo apt install python-virtualenv python3-pip python3-venv
-virtualenv --python=/usr/bin/python2.7 /work/venv27
-source /work/venv27/bin/activate
+cd $HOME/adc2019/
+virtualenv --python=/usr/bin/python2.7 $HOME/adc2019/venv27
+source $HOME/adc2019/venv27/bin/activate
 pip install grpcio
-pip3 download -d /work/pip-dir/ pip gunicorn Flask==1.0.2 google-cloud-datastore==1.7.3
+pip3 download -d $HOME/adc2019/pip-dir/ pip gunicorn Flask==1.0.2 google-cloud-datastore==1.7.3
 ```
 
 
 dev_appserver.pyを実行する。
 
 ```
-export CLOUDSDK_PYTHON=/work/venv27/bin/python
+export CLOUDSDK_PYTHON=$HOME/adc2019/venv27/bin/python
 export PIP_CONFIG_FILE=$(pwd)/pip.conf
 $(gcloud beta emulators datastore env-init)
 dev_appserver.py --application=test813 --support_datastore_emulator=true app.yaml 
