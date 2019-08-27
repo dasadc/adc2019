@@ -56,11 +56,6 @@ pip3 download -d $HOME/adc2019/pip-dir/ pip gunicorn Flask==1.0.2 google-cloud-d
 ln -s $HOME/adc2019/pip-dir /tmp/
 ```
 
-なぜか、datastore emulatorを使うためにも、credentialが必要らしい。
-
-```
-export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keyfile.json
-```
 
 
 APIサーバ用にも仮想環境を作る。
@@ -77,6 +72,12 @@ pip install gunicorn
 実行する
 --------
 
+なぜか、datastore emulatorを使うためにも、credentialが必要らしい。
+
+```
+export GOOGLE_APPLICATION_CREDENTIALS=$HOME/adc2019/server/keyfile.json
+```
+
 ### datastore emulator
 
 ```
@@ -86,6 +87,8 @@ gcloud beta emulators datastore --data-dir $HOME/adc2019/work/datastore start
 
 
 ### ダミーアプリ
+
+開発時、デバッグ時に実行しておくと便利、というだけであり、必須ではない。
 
 詳細 [hello_world/README.md](hello_world/README.md)
 
@@ -115,11 +118,12 @@ dev_appserver.py --application=test813 --support_datastore_emulator=true app.yam
 
 ```
 source $HOME/adc2019/venv36/bin/activate
-export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keyfile.json
+export GOOGLE_APPLICATION_CREDENTIALS=$HOME/adc2019/server/keyfile.json
 $(gcloud beta emulators datastore --data-dir $HOME/adc2019/work/datastore env-init)
 ```
 
 ```
+cd $HOME/adc2019/server/
 gunicorn -b :4280 --access-logfile '-' main:app
 ```
 
