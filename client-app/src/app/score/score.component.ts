@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 import { AdcService } from '../adc.service';
+import { CheckResults } from '../checkresults';
 //import { QNumberList, ANumberList } from '../apiresponse';
 
 @Component({
@@ -9,14 +10,15 @@ import { AdcService } from '../adc.service';
   styleUrls: ['./score.component.css']
 })
 export class ScoreComponent implements OnInit {
-score: Object;
-score_board: Object;
-score_board_num: number;
-score_board_header: string[];
-teams: string[];
-ok_point: Object;
-q_point: Object;
-bonus_point: Object;
+  score: Object;
+  score_board: Object;
+  score_board_num: number;
+  score_board_header: string[];
+  teams: string[];
+  ok_point: Object;
+  q_point: Object;
+  bonus_point: Object;
+  boardData: CheckResults;
 
 
   constructor(private adcService: AdcService) { }
@@ -71,7 +73,21 @@ bonus_point: Object;
       });
   }
 
-  viewA(q: string, team: string, i: number, j: number) {
-    console.log(q, team, i, j);
+  viewA(q: string, username: string, i: number, j: number) {
+    let n = parseInt(q.slice(1), 10); // 'A01' --> '01' --> 1
+    //console.log(q, n, username, i, j);
+    this.adcService.getA(username, n)
+      .subscribe(res => {
+	let aData: Object = res;
+	//console.log('A result=', aData['result']);
+	let aText: string = aData['result'][1]; // APIが汚い
+	//console.log(`A${n} =\n`, aText);
+	this.adcService.getQ(n)
+	  .subscribe(res => {
+	    let qText: string = res['text'];
+            //console.log(`Q${n} =\n`, qText);
+	    this.boardData = new CheckResults('info', qText, aText);
+	  })
+      });
   }
 }

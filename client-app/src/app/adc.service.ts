@@ -606,7 +606,7 @@ export class AdcService {
     return this.http.get<Object>(`/api/A/${username}/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
-	  console.log('AdcService: getA', res);
+	  //console.log('AdcService: getA', res);
 	  return res;
 	})
       );

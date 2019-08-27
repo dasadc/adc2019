@@ -647,7 +647,7 @@ def a_put(usernm, a_num):
     if len(result) == 0:
         return adc_response("answer data A%d not found" % a_num, 404)
     text = '\n'.join(result)
-    return adc_response_json({'msg': text})
+    return adc_response_json({'msg': text, 'result': result}) # このAPIよくない
 
 
 @app.route('/A/<usernm>/Q/<int:a_num>/info', methods=['GET', 'PUT', 'DELETE'])
