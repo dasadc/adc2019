@@ -71,4 +71,7 @@ bonus_point: Object;
       });
   }
 
+  viewA(q: string, team: string, i: number, j: number) {
+    console.log(q, team, i, j);
+  }
 }

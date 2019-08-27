@@ -493,8 +493,8 @@ export class AdcService {
 			   res['blocknum'],
 			   res['linenum'],
 			   res['text']);
-	}),
-	catchError(this.handleError<QData>('getQ'))
+	})/*,
+	catchError(this.handleError<QData>('getQ'))*/
       );
   }
 
@@ -601,6 +601,16 @@ export class AdcService {
     return this.http.get<Object>(`/api/score`, this.apiHttpOptions());
   }
 
+  /** 回答データを取得する。 see also getQ */
+  getA(username: string, qnum: number): Observable<Object> {
+    return this.http.get<Object>(`/api/A/${username}/Q/${qnum}`, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  console.log('AdcService: getA', res);
+	  return res;
+	})
+      );
+  }
 
   /** ファイルをダウンロードさせる。 */
   downloadFile(data: any, type: string, download: string) {

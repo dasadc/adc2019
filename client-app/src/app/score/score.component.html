@@ -68,3 +68,21 @@
     </tr>
   </table>
 </div>
+
+
+<h2>Viewer</h2>
+
+<div *ngIf="ok_point">
+  <table>
+    <tr>
+      <th>Qn \ team</th>
+      <th *ngFor="let t of teams">{{t}}</th>
+    </tr>
+    <tr *ngFor="let row of ok_point; let i = index">
+      <th>{{row[0]}}</th>
+      <td *ngFor="let c of row.slice(1); let j = index">
+        <button *ngIf="c==1" (click)="viewA(row[0], teams[j], i, j)">view</button>
+      </td>
+    </tr>
+  </table>
+</div>

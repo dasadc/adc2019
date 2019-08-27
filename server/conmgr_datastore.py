@@ -831,7 +831,7 @@ def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
     try:
         A = adc2019.read_A(a_text)
     except RuntimeError as e:
-        print('e=', e)
+        # print('e=', e)
         A = None
         msg = 'Error in A%d\n' % a_num + str(e)
 
