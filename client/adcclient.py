@@ -350,12 +350,16 @@ class ADCClient:
         return res2
 
     def get_admin_q_all(self):
-        res = self.http_request('GET', '/admin/Q/all')
+        res = self.http_request('GET',    '/admin/Q/all')
+        return self.fin(res)
+
+    def delete_admin_q_all(self):
+        res = self.http_request('DELETE', '/admin/Q/all')
         return self.fin(res)
 
     def get_admin_a_all(self):
         res = self.http_request('GET', '/A')
-        print('res=', res)
+        # print('res=', res)
         return self.fin(res)
 
     def delete_admin_a_all(self):
@@ -595,15 +599,45 @@ class ADCClient:
             state   = args[1]
         """
         path = '/admin/timekeeper'
-        if args is None:
+        if args is None or len(args)==0:
             res = self.http_request('GET', path)
             return self.fin(res)
         else:
+            assert len(args) == 2
             enabled = int(args[0])
             assert enabled in (0, 1)
             state = args[1]
             assert state in ('init', 'im0', 'Qup', 'im1', 'Aup', 'im2')
             dat = {'enabled': enabled,
                    'state': state}
+            res = self.http_request('PUT', path, params=json.dumps(dat))
+            return self.fin(res)
+
+    def test_mode(self, args=None):
+        """
+        TEST_MODEの値を取得する(GET)、変更する(PUT)。
+        
+        Parameters
+        ==========
+        args : None or str
+            'True', 'False'
+        """
+        path = '/admin/config/test_mode'
+        if args is None or len(args)==0:
+            res = self.http_request('GET', path)
+            # print(res)
+            return self.fin(res)
+        else:
+            assert len(args) == 1
+            a = args[0]
+            if a.lower() == 'true':
+                param = True
+            elif a.lower() == 'false':
+                param = False
+            else:
+                print
+                raise RuntimeError('bad argument: %s' % a)
+
+            dat = {'test_mode': param}
             res = self.http_request('PUT', path, params=json.dumps(dat))
             return self.fin(res)

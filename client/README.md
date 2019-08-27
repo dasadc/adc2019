@@ -177,6 +177,7 @@ admin command:
   get-admin-q-list
   put-admin-q-list
   delete-admin-q-list
+  delete-admin-q-all
   get-admin-a-all
   delete-admin-a-all
   get-log [NUMBER (seconds|days)]
@@ -884,6 +885,10 @@ File Checkerは、ログインせずに使うことができます。本番用�
 出題番号を消去する
 
     adccli delete-admin-q-list
+
+すべての問題データを消去する
+
+    adccli delete-admin-q-all
 
 ### 回答データへのアクセス
 

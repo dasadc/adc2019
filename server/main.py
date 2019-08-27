@@ -58,22 +58,6 @@ def adc_response(msg, code=200, json_encoded=False):
     return resp
 
 
-def adc_response_html(html, code=200):
-    template = 'raw.html'
-    body = render_template(template, raw=html)
-    resp = make_response(body)
-    resp.status_code = code
-    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
-    return resp
-
-
-def adc_response_text(body, code=200):
-    resp = make_response(body)
-    resp.status_code = code
-    resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
-    return resp
-
-
 def adc_response_json(obj, code=200):
     """
     Parameters
@@ -416,15 +400,20 @@ def admin_user_post(usernm):
 
 
 
-@app.route('/admin/Q/all', methods=['GET'])
+@app.route('/admin/Q/all', methods=['GET', 'DELETE'])
 def admin_Q_all():
     """
-    データベースに登録されたすべての問題の一覧リストを返す。
+    データベースに登録されたすべての問題の一覧リストを返す、
+    または、すべての問題データを削除する。
     """
     if not priv_admin():
         return adc_response('access forbidden', 403)
     log_request(username())
-    msg = cds.get_admin_Q_all()
+    if request.method == 'GET':
+        msg = cds.get_admin_Q_all()
+        return adc_response_json({'msg': msg})
+    # DELETEの場合
+    msg = cds.delete_admin_Q_all()
     return adc_response_json({'msg': msg})
 
 @app.route('/admin/Q/list', methods=['GET','PUT','DELETE'])
@@ -447,6 +436,8 @@ def admin_Q_list():
             rows_list = []
             blocknum_list = []
             linenum_list = []
+            text_admin = ''
+            text_user = ''
         else:
             msg = qla['text_admin']
             qnum_list = qla['qnum_list']
@@ -456,6 +447,8 @@ def admin_Q_list():
             rows_list = qla['rows_list']
             blocknum_list = qla['blocknum_list']
             linenum_list = qla['linenum_list']
+            text_admin = qla['text_admin']
+            text_user = qla['text_user']
         info = {'msg': msg,
                 'qnum_list': qnum_list,
                 'author_list': author_list,
@@ -463,7 +456,9 @@ def admin_Q_list():
                 'cols_list': cols_list,
                 'rows_list': rows_list,
                 'blocknum_list': blocknum_list,
-                'linenum_list': linenum_list}
+                'linenum_list': linenum_list,
+                'text_admin': text_admin,
+                'text_user': text_user}
         return adc_response_json(info)
     elif request.method == 'PUT':
         flag, msg, qla = cds.admin_Q_list_create()
@@ -545,6 +540,8 @@ def admin_timekeeper():
         dat['lastUpdate'] = dat['lastUpdate'].isoformat()  # datetime型をstring型へ変換
         return adc_response_json(dat)
     else:  # PUTの場合
+        if not priv_admin():
+            return adc_response('access forbidden. admin only', 403)
         e = request.json.get('enabled')
         s = request.json.get('state')
         dat = {}
@@ -556,6 +553,26 @@ def admin_timekeeper():
         return adc_response_json(r)
 
     
+@app.route('/admin/config/test_mode', methods=['GET', 'PUT'])
+def admin_config_test_mode():
+    """
+    TEST_MODEの値を取得する(GET)、または、設定する(PUT)。
+    """
+    if request.method == 'GET':
+        dat = {'test_mode': app.config['TEST_MODE']}
+        return adc_response_json(dat)
+    else:  # PUTの場合
+        if not priv_admin():
+            return adc_response('access forbidden. admin only', 403)
+        i = request.json.get('test_mode')
+        if i in (0, 1):
+            app.config['TEST_MODE'] = bool(i)
+            dat = {'test_mode': app.config['TEST_MODE']}
+            return adc_response_json(dat)
+        else:
+            return adc_response('illeagal argument %s' % i, 400)
+
+    
 @app.route('/A', methods=['GET', 'DELETE'])
 def admin_A_all():
     """
@@ -565,15 +582,14 @@ def admin_A_all():
         return adc_response('access forbidden', 403)
     log_request(username())
     if request.method == 'GET':
-        msg = cds.get_admin_A_all()
-        dat = {'msg': msg}
+        msg, data = cds.get_admin_A_all()
+        dat = {'msg': msg, 'data': data}
         return adc_response_json(dat)
     else:
         # DELETE
-        result = cds.get_or_delete_A_data(delete=True)
-        print('ret=', ret, ' result=', result)
-        msg = '\n'.join(result)
-        dat = {'msg': msg}
+        msg, data = cds.get_or_delete_A_data(delete=True)
+        print('data=', data)
+        dat = {'msg': msg, 'data': data}
         return adc_response_json(dat)
         
 
@@ -598,7 +614,7 @@ def a_q_menu(usernm):
     a_text   = request.json.get('A')
     ret, msg = post_A(usernm, a_text, request.form)
     code = 200 if ret else 403
-    return adc_response_text(msg, code)
+    return adc_response_json({'msg': msg}, code)
 
 @app.route('/A/<usernm>/Q/<int:a_num>', methods=['PUT', 'GET', 'DELETE'])
 def a_put(usernm, a_num):
@@ -623,8 +639,9 @@ def a_put(usernm, a_num):
             code = 403
         return adc_response_json({'msg': msg}, code)
     # GET, DELETEの場合
-    if app.config['TEST_MODE']==False:  # 本番モード
-        return adc_response('permission denied. GET, DELETE are allowed in test mode only', 403)
+    if not priv_admin():                    # 管理者ではない
+        if app.config['TEST_MODE']==False:  # 本番モード
+            return adc_response('permission denied. GET, DELETE are allowed in test mode only', 403)
     delete = True if request.method=='DELETE' else False
     result = cds.get_or_delete_A_data(a_num=a_num, username=usernm, delete=delete)
     if len(result) == 0:
@@ -874,22 +891,28 @@ def score_dump():
     if not priv_admin():                    # 管理者ではない
         return adc_response('access forbidden', 403)
     log_request(username())
-    import cPickle as pickle
+    import pickle
     import base64
-    res = calc_score_all()
+    res = cds.calc_score_all()
     bin = pickle.dumps(res)
-    txt = base64.b64encode(bin)
-    return adc_response_text(txt)
+    txt = base64.b64encode(bin).decode('utf-8')
+    return adc_response_json({'score': txt})
     
+
 @app.route('/score', methods=['GET'])
 def get_score():
     "スコア計算"
     if not authenticated():
         return adc_response('not login yet', 401)
     log_request(username())
-    res = calc_score_all()
-    html = html_score_board(res[0])
-    return adc_response_html(html)
+    score_board, ok_point, q_point, bonus_point, q_factors, misc = cds.calc_score_all()
+    dat = {'score_board': score_board,
+           'ok_point': ok_point,
+           'q_point': q_point,
+           'bonus_point': bonus_point,
+           'q_factors': q_factors,
+           'misc': misc}
+    return adc_response_json(dat)
     
 
 @app.route('/%s/' % adcconfig.YEAR, methods=['GET'])

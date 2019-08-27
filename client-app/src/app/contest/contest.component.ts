@@ -49,15 +49,17 @@ export class ContestComponent implements OnInit {
           return;
         }
         this.aNumberList = res;
-        let n = this.qNumberList.qnum_list.length;
-        this.aPosted = Array(n);
-        for (let i=0; i<n; i++) {
-          this.aPosted[i] = false;
-        }
-        for (let i=0; i<this.aNumberList.anum_list.length; i++) {
-          let qnum = this.aNumberList.anum_list[i];
-          this.aPosted[qnum] = true;
-          //console.log(i, qnum);
+        if (this.qNumberList !== void 0) {
+          let n = this.qNumberList.qnum_list.length;
+          this.aPosted = Array(n);
+          for (let i=0; i<n; i++) {
+            this.aPosted[i] = false;
+          }
+          for (let i=0; i<this.aNumberList.anum_list.length; i++) {
+            let qnum = this.aNumberList.anum_list[i];
+            this.aPosted[qnum] = true;
+            //console.log(i, qnum);
+          }
         }
         //console.log('aPosted', this.aPosted);
       });
@@ -106,7 +108,8 @@ export class ContestComponent implements OnInit {
 
 
   onCleared(c: boolean) {
-    console.log('contest: onCleared', c)
+    //console.log('contest: onCleared', c);
+    this.uploadResults = undefined;
   }
 
 }

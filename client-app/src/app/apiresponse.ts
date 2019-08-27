@@ -15,10 +15,23 @@ export class ResMsgOnly {
 }
 
 export class ResTimekeeper {
+  public static enabledDescrTbl = {
+    0: 'manual state transition',
+    1: 'automatic state transition, depending on current time'
+  };
+  public static stateDescrTbl = {
+    'init': 'initial',
+    'im0': 'intermission (0)',
+    'Qup': 'You can upload Q data.',
+    'im1': 'intermission (1)',
+    'Aup': 'You can upload A data.',
+    'im2': 'intermission (2)',
+  }
+
   constructor(
     public enabled: number,
-    public lastUpdate: Date, //string,
-    public state: string) { }
+    public state: string,
+    public lastUpdate: Date) { }
 }
 
 export class UserQEntry {
@@ -69,3 +82,23 @@ export class QData {
     public text: string
   ) { }
 }
+
+export class AdminQList { // API: '/admin/Q/list', datastore kind: 'q_list_all'
+  constructor(
+    public author_list: number[],
+    public author_qnum_list: number[],
+    public blocknum_list: number[],
+    public cols_list: number[],
+    public date: Date,
+    public linenum_list: number[],
+    public qnum_list: number[],
+    public rows_list: number[],
+    public text_admin: string,
+    public text_user: string
+  ) { }
+
+  public static empty(): AdminQList {
+    return new AdminQList([], [], [], [], new Date(), [], [], [], '??', '?');
+  }
+}
+

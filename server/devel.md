@@ -169,13 +169,139 @@ cd ../sample_hiromoto_1-12_mod/
 adccli post-user-q 1 sample_hiromoto_1_Q.txt
 adccli post-user-q 2 sample_hiromoto_2_Q.txt
 adccli post-user-q 3 sample_hiromoto_3_Q.txt
-adccli post-user-q 4 sample_hiromoto_4_Q.txt
-adccli post-user-q 5 sample_hiromoto_5_Q.txt
-adccli post-user-q 6 sample_hiromoto_6_Q.txt
-adccli post-user-q 7 sample_hiromoto_7_Q.txt
-adccli post-user-q 8 sample_hiromoto_8_Q.txt
-adccli post-user-q 9 sample_hiromoto_9_Q.txt
-adccli post-user-q 10 sample_hiromoto_10_Q.txt
-adccli post-user-q 11 sample_hiromoto_11_Q.txt
-adccli post-user-q 12 sample_hiromoto_12_Q.txt
+adccli post-user-q 4 sample_hiromoto_1_Q.txt
+adccli post-user-q 5 sample_hiromoto_2_Q.txt
+adccli post-user-q 6 sample_hiromoto_3_Q.txt
+adccli post-user-q 7 sample_hiromoto_1_Q.txt
+adccli post-user-q 8 sample_hiromoto_2_Q.txt
+adccli post-user-q 9 sample_hiromoto_3_Q.txt
+adccli post-user-q 10 sample_hiromoto_1_Q.txt
+adccli post-user-q 11 sample_hiromoto_2_Q.txt
+adccli post-user-q 12 sample_hiromoto_3_Q.txt
+
+adccli --alt-user test-01 post-user-q 1 sample_hiromoto_1_Q.txt
+adccli --alt-user test-01 post-user-q 2 sample_hiromoto_2_Q.txt
+adccli --alt-user test-01 post-user-q 3 sample_hiromoto_3_Q.txt
+
+adccli --alt-user test-02 post-user-q 1 sample_hiromoto_1_Q.txt
+adccli --alt-user test-02 post-user-q 2 sample_hiromoto_2_Q.txt
+adccli --alt-user test-02 post-user-q 3 sample_hiromoto_3_Q.txt
+
+adccli --alt-user test-03 post-user-q 1 sample_hiromoto_1_Q.txt
+adccli --alt-user test-03 post-user-q 2 sample_hiromoto_2_Q.txt
+adccli --alt-user test-03 post-user-q 3 sample_hiromoto_3_Q.txt
+
+adccli --alt-user test-04 post-user-q 1 sample_hiromoto_1_Q.txt
+adccli --alt-user test-04 post-user-q 2 sample_hiromoto_2_Q.txt
+adccli --alt-user test-04 post-user-q 3 sample_hiromoto_3_Q.txt
+```
+
+テスト用問題データの確認
+--------------------------------
+
+ローカルのテスト用サイトを選択すること。
+
+```
+adccli --URL http://127.0.0.1:4280/ --username administrator whoami
+
+adccli get-admin-q-all
+```
+
+
+テスト用問題データの削除
+--------------------------------
+
+ローカルのテスト用サイトを選択すること。
+
+```
+adccli --URL http://127.0.0.1:4280/ --username administrator whoami
+
+adccli delete-admin-q-all
+```
+
+
+テスト用回答データのアップロード
+---------------------------------
+
+本当は、`adccli get-admin-q-list` で、問題データがどれなのかを確認したあと、それと対応する回答データをアップロードすべき。
+まあ、確率33.333%で正解するはず。
+
+
+```
+adccli put-a 1 sample_hiromoto_1_A.txt 
+adccli put-a 2 sample_hiromoto_1_A.txt 
+adccli put-a 3 sample_hiromoto_1_A.txt 
+adccli put-a 4 sample_hiromoto_1_A.txt 
+adccli put-a 5 sample_hiromoto_1_A.txt 
+adccli put-a 6 sample_hiromoto_1_A.txt 
+adccli put-a 7 sample_hiromoto_1_A.txt 
+adccli put-a 8 sample_hiromoto_1_A.txt 
+adccli put-a 9 sample_hiromoto_1_A.txt 
+adccli put-a 10 sample_hiromoto_1_A.txt 
+adccli put-a 11 sample_hiromoto_1_A.txt 
+adccli put-a 12 sample_hiromoto_1_A.txt 
+adccli put-a 13 sample_hiromoto_1_A.txt 
+adccli put-a 14 sample_hiromoto_1_A.txt 
+adccli put-a 15 sample_hiromoto_1_A.txt 
+adccli put-a 16 sample_hiromoto_1_A.txt 
+adccli put-a 17 sample_hiromoto_1_A.txt 
+adccli put-a 18 sample_hiromoto_1_A.txt 
+adccli put-a 19 sample_hiromoto_1_A.txt 
+adccli put-a 20 sample_hiromoto_1_A.txt 
+
+adccli --alt-username test-01 put-a 3 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 4 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 5 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 6 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 7 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 8 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 9 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 10 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 11 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 12 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 13 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 14 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 15 sample_hiromoto_2_A.txt 
+adccli --alt-username test-01 put-a 16 sample_hiromoto_2_A.txt 
+
+adccli --alt-username test-02 put-a 2 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 3 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 4 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 5 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 6 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 7 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 8 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 9 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 10 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 11 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 12 sample_hiromoto_3_A.txt 
+adccli --alt-username test-02 put-a 13 sample_hiromoto_3_A.txt 
+
+adccli --alt-username test-03 put-a 8 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 9 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 10 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 11 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 12 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 13 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 14 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 15 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 16 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 17 sample_hiromoto_1_A.txt 
+adccli --alt-username test-03 put-a 18 sample_hiromoto_1_A.txt 
+
+adccli --alt-username test-04 put-a 2 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 3 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 4 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 5 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 6 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 7 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 8 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 9 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 10 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 11 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 12 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 13 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 14 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 15 sample_hiromoto_2_A.txt 
+adccli --alt-username test-04 put-a 16 sample_hiromoto_2_A.txt 
 ```

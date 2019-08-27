@@ -46,6 +46,7 @@ admin command:
   get-admin-q-list
   put-admin-q-list
   delete-admin-q-list
+  delete-admin-q-all
   get-admin-a-all
   delete-admin-a-all
   get-log [NUMBER (seconds|days)]
@@ -53,6 +54,7 @@ admin command:
   timekeeper-enabled [0|1]
   timekeeper-state [init|im0|Qup|im1|Aup|im2]
   timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2]]
+  test-mode [True|False]
 """)
 
 
@@ -61,12 +63,12 @@ def main():
         if cli.output_file is None:
             ff = sys.stdout
         else:
-            ff = open(cli.output_file, "w")
+            ff = open(cli.output_file, 'w')
         if len(args.arg) == 0:
-            ff.write(resx[6]['msg'] + "\n")
+            ff.write(resx[6]['msg'] + '\n')
         else:
             for res1 in resx:
-                ff.write(res1[6]['text'] + "\n")
+                ff.write(res1[6]['text'] + '\n')
         if cli.output_file is not None:
             ff.close()
 
@@ -75,7 +77,7 @@ def main():
     cli.read_config()
 
     parser = argparse.ArgumentParser(
-        description="DA Symposium 2019 Algorithm Design Contest, Command Line Interface tool")
+        description='DA Symposium 2019 Algorithm Design Contest, Command Line Interface tool')
     parser.add_argument('--debug', action='store_true', help='enable debug mode')
     parser.add_argument('--verbose', action='store_true', help='verbose message')
     parser.add_argument('-c', '--config', metavar='FILE', default=cli.config, help='config file (default: %(default)s)')
@@ -131,7 +133,7 @@ def main():
             if newpassword1 == newpassword2:
                 newpassword = newpassword1
             else:
-                print("password mismatch. not changed")
+                print('password mismatch. not changed')
         if newpassword is not None:
             res = cli.change_password(newpassword)
             print(res[6]['msg'])
@@ -278,6 +280,9 @@ def main():
     elif a == 'delete-admin-q-list':
         res = cli.delete_admin_q_list()
         print(res[6]['msg'])
+    elif a == 'delete-admin-q-all':
+        res = cli.delete_admin_q_all()
+        print(res[6]['msg'])
     elif a == 'put-user-alive':
         res = cli.put_user_alive(args.arg)
         print(res[6]['msg'])
@@ -293,17 +298,15 @@ def main():
         if 'results' in res[6]:
             for i in res[6]['results']:
                 if delete:
-                    print("%s" % (i['date']))
+                    print('%s' % (i['date']))
                 else:
-                    print("%s %s: %s" % (i['date'], i['username'], i['what']))
+                    print('%s %s: %s' % (i['date'], i['username'], i['what']))
     elif a == 'score':
-        res = cli.score(args[1:])
-        print("res=", res)
-        # print res[6]['msg']
+        res = cli.score(args.arg)
+        print(res[6])
     elif a == 'score-dump':
-        res = cli.score_dump(args[1:])
-        print("res=", res)
-        # print res[6]['msg']
+        res = cli.score_dump(args.arg)
+        print(res[6])
     elif a == 'timekeeper-enabled':
         res = cli.timekeeper_enabled(args.arg)
         print(res[6])
@@ -313,8 +316,11 @@ def main():
     elif a == 'timekeeper':
         res = cli.timekeeper(args.arg)
         print(res[6])
+    elif a == 'test-mode':
+        res = cli.test_mode(args.arg)
+        print(res[6])
     else:
-        print("Error: Unknown command:", a)
+        print('Error: Unknown command:', a)
     #
     cli.write_config()
 

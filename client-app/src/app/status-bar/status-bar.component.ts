@@ -16,19 +16,7 @@ export class StatusBarComponent implements OnInit {
   username: string;
   usernameDescription: string;
   enabledDescription: string;
-  enabledDescrTbl = {
-    0: 'manual state transition',
-    1: 'automatic state transition, depending on current time'
-  };
   stateDescription: string;
-  stateDescrTbl = {
-    'init': 'initial',
-    'im0': 'intermission (0)',
-    'Qup': 'You can upload Q data.',
-    'im1': 'intermission (1)',
-    'Aup': 'You can upload A data.',
-    'im2': 'intermission (2)',
-  }
   updateUsername_error_count: number = 0;
 
   constructor(private adcService: AdcService) { }
@@ -114,8 +102,8 @@ export class StatusBarComponent implements OnInit {
       .subscribe(tk => {
         //console.log('status-bar: tk=', tk);
         this.clk = tk;
-        this.stateDescription = this.stateDescrTbl[tk['state']]
-        this.enabledDescription = this.enabledDescrTbl[tk['enabled']]
+        this.stateDescription = ResTimekeeper.stateDescrTbl[tk['state']]
+        this.enabledDescription = ResTimekeeper.enabledDescrTbl[tk['enabled']]
       });
   }
 }

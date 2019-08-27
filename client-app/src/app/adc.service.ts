@@ -5,7 +5,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 
 import { readFile } from './rx-file-reader';
 import { CheckResults } from './checkresults';
-import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList, QNumberList, QData, ANumberList } from './apiresponse';
+import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList, QNumberList, QData, ANumberList, AdminQList } from './apiresponse';
 
 const httpOptions = {
   headers: new HttpHeaders({ 'Content-Type': 'application/json' })
@@ -340,26 +340,50 @@ export class AdcService {
       .pipe(
 	map((res: Object) => {
 	  //console.log('AdcService: getTimekeeper', res);
-	  return new ResTimekeeper(res['enabled'], new Date(res['lastUpdate']), res['state']);
-	}),
-	catchError(this.handleError<ResTimekeeper>('getTimekeeper'))
+	  return new ResTimekeeper(res['enabled'], res['state'], new Date(res['lastUpdate']));
+	})/*,
+	catchError(this.handleError<ResTimekeeper>('getTimekeeper'))*/
       );
   }
 
   /** timekeeperの値を変更する。lastUpdateは無視される。 */
   setTimekeeper(obj: ResTimekeeper): Observable<ResTimekeeper> {
-    let dat1: Object = {'enabled': obj.enabled};
-    let dat2: Object = {'state': obj.state};
-    return this.http.put<Object>('/api/admin/timekeeper', dat1, this.apiHttpOptions())
+    let dat: Object = {'enabled': obj.enabled,
+		       'state': obj.state};
+    return this.http.put<Object>('/api/admin/timekeeper', dat, this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
 	  //console.log('AdcService: setTimekeeper', res);
-	  return obj;
-	}),
-	catchError(this.handleError<ResTimekeeper>('setTimekeeper'))
+	  return new ResTimekeeper(res['enabled'], res['state'], res['lastUpdate']);
+	})/*,
+	catchError(this.handleError<ResTimekeeper>('setTimekeeper'))*/
       );
   }
     
+  /** TEST_MODEの値を取得する。 */
+  getTestMode(): Observable<boolean> {
+    return this.http.get<Object>('/api/admin/config/test_mode', this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: getTestMode', res);
+	  return res['test_mode'];
+	})
+      );
+  }
+
+  /** TEST_MODEの値を変更する。 */
+  setTestMode(mode: boolean): Observable<boolean> {
+    let dat: Object = {'test_mode': mode};
+    return this.http.put<Object>('/api/admin/config/test_mode', dat, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: setTestMode', res);
+	  return res['test_mode'];
+	})
+      );
+  }
+
+
 
   getUserQList(usernm: string): Observable<ResUserQList> {
     return this.http.get<Object[]>(`/api/user/${usernm}/Q`, this.apiHttpOptions())
@@ -448,8 +472,8 @@ export class AdcService {
 				 res['rows_list'],
 				 res['blocknum_list'],
 				 res['linenum_list']);
-	}),
-	catchError(this.handleError<QNumberList>('getQList'))
+	})/*,
+	catchError(this.handleError<QNumberList>('getQList'))*/
       );
   }
 
@@ -496,14 +520,87 @@ export class AdcService {
   getANumberList(usernm: string): Observable<ANumberList> {
     return this.http.get<Object>(`/api/A/${usernm}`, this.apiHttpOptions())
       .pipe(
-	map((res: Object[]) => {
+	map((res: Object) => {
 	  //console.log('AdcService: getANumberList', res);
 	  return new ANumberList(res['msg'],
 				 res['anum_list']);
-	}),
-	catchError(this.handleError<ANumberList>('getANumberList'))
+	})/*,
+	catchError(this.handleError<ANumberList>('getANumberList'))*/
       );
   }
+
+
+  getAdminQList(): Observable<AdminQList> {
+    return this.http.get<Object[]>(`/api/admin/Q/list`, this.apiHttpOptions())
+      .pipe(
+	map((res: Object[]) => {
+	  //console.log('AdcService: getAdminQList', res);
+	  return new AdminQList(res['author_list'],
+				res['author_qnum_list'],
+				res['blocknum_list'],
+				res['cols_list'],
+				res['date'],
+				res['linenum_list'],
+				res['qnum_list'],
+				res['rows_list'],
+				res['text_admin'],
+				res['text_user']);
+	})/*,
+	catchError(this.handleError<AdminQList>('getAdminQList',AdminQList.empty()))*/
+      );
+  }
+
+  deleteAdminQList(): Observable<Object> {
+    return this.http.delete<Object[]>(`/api/admin/Q/list`, this.apiHttpOptions())
+      .pipe(
+	map((res: Object[]) => {
+	  //console.log('AdcService: deleteAdminQList', res);
+	  return res;
+	})/*,
+	catchError(this.handleError<Object>('deleteAdminQList', AdminQList.empty()))*/
+      );
+  }
+
+  putAdminQList(): Observable<Object> {
+    //console.log('adc.service putAdminQList');
+    let params = {'dummy': 0};
+    return this.http.put<Object>(`/api/admin/Q/list`, params, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: putAdminQList', res);
+	  return res;
+	})/*,
+	catchError(this.handleError<Object>('putAdminQList'))*/
+      );
+  }
+
+
+  /** すべての問題データを取得する。 */
+  getAdminQAll(): Observable<Object> {
+    return this.http.get<Object>(`/api/admin/Q/all`, this.apiHttpOptions());
+  }
+
+  /** すべての回答データを消去する。 */
+  deleteAdminQAll(): Observable<Object> {
+    return this.http.delete<Object>(`/api/admin/Q/all`, this.apiHttpOptions());
+  }
+
+
+  /** すべての回答データを取得する。 */
+  getAdminAAll(): Observable<Object> {
+    return this.http.get<Object>(`/api/A`, this.apiHttpOptions());
+  }
+
+  /** すべての回答データを消去する。 */
+  deleteAdminAAll(): Observable<Object> {
+    return this.http.delete<Object>(`/api/A`, this.apiHttpOptions());
+  }
+
+
+  getScore(): Observable<Object> {
+    return this.http.get<Object>(`/api/score`, this.apiHttpOptions());
+  }
+
 
   /** ファイルをダウンロードさせる。 */
   downloadFile(data: any, type: string, download: string) {

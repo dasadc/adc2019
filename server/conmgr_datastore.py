@@ -469,7 +469,7 @@ def log_get_or_delete(username=None, fetch_num=100, when=None, delete=False):
         query.add_filter('username', '=', username)
     if when:
         before = datetime.utcnow() - when
-        print('before=', before)
+        # print('before=', before)
         query.add_filter('timestamp', '>', before)
     q = query.fetch(fetch_num)
     results = []
@@ -586,6 +586,7 @@ def timekeeper_set(value):
     clk['enabled'] = enabled
     clk['lastUpdate'] = datetime.utcnow()
     client.put(clk)
+    # print('timekeeper_set', clk)
     return dict(clk)
 
 
@@ -764,14 +765,16 @@ def get_admin_A_all():
     query.order = ['owner', 'anum']
     alist = list(query.fetch())
     out = '%d\n' % len(alist)
+    dat = []
     for i in alist:
-        print('i=', i)
+        # print('i=', i)
         if type(i['date']) is datetime:
             dt = gae_datetime_JST(i['date'])
         else:
             dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
         out += 'A%02d (%s) %s\n' % (i['anum'], i['owner'], dt)
-    return out
+        dat.append(dict(i))
+    return out, dat
 
 
 def get_A_data(a_num=None, username=None):
@@ -956,8 +959,6 @@ def get_Q_author_all():
     return authors
 
 
-
-
 def get_admin_Q_all():
     """
     データベースに登録されたすべての問題の一覧リストを返す。
@@ -970,6 +971,20 @@ def get_admin_Q_all():
         # print('i=', i)
         dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
         out += 'Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], dt)
+    return out
+    
+
+def delete_admin_Q_all():
+    """
+    データベースに登録されたすべての問題データを削除する。
+    """
+    query = query_q_data()
+    qlist = list(query.fetch())
+    out = ''
+    for i in qlist:
+        # print('i=', i)
+        out += 'Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], i['date'])
+        client.delete(i.key)
     return out
     
 

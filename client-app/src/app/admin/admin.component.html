@@ -1,1 +1,105 @@
-<p>admin works!</p>
+<div style="text-align:center">
+  <h1>ADC2019 Administration</h1>
+</div>
+
+<h2>Timekeeper</h2>
+
+<div *ngIf="tk">{{tk.lastUpdate | date: 'yyyy-MM-dd HH:mm:ss ZZZZ'}}<div>
+
+<h4>Mode</h4>
+
+<div *ngIf="tk">
+  <span *ngFor="let i of tk_enabled_values" class="tooltip">
+    <input type="radio" name="enabled" id="tk_enabled" [value]="i"
+     [checked]="i == tk.enabled" (change)="timekeeper_enabled(i)">{{i}}
+     <span class="tooltiptext">{{enabledDescrTbl[i]}}</span>
+  </span>
+</div>
+
+<h4>State</h4>
+
+<div *ngIf="tk">
+  <span *ngFor="let i of tk_state_values" class="tooltip">
+    <input type="radio" name="state" id="tk_state" [value]="i"
+     [checked]="i == tk.state" (change)="timekeeper_state(i)">{{i}}
+    <span class="tooltiptext">{{stateDescrTbl[i]}}</span>
+  </span>
+</div>
+
+
+<h2>Test mode</h2>
+
+<div *ngIf="testModeIsDefined()">
+  <span class="tooltip">
+    <input type="radio" name="test_mode" id="tm_state" #tm0 [value]="0"
+      [checked]="false == testMode" (change)="setTestMode(false)">False
+    <span class="tooltiptext">コンテスト本番モード</span>
+  </span>
+  <span class="tooltip">
+    <input type="radio" name="test_mode" id="tm_state" #tm1 [value]="1"
+      [checked]="true == testMode" (change)="setTestMode(true)">True
+      <span class="tooltiptext">テストモード</span>
+  </span>
+</div>
+
+
+<h2>Admin Q List</h2>
+
+<span>CAUTION !!</span>
+
+<span class="tooltip">
+  <button title="GET" (click)="getAdminQList($event)">get</button>
+  <span class="tooltiptext">ctrl + shift + click to show full description</span>
+</span>
+
+<span class="tooltip">
+  <button title="DELETE" (click)="deleteAdminQList($event)">delete</button>
+  <span class="tooltiptext">Alt + ctrl + shift + click to delete Q list</span>
+</span>
+
+<span class="tooltip">
+  <button title="PUT" (click)="putAdminQList($event)">put</button>
+  <span class="tooltiptext">shift + click to create Q list</span>
+</span>
+
+<div *ngIf="adminQListText" class="msg">
+{{adminQListText}}
+</div>
+
+
+<h2>Admin Q data</h2>
+
+<span>CAUTION !!</span>
+
+<span class="tooltip">
+  <button title="GET" (click)="getAdminQAll($event)">get</button>
+  <span class="tooltiptext">ctrl + shift + click to show all Q data</span>
+</span>
+
+<span class="tooltip">
+  <button title="DELETE" (click)="deleteAdminQAll($event)">delete</button>
+  <span class="tooltiptext">Alt + ctrl + shift + click to delete all Q data</span>
+</span>
+
+<div *ngIf="adminQAll" class="msg">
+{{adminQAll['msg']}}
+</div>
+
+
+<h2>Admin A data</h2>
+
+<span>CAUTION !!</span>
+
+<span class="tooltip">
+  <button title="GET" (click)="getAdminAAll($event)">get</button>
+  <span class="tooltiptext">ctrl + shift + click to show all A data</span>
+</span>
+
+<span class="tooltip">
+  <button title="DELETE" (click)="deleteAdminAAll($event)">delete</button>
+  <span class="tooltiptext">Alt + ctrl + shift + click to delete all A data</span>
+</span>
+
+<div *ngIf="adminAAll" class="msg">
+{{adminAAll['msg']}}
+</div>

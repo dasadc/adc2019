@@ -1,1 +1,70 @@
-<p>score works!</p>
+<div style="text-align:center">
+  <h1>Score</h1>
+</div>
+
+<div>
+  <button title="Refresh score" (click)="refreshScore()">Refresh score</button>
+</div>
+
+<h2>Score board (total)</h2>
+
+<div *ngIf="score_board">
+  <table>
+    <tr>
+      <th>Qn \ team</th>
+      <th *ngFor="let t of teams">{{t}}</th>
+    </tr>
+    <tr *ngFor="let v of score_board['/header/']; let i = index">
+      <th>{{v}}</th>
+      <td *ngFor="let t of teams">{{score_board[t][i]}}</td>
+    </tr>
+  </table>
+</div>
+
+
+<h2>OK point</h2>
+
+<div *ngIf="ok_point">
+  <table>
+    <tr>
+      <th>Qn \ team</th>
+      <th *ngFor="let t of teams">{{t}}</th>
+    </tr>
+    <tr *ngFor="let row of ok_point; let i = index">
+      <th>{{row[0]}}</th>
+      <td *ngFor="let c of row.slice(1)">{{c}}</td>
+    </tr>
+  </table>
+</div>
+
+
+<h2>Quality point</h2>
+
+<div *ngIf="q_point">
+  <table>
+    <tr>
+      <th>Qn \ team</th>
+      <th *ngFor="let t of teams">{{t}}</th>
+    </tr>
+    <tr *ngFor="let row of q_point; let i = index">
+      <th>{{row[0]}}</th>
+      <td *ngFor="let c of row.slice(1)">{{c}}</td>
+    </tr>
+  </table>
+</div>
+
+
+<h2>Bonus point</h2>
+
+<div *ngIf="bonus_point">
+  <table>
+    <tr>
+      <th>Qn \ team</th>
+      <th *ngFor="let t of teams">{{t}}</th>
+    </tr>
+    <tr *ngFor="let row of bonus_point; let i = index">
+      <th>{{row[0]}}</th>
+      <td *ngFor="let c of row.slice(1)">{{c}}</td>
+    </tr>
+  </table>
+</div>
