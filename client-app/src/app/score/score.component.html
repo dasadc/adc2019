@@ -16,7 +16,7 @@
     </tr>
     <tr *ngFor="let v of score_board['/header/']; let i = index">
       <th>{{v}}</th>
-      <td *ngFor="let t of teams">{{score_board[t][i]}}</td>
+      <td *ngFor="let t of teams">{{score_board[t][i] | number:'1.0-5'}}</td>
     </tr>
   </table>
 </div>
@@ -48,7 +48,7 @@
     </tr>
     <tr *ngFor="let row of q_point; let i = index">
       <th>{{row[0]}}</th>
-      <td *ngFor="let c of row.slice(1)">{{c}}</td>
+      <td *ngFor="let c of row.slice(1)">{{c | number:'1.0-5'}}</td>
     </tr>
   </table>
 </div>
