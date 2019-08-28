@@ -9,8 +9,8 @@ DAシンポジウム 2019
 RESTもどき API server
 """
 
-from flask import Flask, request, jsonify, session, json, render_template, make_response, escape, url_for, g
-#  redirect,  Markup
+from flask import Flask, request, jsonify, session, json, render_template, make_response, escape, url_for, g, redirect
+#    Markup
 from werkzeug.wsgi import DispatcherMiddleware
 import traceback
 import datetime
@@ -926,6 +926,12 @@ def root():
 
 
 dummy_app = Flask('dummy')
+
+@dummy_app.route('/', methods=['GET'])
+def dummy_root():
+    return redirect('/static/app/index.html')
+
+
 app.wsgi_app = DispatcherMiddleware(dummy_app, {app.config['APPLICATION_ROOT']: app.wsgi_app})
 
 if __name__ == '__main__':
