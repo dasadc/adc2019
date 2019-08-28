@@ -279,7 +279,7 @@ def insert_Q_data(q_num, q_text, author='DASymposium', filename='', uniq=True):
     except RuntimeError as e:
         return False, 'Syntax Error: ' + str(e)
 
-    dat = datastore.Entity(client.key('q_data'))
+    dat = datastore.Entity(client.key('q_data'), exclude_from_indexes=['text'])
     dat.update(p_qdata_from_Q(q_num, author, Q, filename))
     client.put(dat) # 登録する
 
@@ -856,7 +856,7 @@ def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
     prop_a = p_adata_from_A(a_num, username, A, a_text, check_A, quality, ainfo)
     # print('prop_a', prop_a)
     key = client.key('a_data')
-    entity = datastore.Entity(key=key)
+    entity = datastore.Entity(key=key, exclude_from_indexes=['text'])
     entity.update(prop_a)
     client.put(entity)
     return True, msg

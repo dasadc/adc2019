@@ -587,9 +587,9 @@ def admin_A_all():
         return adc_response_json(dat)
     else:
         # DELETE
-        msg, data = cds.get_or_delete_A_data(delete=True)
-        print('data=', data)
-        dat = {'msg': msg, 'data': data}
+        result = cds.get_or_delete_A_data(delete=True)
+        print('result=', result)
+        dat = {'msg': 'DELETE', 'result': result}
         return adc_response_json(dat)
         
 

@@ -305,3 +305,147 @@ adccli --alt-username test-04 put-a 14 sample_hiromoto_2_A.txt
 adccli --alt-username test-04 put-a 15 sample_hiromoto_2_A.txt 
 adccli --alt-username test-04 put-a 16 sample_hiromoto_2_A.txt 
 ```
+
+
+# 2019-08-28 BUG
+
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1813, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1799, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/home/USER/adc2019/server/main.py", line 590, in admin_A_all
+    msg, data = cds.get_or_delete_A_data(delete=True)
+ValueError: not enough values to unpack (expected 2, got 0)
+127.0.0.1 - - [28/Aug/2019:16:44:25 +0900] "DELETE /api/A HTTP/1.1" 500 290 "-" "adcclient/2019.08.21"
+
+
+とりあえず修正
+
+
+# 1500 bytes
+
+
+
+[2019-08-28 16:52:50,223] ERROR in app: Exception on /user/administrator/Q/30 [POST]
+Traceback (most recent call last):
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/grpc_helpers.py", line 57, in error_remapped_callable
+    return callable_(*args, **kwargs)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/grpc/_channel.py", line 565, in __call__
+    return _end_unary_response_blocking(state, call, False, None)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/grpc/_channel.py", line 467, in _end_unary_response_blocking
+    raise _Rendezvous(state, None, None, deadline)
+grpc._channel._Rendezvous: <_Rendezvous of RPC that terminated with:
+	status = StatusCode.INVALID_ARGUMENT
+	details = "The value of property "text" is longer than 1500 bytes."
+	debug_error_string = "{"created":"@1566978770.223421264","description":"Error received from peer ipv4:127.0.0.1:8081","file":"src/core/lib/surface/call.cc","file_line":1052,"grpc_message":"The value of property "text" is longer than 1500 bytes.","grpc_status":3}"
+>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 2292, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1815, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1718, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/_compat.py", line 35, in reraise
+    raise value
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1813, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1799, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/home/USER/adc2019/server/main.py", line 736, in user_q
+    flag, *args = cds.insert_Q_data(q_num, q_text, author=usernm, filename=filename)
+  File "/home/USER/adc2019/server/conmgr_datastore.py", line 284, in insert_Q_data
+    client.put(dat) # 登録する
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore/client.py", line 421, in put
+    self.put_multi(entities=[entity])
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore/client.py", line 448, in put_multi
+    current.commit()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore/batch.py", line 274, in commit
+    self._commit()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore/batch.py", line 250, in _commit
+    self.project, mode, self._mutations, transaction=self._id
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore_v1/gapic/datastore_client.py", line 501, in commit
+    request, retry=retry, timeout=timeout, metadata=metadata
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/gapic_v1/method.py", line 143, in __call__
+    return wrapped_func(*args, **kwargs)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/retry.py", line 273, in retry_wrapped_func
+    on_error=on_error,
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/retry.py", line 182, in retry_target
+    return target()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/timeout.py", line 214, in func_with_timeout
+    return func(*args, **kwargs)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/grpc_helpers.py", line 59, in error_remapped_callable
+    six.raise_from(exceptions.from_grpc_error(exc), exc)
+  File "<string>", line 3, in raise_from
+google.api_core.exceptions.InvalidArgument: 400 The value of property "text" is longer than 1500 bytes.
+127.0.0.1 - - [28/Aug/2019:16:52:50 +0900] "POST /api/user/administrator/Q/30 HTTP/1.1" 500 290 "-" "adcclient/2019.08.21"
+
+
+
+Aも同様
+
+
+[2019-08-28 17:47:36,328] ERROR in app: Exception on /A/administrator/Q/30 [PUT]
+Traceback (most recent call last):
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/grpc_helpers.py", line 57, in error_remapped_callable
+    return callable_(*args, **kwargs)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/grpc/_channel.py", line 565, in __call__
+    return _end_unary_response_blocking(state, call, False, None)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/grpc/_channel.py", line 467, in _end_unary_response_blocking
+    raise _Rendezvous(state, None, None, deadline)
+grpc._channel._Rendezvous: <_Rendezvous of RPC that terminated with:
+	status = StatusCode.INVALID_ARGUMENT
+	details = "The value of property "text" is longer than 1500 bytes."
+	debug_error_string = "{"created":"@1566982056.327710812","description":"Error received from peer ipv4:127.0.0.1:8081","file":"src/core/lib/surface/call.cc","file_line":1052,"grpc_message":"The value of property "text" is longer than 1500 bytes.","grpc_status":3}"
+>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 2292, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1815, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1718, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/_compat.py", line 35, in reraise
+    raise value
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1813, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1799, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/home/USER/adc2019/server/main.py", line 635, in a_put
+    flag, msg = cds.put_A_data(a_num, usernm, atext)
+  File "/home/USER/adc2019/server/conmgr_datastore.py", line 861, in put_A_data
+    client.put(entity)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore/client.py", line 421, in put
+    self.put_multi(entities=[entity])
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore/client.py", line 448, in put_multi
+    current.commit()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore/batch.py", line 274, in commit
+    self._commit()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore/batch.py", line 250, in _commit
+    self.project, mode, self._mutations, transaction=self._id
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/cloud/datastore_v1/gapic/datastore_client.py", line 501, in commit
+    request, retry=retry, timeout=timeout, metadata=metadata
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/gapic_v1/method.py", line 143, in __call__
+    return wrapped_func(*args, **kwargs)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/retry.py", line 273, in retry_wrapped_func
+    on_error=on_error,
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/retry.py", line 182, in retry_target
+    return target()
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/timeout.py", line 214, in func_with_timeout
+    return func(*args, **kwargs)
+  File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/grpc_helpers.py", line 59, in error_remapped_callable
+    six.raise_from(exceptions.from_grpc_error(exc), exc)
+  File "<string>", line 3, in raise_from
+google.api_core.exceptions.InvalidArgument: 400 The value of property "text" is longer than 1500 bytes.
+127.0.0.1 - - [28/Aug/2019:17:47:36 +0900] "PUT /api/A/administrator/Q/30 HTTP/1.1" 500 290 "-" "adcclient/2019.08.21"
+e= check-QA1: number of block mismatch
+127.0.0.1 - - [28/Aug/2019:17:47:36 +0900] "PUT /api/A/administrator/Q/31 HTTP/1.1" 200 57 "-" "adcclient/2019.08.21"
+[2019-08-28 18:08:48 +0900] [9167] [CRITICAL] WORKER TIMEOUT (pid:9170)
+[2019-08-28 18:08:48 +0900] [9170] [INFO] Worker exiting (pid: 9170)
+[2019-08-28 18:08:49 +0900] [9386] [INFO] Booting worker with pid: 9386
