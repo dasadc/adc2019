@@ -931,6 +931,14 @@ dummy_app = Flask('dummy')
 def dummy_root():
     return redirect('/static/app/index.html')
 
+@dummy_app.route('/2019', methods=['GET'])
+def dummy_2019dir():
+    return redirect('/static/app/index.html')
+
+@dummy_app.route('/2019/', methods=['GET'])
+def dummy_2019():
+    return redirect('/static/app/index.html')
+
 
 app.wsgi_app = DispatcherMiddleware(dummy_app, {app.config['APPLICATION_ROOT']: app.wsgi_app})
 
