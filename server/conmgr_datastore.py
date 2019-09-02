@@ -1016,9 +1016,10 @@ def calc_score_all():
             ok_point[anum] = {}
         ok_point[anum][username] = int(i['judge'])  # True, False --> 1, 0
         # 品質ポイント
-        if anum not in q_factors:
-            q_factors[anum] = {}
-        q_factors[anum][username] = i['quality']
+        if username != 'ADC-0':
+            if anum not in q_factors:
+                q_factors[anum] = {}
+            q_factors[anum][username] = i['quality']
         # 出題ボーナスポイント
         if int(i['judge']) in (0, 1) and authors[i['anum']] == username:
             # print('check_bonus:', i['anum'], i['judge'], authors[i['anum']], username)
@@ -1059,7 +1060,8 @@ def calc_score_all():
         for anum in sorted(all_numbers.keys()):  # ['A13', 'A15', 'A16']
             p = 0.0
             p += ok_point[anum].get(user, 0)
-            p += q_point[anum].get(user, 0)
+            if anum in q_point:
+                p += q_point[anum].get(user, 0)
             p += bonus_point.get(anum, {}).get(user, 0)
             score_board[user][i] = p
             ptotal += p

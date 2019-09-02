@@ -303,8 +303,12 @@ export class AdcService {
   }
 
   /** API, GET /admin/user/<usernm> を実行する。ユーザー情報を取得する。 */
-  getUserInfo(): Observable<ResMsgOnly> {
-    return this.http.get<Object>(`/api/admin/user/${this.username}`, this.apiHttpOptions())
+  getUserInfo(username?: string): Observable<ResMsgOnly> {
+    let user = this.username;
+    if (username !== void 0) {
+      user = username;
+    }
+    return this.http.get<Object>(`/api/admin/user/${user}`, this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
 	  //console.log('AdcService: getUserInfo', res);
@@ -608,6 +612,17 @@ export class AdcService {
 	map((res: Object) => {
 	  //console.log('AdcService: getA', res);
 	  return res;
+	})
+      );
+  }
+
+  /** ユーザーの一覧リストを取得する。 */
+  getUserList(): Observable<string[]> {
+    return this.http.get<Object>(`/api/admin/user`, this.apiHttpOptions())
+      .pipe(
+	map((res: Object) => {
+	  //console.log('AdcService: getUserList', res);
+	  return res as string[];
 	})
       );
   }

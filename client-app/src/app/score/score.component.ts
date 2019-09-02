@@ -19,16 +19,19 @@ export class ScoreComponent implements OnInit {
   q_point: Object;
   bonus_point: Object;
   boardData: CheckResults;
-
+  userList: string[];
+  userInfo: Object[] = [];
 
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
     this.getScore();
+    this.getUserList();
   }
 
   refreshScore() {
     this.getScore();
+    this.getUserList();
   }
 
   createArray(data, teams) {
@@ -70,6 +73,25 @@ export class ScoreComponent implements OnInit {
         //console.log('score getScore: res=', res);
         this.score = res;
         this.createData();
+      });
+  }
+
+  getUserList() {
+    this.adcService.getUserList()
+      .subscribe(res => {
+        this.userList = res;
+	for (let i=0; i<this.userList.length; i++) {
+	  let userName = this.userList[i];
+	  this.adcService.getUserInfo(userName)
+	    .subscribe(res2 => {
+	      //console.log('res2=', res2);
+	      let tmp = res2['msg'].split(':');
+	      this.userInfo.push({'username': tmp[0],
+				  'displayname': tmp[1],
+				  'uid': tmp[2],
+				  'gid': tmp[3]});
+	    });
+	} // for i
       });
   }
 

@@ -2,6 +2,25 @@
   <h1>Score</h1>
 </div>
 
+<h2>teams</h2>
+
+<div *ngIf="userInfo">
+  <table>
+    <tr>
+      <th>team name</th>
+      <th>displayname</th>
+      <th>uid</th>
+      <th>gid</th>
+    </tr>
+    <tr *ngFor="let v of userInfo; let i = index">
+      <td>{{v['username']}}</td>
+      <td>{{v['displayname']}}</td>
+      <td>{{v['uid']}}</td>
+      <td>{{v['gid']}}</td>
+    </tr>
+  </table>
+</div>
+
 <div>
   <button title="Refresh score" (click)="refreshScore()">Refresh score</button>
 </div>
