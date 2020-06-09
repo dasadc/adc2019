@@ -1,9 +1,9 @@
 # coding: utf-8
 #
-# Copyright (C) 2019 DA Symposium
+# Copyright (C) 2020 DA Symposium
 
 """
-DAシンポジウム 2019
+DAシンポジウム 2020
 アルゴリズムデザインコンテスト
 
 RESTもどき API server
@@ -242,7 +242,7 @@ def check_file():
         return jsonify(info2)
     except Exception as e:
         #traceback.print_exc()
-        errinfo = ['ADC2019 rule violation'] + [str(i) for i in e.args]
+        errinfo = ['ADC2020 rule violation'] + [str(i) for i in e.args]
         info = {'error': errinfo, 'stack_trace': traceback.format_exc()}
         return jsonify(info)
 
@@ -880,7 +880,7 @@ def q_check():
             Q = adc2019.read_Q(qdata)
             return jsonify({'check_file': 'Q-ok'})
     except Exception as e:
-        errinfo = ['ADC2019 rule violation'] + [str(i) for i in e.args]
+        errinfo = ['ADC2020 rule violation'] + [str(i) for i in e.args]
         info = {'error': errinfo, 'stack_trace': traceback.format_exc()}
         return jsonify(info)
     
@@ -933,11 +933,11 @@ dummy_app = Flask('dummy')
 def dummy_root():
     return redirect('/static/app/index.html')
 
-@dummy_app.route('/2019', methods=['GET'])
+@dummy_app.route('/2020', methods=['GET'])
 def dummy_2019dir():
     return redirect('/static/app/index.html')
 
-@dummy_app.route('/2019/', methods=['GET'])
+@dummy_app.route('/2020/', methods=['GET'])
 def dummy_2019():
     return redirect('/static/app/index.html')
 

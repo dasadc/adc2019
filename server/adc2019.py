@@ -1015,7 +1015,7 @@ def main():
         if verbose or debug:
             raise e
         else:
-            print('ADC2019 rule violation')
+            print('ADC2020 rule violation')
             for i in e.args:
                 print(i)
             return False
