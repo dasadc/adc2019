@@ -35,20 +35,26 @@ import adcutil
 from adcconfig import YEAR
 from tz import gae_datetime_JST
 
-import argparse
-parser = argparse.ArgumentParser(description='')
-parser.add_argument('--anonymous', action='store_true', help='if set, use AnonymousCredentials')
-args, unknown = parser.parse_known_args()
-if args.anonymous:
-    global client
-    from google.auth.credentials import AnonymousCredentials
-    from os import getenv
-    client = datastore.Client(
-        credentials=AnonymousCredentials(),
-        project=getenv('PROJECT_ID')
-    )
-else:
-    client = datastore.Client()
+#import argparse
+#parser = argparse.ArgumentParser(description='')
+#parser.add_argument('--anonymous', action='store_true', help='if set, use AnonymousCredentials')
+#args, unknown = parser.parse_known_args()
+#if args.anonymous:
+#    global client
+#    from google.auth.credentials import AnonymousCredentials
+#    from os import getenv
+#    client = datastore.Client(
+#        credentials=AnonymousCredentials(),
+#        project=getenv('PROJECT_ID')
+#    )
+#else:
+#    client = datastore.Client()
+from google.auth.credentials import AnonymousCredentials
+from os import getenv
+client = datastore.Client(
+    credentials=AnonymousCredentials(),
+    project=getenv('PROJECT_ID')
+)
 
 def qdata_key(year=YEAR):
     "問題データのparent"
