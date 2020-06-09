@@ -429,12 +429,15 @@ def read_A(s):
     ----------
     s : str
         | A data is like
+        | A0
         | SIZE 9X8
         | 0, 1, 1, 1, 1, 2, 2, 2, 2
         | 0, 0, ...
 
     Returns
     -------
+    aid : int
+        id of A
     size : tuple
         For example (9,8) in case of 'SIZE 9X8'
 
@@ -449,6 +452,8 @@ def read_A(s):
     in_size = False
     ban_data = []
     dict_block_pos = {}
+    aid=None
+    pAID = re.compile(r'A([0-9]+)', re.IGNORECASE)
     pSIZE = re.compile(r'SIZE\s+([0-9]+)X([0-9]+)', re.IGNORECASE)
     pBLOCK = re.compile(r'BLOCK\s*#\s*([0-9]+)\s+@\s*\(\s*([0-9]+)\s*,\s*([0-9]+)\s*\)', re.IGNORECASE)
     for line in s.splitlines():
@@ -460,6 +465,12 @@ def read_A(s):
             if in_size:
                 if 0 < len(ban_data):
                     in_size = False
+            continue
+
+        m = pAID.match(line)
+        if m:
+            in_size = False
+            aid = int(m.group(1))
             continue
 
         m = pSIZE.match(line)
@@ -510,7 +521,12 @@ def read_A(s):
     if ban_data.shape != (size[1], size[0]):
         raise RuntimeError('check-A9: size mismatch', size, ban_data.shape[::-1])
 
-    return size, ban_data, block_pos
+    if aid is None:
+        raise RuntimeError('check-A10: Answer ID should be specified')
+    if aid <= 0:
+        raise RuntimeError('check-A11: Answer ID should be >= 1')
+
+    return aid, size, ban_data, block_pos
 
 
 def match_block_shape(npb):
@@ -601,7 +617,7 @@ def check_data(data_Q, data_A):
         return value of read_Q()
 
     data_A : tuple
-        return value of read_A()
+        return value of read_A()[1:] (exclude 1st element aid)
 
 
     Returns
@@ -971,7 +987,7 @@ def check(Q_file, A_file):
     if A_file:
         A = read_A_file(A_file[0])
     if Q and A:
-        return check_data(Q, A)
+        return check_data(Q, A[1:])
 
 
 def main():

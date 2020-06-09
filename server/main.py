@@ -224,6 +224,8 @@ def check_file():
             Q = adc2019.read_Q(qdata)
         if adata:
             A = adc2019.read_A(adata)
+            aid = A[0]
+            A = A[1:]
         if Q is None and A is None:
             return jsonify({'check_file': 'No data'})
         if Q is None:

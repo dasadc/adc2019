@@ -845,6 +845,12 @@ def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
         # print('e=', e)
         A = None
         msg = 'Error in A%d\n' % a_num + str(e)
+    else:
+        # 回答データ中の問題IDと、APIでの問題IDが異なったらエラー
+        aid = A[0]
+        A = A[1:]
+        if a_num != aid:
+            return False, "Error: Answer ID mismatch. API's ID is {}, but ID in A file is {}\n".format(a_num, aid)
 
     check_A = False
     quality = 0.0
