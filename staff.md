@@ -1,4 +1,4 @@
-ADC2019スタッフ用マニュアル
+ADC2020スタッフ用マニュアル
 =============================
 
 
@@ -11,6 +11,7 @@ ADC2019スタッフ用マニュアル
 ```
 cd $HOME/
 git clone https://github.com/dasadc/adc2019.git
+git checkout -b adc2020 origin/adc2020
 ```
 
 足りないファイルを追加。
@@ -19,7 +20,20 @@ git clone https://github.com/dasadc/adc2019.git
 tar xvf ~/extra.tar -C $HOME/adc2019/server/
 ```
 
-### インストール
+### インストール docker版(docker build and run)
+
+以下コマンドを実行することで gcloud datastore 用 dockerコンテナおよび API server 用dockerコンテナの両方をビルドし起動することができる。
+```
+cd $HOME/adc2019
+docker-compose up
+```
+
+もしビルドし直したいときは以下コマンド
+```
+docker-compose build
+```
+
+### インストール VM 版
 
 #### Google Cloud Platform SDK
 
