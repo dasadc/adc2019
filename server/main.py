@@ -11,7 +11,8 @@ RESTもどき API server
 
 from flask import Flask, request, jsonify, session, json, render_template, make_response, escape, url_for, g, redirect
 #    Markup
-from werkzeug.wsgi import DispatcherMiddleware
+#from werkzeug.wsgi import DispatcherMiddleware # deprecated
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 import traceback
 import datetime
 
