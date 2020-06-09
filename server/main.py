@@ -22,7 +22,6 @@ import adcusers
 import adcutil
 import conmgr_datastore as cds
 
-
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 app.config['APPLICATION_ROOT'] = '/api'
@@ -947,4 +946,12 @@ if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app. This
     # can be configured by adding an `entrypoint` to app.yaml.
-    app.run(host='127.0.0.1', port=4280, debug=True)
+    import argparse
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--ip', type=str, default="127.0.0.1", help='ip address')
+    parser.add_argument('--port', type=int, default=4280, help='port')
+    parser.add_argument('--anonymous', action='store_true', help='if set, use AnonymousCredentials')
+    args = parser.parse_args()
+
+    app.run(host=args.ip, port=args.port, debug=True)
+
