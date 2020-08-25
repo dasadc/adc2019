@@ -5,10 +5,10 @@ adc2019 API server
 --------
 
 ```
+sudo apt install virtualenv
 virtualenv --python=/usr/bin/python3 /work/venv36
 source /work/venv36/bin/activate
 pip install -r requirements.txt
-pip install gunicorn
 ```
 
 実行する

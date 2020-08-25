@@ -1,0 +1,18 @@
+SIZE 72X72
+BLOCK_NUM 4
+
+BLOCK#1 2X2
+1,+
++,2
+
+BLOCK#2 2X2
++,2
+3,+
+
+BLOCK#3 2X2
+4,+
++,3
+
+BLOCK#4 2X2
++,1
+4,+

@@ -55,9 +55,10 @@ export class ScoreComponent implements OnInit {
   }
 
   createData() {
+    //console.log(this.score);
     let s = this.score['score_board'];
     let h = s['/header/'];
-    let n = h.length;
+    let n = (h === void 0) ? 0 : h.length;
     this.score_board = s;
     this.score_board_num = n;
     this.score_board_header = h;
@@ -77,21 +78,26 @@ export class ScoreComponent implements OnInit {
   }
 
   getUserList() {
+    this.userList = [];
+    this.userInfo = [];
     this.adcService.getUserList()
       .subscribe(res => {
+        //console.log('getUserList: res=', res);
         this.userList = res;
-	for (let i=0; i<this.userList.length; i++) {
-	  let userName = this.userList[i];
-	  this.adcService.getUserInfo(userName)
-	    .subscribe(res2 => {
-	      //console.log('res2=', res2);
-	      let tmp = res2['msg'].split(':');
-	      this.userInfo.push({'username': tmp[0],
-				  'displayname': tmp[1],
-				  'uid': tmp[2],
-				  'gid': tmp[3]});
-	    });
-	} // for i
+      	for (let i=0; i<this.userList.length; i++) {
+      	  let userName = this.userList[i];
+      	  this.adcService.getUserInfo(userName)
+      	    .subscribe(res2 => {
+      	      //console.log('getUserList: res2=', res2);
+              if (res2['msg'] !== void 0) {
+                let tmp = res2['msg'].split(':');
+        	      this.userInfo.push({'username': tmp[0],
+        				  'displayname': tmp[1],
+        				  'uid': tmp[2],
+        				  'gid': tmp[3]});
+              }
+      	    });
+      	} // for i
       });
   }
 
@@ -100,16 +106,16 @@ export class ScoreComponent implements OnInit {
     //console.log(q, n, username, i, j);
     this.adcService.getA(username, n)
       .subscribe(res => {
-	let aData: Object = res;
-	//console.log('A result=', aData['result']);
-	let aText: string = aData['result'][1]; // APIが汚い
-	//console.log(`A${n} =\n`, aText);
-	this.adcService.getQ(n)
-	  .subscribe(res => {
-	    let qText: string = res['text'];
-            //console.log(`Q${n} =\n`, qText);
-	    this.boardData = new CheckResults('info', qText, aText);
-	  })
+      	let aData: Object = res;
+      	//console.log('A result=', aData['result']);
+      	let aText: string = aData['result'][1]; // APIが汚い
+      	//console.log(`A${n} =\n`, aText);
+      	this.adcService.getQ(n)
+      	  .subscribe(res => {
+      	    let qText: string = res['text'];
+                  //console.log(`Q${n} =\n`, qText);
+      	    this.boardData = new CheckResults('info', qText, aText);
+      	  })
       });
   }
 }

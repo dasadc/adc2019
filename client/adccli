@@ -16,6 +16,7 @@ def cmd_help():
     print("""
   login
   logout
+  version
   whoami
   password [NEWPASSWORD]
   get-user-list
@@ -39,8 +40,9 @@ def cmd_help():
   score-dump
   get-root
 admin command:
+  convert-users FILENAME_IN.py FILENAME_OUT.yaml
   create-user USERNAME PASSWORD DISPLAYNAME UID GID
-  create-users FILENAME
+  create-users FILENAME.(py|yaml)
   delete-user [USERNAME ...]
   get-admin-q-all
   get-admin-q-list
@@ -55,6 +57,7 @@ admin command:
   timekeeper-state [init|im0|Qup|im1|Aup|im2]
   timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2]]
   test-mode [True|False]
+  view-score-mode [True|False]
 """)
 
 
@@ -77,7 +80,7 @@ def main():
     cli.read_config()
 
     parser = argparse.ArgumentParser(
-        description='DA Symposium 2019 Algorithm Design Contest, Command Line Interface tool')
+        description='DA Symposium 2020 Algorithm Design Contest, Command Line Interface tool')
     parser.add_argument('--debug', action='store_true', help='enable debug mode')
     parser.add_argument('--verbose', action='store_true', help='verbose message')
     parser.add_argument('-c', '--config', metavar='FILE', default=cli.config, help='config file (default: %(default)s)')
@@ -118,6 +121,9 @@ def main():
     elif a == 'logout':
         res = cli.logout()
         print(res[6]['msg'])
+    elif a == 'version':
+        res = cli.get_api_version()
+        print(res[6])
     elif a == 'whoami':
         res = cli.whoami()
         print(res[6]['msg'])
@@ -157,6 +163,9 @@ def main():
         res2 = cli.delete_users(args.arg)
         for res in res2:
             print(res[6]['msg'])
+    elif a == 'convert-users':
+        out = cli.convert_users(args.arg[0], args.arg[1])
+        print(out)
     elif a == 'get-q':
         if len(args.arg) == 0:
             res = cli.get_q(args.arg)
@@ -318,6 +327,9 @@ def main():
         print(res[6])
     elif a == 'test-mode':
         res = cli.test_mode(args.arg)
+        print(res[6])
+    elif a == 'view-score-mode':
+        res = cli.view_score_mode(args.arg)
         print(res[6])
     else:
         print('Error: Unknown command:', a)

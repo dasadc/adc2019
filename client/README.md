@@ -1,4 +1,6 @@
-# このドキュメントは、旧版をコピペしただけで、未完成です。
+### ドキュメントの注意
+
+このドキュメントは、旧版のままで更新されていない部分があり、2020年版とは一部異なるところがあります。
 
 自動運用システムは、現在もなお開発中です。
 まだ動作しない機能があります。
@@ -15,7 +17,7 @@
 
 # アルゴリズムデザインコンテスト(ADC)の自動運用システムの利用方法
 
-DAシンポジウム2019にて開催されるアルゴリズムデザインコンテスト(ADC)では、クライアント・サーバ方式による、自動運用システムを導入します。
+DAシンポジウム2020にて開催されるアルゴリズムデザインコンテスト(ADC)では、クライアント・サーバ方式による、自動運用システムを導入します。
 
 問題データの配布、回答データの提出、スコア計算、スコア表示などが、すべてネットワーク経由で自動的に行われます。
 
@@ -46,6 +48,18 @@ DAシンポジウム2019にて開催されるアルゴリズムデザインコ�
 |curl            |http://curl.haxx.se/    |
 
 pythonとcurlは、LinuxやMacなどでは、ほぼ標準でインストールされています。Windowsでは、申し訳ありませんが各自でインストールをお願いします。
+
+Pythonは、Anaconda Pythonもおすすめです。
+
+- https://www.anaconda.com/products/individual
+- https://docs.conda.io/en/latest/miniconda.html (MinicondaでもOK)
+
+Anacondaで環境を作成する例
+
+``` shell
+conda create -n adc2020 python=3.8 numpy pyyaml
+```
+
 
 ### APIの利用
 
@@ -82,22 +96,23 @@ curlなどで、HTTPプロトコルでアクセスするときは、`ADC-USER`�
 
 ## ADCサービスを利用するためのツール
 
-[adccliを使う方法](#adccli)(要 Python 3.6)と、[curlを使う方法](#curl)(要 curl)の2通りを紹介します。
+[adccliを使う方法](#adccli)(要 Python 3.6以降)と、[curlを使う方法](#curl)(要 curl)の2通りを紹介します。
 
 <a name="adccli"></a>
 ### コマンドラインツール adccli （クライアントのサンプル実装）
 
-ADCサービスを利用するためのコマンドラインツールadccliを用意しました。Python 3.6で記述しています。
+ADCサービスを利用するためのコマンドラインツールadccliを用意しました。Python 3.6以降で実行できます。
 
 #### adccliの入手
 
-1. `git clone https://github.com/dasadc/adc2019.git`します。
+1. `git clone -b adc2020-yt https://github.com/dasadc/adc2019.git` を実行します。
 2. `adc2019/client/`フォルダーにファイル一式が入ってます。
 
 
 
 以下の環境で、ある程度の動作確認を行っています。
 
+- Ubuntu 18.04.5 x86_64  (Anaconda Python 3.8.5)
 - CentOS 7 x86_64  (Python 3.6.8)
 
 このツールについての、ご意見、改良案、パッチなど、歓迎します。
@@ -114,7 +129,7 @@ usage: adccli [-h] [--debug] [--verbose] [-c FILE] [-u USERNAME]
               [--alt-username ALT_USERNAME] [-p PASSWORD] [-U URL] [-o FILE]
               cmd [arg [arg ...]]
 
-DA Symposium 2019 Algorithm Design Contest, Command Line Interface tool
+DA Symposium 2020 Algorithm Design Contest, Command Line Interface tool
 
 positional arguments:
   cmd                   "adccli help" will show help of cmd.
@@ -125,15 +140,14 @@ optional arguments:
   --debug               enable debug mode
   --verbose             verbose message
   -c FILE, --config FILE
-                        config file (default:
-                        /home/user/adcclient.json)
+                        config file (default: /home/yoshin-t/adcclient.json)
   -u USERNAME, --username USERNAME
                         set username (default: administrator)
   --alt-username ALT_USERNAME
                         set alternative username. admin only
   -p PASSWORD, --password PASSWORD
                         set password
-  -U URL, --URL URL     set server URL (default: https://das-adc.appspot.com/)
+  -U URL, --URL URL     set server URL (default: http://127.0.0.1:8888/)
   -o FILE, --output FILE
                         output file name (default: None)
 ```
@@ -147,6 +161,7 @@ $ ./adccli help
 
   login
   logout
+  version
   whoami
   password [NEWPASSWORD]
   get-user-list
@@ -156,7 +171,7 @@ $ ./adccli help
   put-a-info NUMBER CPU_SEC MEM_BYTE [MISC_TEXT]
   get-a-info [NUMBER]
   delete-a-info NUMBER
-  get-a [NUMBER ...]          # test mode only
+  get-a [NUMBER ...]          # test mode only, when NUMBER specified
   delete-a [NUMBER ...]       # test mode only
   get-user-q [NUMBER ...]
   post-user-q NUMBER FILENAME
@@ -170,8 +185,9 @@ $ ./adccli help
   score-dump
   get-root
 admin command:
+  convert-users FILENAME_IN.py FILENAME_OUT.yaml
   create-user USERNAME PASSWORD DISPLAYNAME UID GID
-  create-users FILENAME
+  create-users FILENAME.(py|yaml)
   delete-user [USERNAME ...]
   get-admin-q-all
   get-admin-q-list
@@ -184,7 +200,9 @@ admin command:
   delete-log [NUMBER (seconds|days)]
   timekeeper-enabled [0|1]
   timekeeper-state [init|im0|Qup|im1|Aup|im2]
-  timekeeper
+  timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2]]
+  test-mode [True|False]
+  view-score-mode [True|False]
 ```
 
 #### 設定ファイル
@@ -855,9 +873,9 @@ File Checkerは、ログインせずに使うことができます。本番用�
 |1000       |テスト用   |
 |2000       |ADC参加者用|
 
-`adcusers_in.py`と同じフォーマットのファイルにアカウント情報を記述して、一括作成する場合。
+`adcusers_in.py`または`adcusers_in.yaml`と同じフォーマットのファイルにアカウント情報を記述して、一括作成する場合。
 
-    adccli create-users FILE
+    adccli create-users FILE.(py|yaml)
 
 ### ユーザー削除
 

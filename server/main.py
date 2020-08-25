@@ -15,6 +15,7 @@ from flask import Flask, request, jsonify, session, json, render_template, make_
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 import traceback
 import datetime
+import logging
 
 import adc2019
 import adcconfig
@@ -22,7 +23,12 @@ import adcusers
 import adcutil
 import conmgr_datastore as cds
 
+#werkzeug_logger = logging.getLogger("werkzeug")
+#werkzeug_logger.setLevel(logging.ERROR)
+#logging.basicConfig(filename='adc-server.log', level=logging.WARNING)
+
 app = Flask(__name__)
+#app.logger.setLevel(logging.INFO)
 app.config['JSON_AS_ASCII'] = False
 app.config['APPLICATION_ROOT'] = '/api'
 app.config.from_object(adcconfig)
@@ -311,6 +317,7 @@ def login():
     session['token'] = token
     session['times'] = 1
     log_request(username())
+    app.logger.warning('%s logged in successfully', usernm)
     txt = json.dumps({'msg': 'login OK',
                       'token': token})
     return adc_response(txt, json_encoded=True)
@@ -570,6 +577,26 @@ def admin_config_test_mode():
         if i in (0, 1):
             app.config['TEST_MODE'] = bool(i)
             dat = {'test_mode': app.config['TEST_MODE']}
+            return adc_response_json(dat)
+        else:
+            return adc_response('illeagal argument %s' % i, 400)
+
+    
+@app.route('/admin/config/view_score_mode', methods=['GET', 'PUT'])
+def admin_config_view_score_mode():
+    """
+    VIEW_SCORE_MODEの値を取得する(GET)、または、設定する(PUT)。
+    """
+    if request.method == 'GET':
+        dat = {'view_score_mode': app.config['VIEW_SCORE_MODE']}
+        return adc_response_json(dat)
+    else:  # PUTの場合
+        if not priv_admin():
+            return adc_response('access forbidden. admin only', 403)
+        i = request.json.get('view_score_mode')
+        if i in (0, 1):
+            app.config['VIEW_SCORE_MODE'] = bool(i)
+            dat = {'view_score_mode': app.config['VIEW_SCORE_MODE']}
             return adc_response_json(dat)
         else:
             return adc_response('illeagal argument %s' % i, 400)
@@ -907,7 +934,10 @@ def get_score():
     if not authenticated():
         return adc_response('not login yet', 401)
     log_request(username())
-    score_board, ok_point, q_point, bonus_point, q_factors, misc = cds.calc_score_all()
+    if app.config['VIEW_SCORE_MODE']:
+        score_board, ok_point, q_point, bonus_point, q_factors, misc = cds.calc_score_all()
+    else:
+        score_board, ok_point, q_point, bonus_point, q_factors, misc = {}, {}, {}, {}, {}, {}
     dat = {'score_board': score_board,
            'ok_point': ok_point,
            'q_point': q_point,
@@ -916,6 +946,11 @@ def get_score():
            'misc': misc}
     return adc_response_json(dat)
     
+
+@app.route('/version', methods=['GET'])
+def get_version():
+    return adc_response_json({'version': adcconfig.YEAR})
+
 
 @app.route('/%s/' % adcconfig.YEAR, methods=['GET'])
 def root():

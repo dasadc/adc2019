@@ -1,7 +1,11 @@
 import { Component, OnInit } from '@angular/core';
+import { Observable, of, from } from 'rxjs';
+import { catchError, map, tap, flatMap, filter } from 'rxjs/operators';
 
 import { AdcService } from '../adc.service';
 import { ResTimekeeper, AdminQList } from '../apiresponse';
+
+import * as yaml from 'js-yaml';
 
 @Component({
   selector: 'app-admin',
@@ -17,15 +21,25 @@ export class AdminComponent implements OnInit {
   adminQList: AdminQList;
   adminQListText: string;
   testMode: boolean;
+  viewScoreMode: boolean;
   adminQAll: Object;
   adminAAll: Object;
-
+  userList: string[];
+  userInfoList: Object[] = [];
+  uploadResults: string;
+  title: string = 'ADC Administration';
 
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
+    this.adcService.version()
+      .subscribe((ver: number) => {
+        this.title = `ADC${ver} Administration`;
+      });
     this.getTimekeeper();
     this.getTestMode();
+    this.getViewScoreMode();
+    this.getUserList();
   }
 
   timekeeper_enabled(i: number) {
@@ -76,6 +90,28 @@ export class AdminComponent implements OnInit {
         this.testMode = res;
       });
   }
+
+  viewScoreModeIsDefined(): boolean {
+    return this.viewScoreMode !== void 0;
+  }
+
+  getViewScoreMode() {
+      //console.log('getViewScoreMode');
+      this.adcService.getViewScoreMode()
+        .subscribe(res => {
+          //console.log('admin getViewScoreMode', res);
+          this.viewScoreMode = res;
+        });
+    }
+
+    setViewScoreMode(value: boolean) {
+      //console.log('setViewScoreMode', value);
+      this.adcService.setViewScoreMode(value)
+        .subscribe(res => {
+          //console.log('admin setViewScoreMode', res);
+          this.viewScoreMode = res;
+        });
+    }
 
   getAdminQList(event: Object) {
     //console.log('get', event);
@@ -168,5 +204,118 @@ export class AdminComponent implements OnInit {
           }
         });
     }
+  }
+
+  getUserList(event?: Object) {
+    this.userInfoList = [];
+    this.adcService.getUserList()
+      .subscribe(res => {
+        this.userList = res;
+      	for (let i=0; i<this.userList.length; i++) {
+      	  let userName = this.userList[i];
+      	  this.adcService.getUserInfo(userName)
+      	    .subscribe(res2 => {
+      	      //console.log('res2=', res2);
+              if (res2['msg'] !== void 0) {
+                let tmp = res2['msg'].split(':');
+        	      this.userInfoList.push({'username': tmp[0],
+        				  'displayname': tmp[1],
+        				  'uid': tmp[2],
+        				  'gid': tmp[3],
+                  'selected': false});
+              }
+      	    });
+      	} // for i
+      });
+  }
+
+  deleteCheckedUsers($event) {
+    let mod: boolean = event['altKey'] && event['ctrlKey'] && event['shiftKey'];
+    if (mod) {
+      //console.log('deleteCheckedUsers', this.userInfoList);
+      from(this.userInfoList)
+        .pipe(
+          filter((u: Object) => {
+            return u['selected'];
+          }),
+          flatMap((u: Object) => {
+            //return of(u['username']);
+            return this.adcService.deleteUserInfo(u['username']);
+          })
+        )
+        .subscribe(
+          (res: Object) => {
+            if (res['msg'] !== void 0) {
+              console.log(res['msg']);
+            }
+          },
+          (err: Object) => {
+            console.log('ERROR', err);
+          },
+          () => { // 完了したとき
+            this.getUserList();
+          }
+        );
+      /*
+      for (let i=0; i<this.userInfoList.length; i++) {
+        if (this.userInfoList[i]['selected']) {
+          let user = this.userInfoList[i]['username'];
+          //console.log('To delete', user);
+          this.adcService.deleteUserInfo(user)
+            .subscribe(
+              (res: Object) => {
+                if (res['msg'] !== void 0) {
+                  console.log(res['msg']);
+                  // this.getUserList(); //これは、this.userInfoListを上書きしてしまうのでうまくいかない
+                }
+              },
+              (err: Object) => {
+              },
+            );
+        }
+      }
+      // TODO すべて削除が完了したあとで、ユーザーリストの表示を更新したい。
+      */
+    }
+  }
+
+  postUsersYamlFile(f: Object) {
+    console.log('postUsersYamlFile');
+    //console.log('filename', f['filename']);
+    //console.log('text', f['text']);
+    if (f['filename'] === void 0 || f['text'] === void 0) {
+      return;
+    }
+    let o = yaml.safeLoad(f['text']) as Object[];
+    //console.log(o);
+    for (let i=0; i<o.length; i++) {
+      console.log('postUsersYamlFile', i, o[i]);
+      this.adcService.createUser(o[i])
+        .subscribe(res => {
+          if (res['msg'] !== void 0) {
+            console.log('postUsersYamlFile ', res['msg']);
+          } else { // error
+            console.log('postUsersYamlFile ', res);
+          }
+        });
+    }
+    /*
+    let username: string = this.adcService.getUsername();
+    this.adcService.postUserQ(username, this.postQNumber, f['text'], f['filename'])
+      .subscribe(
+        (res: string) => {
+        //console.log('res=', res);
+        this.uploadResults = res;
+        this.getUserQList();
+      },
+      (res: string) => {
+        //console.log('ERROR', res);
+        this.uploadResults = res;
+      });
+    */
+  }
+
+  onCleared(c: boolean) {
+    console.log('upload-yaml onCleared', c)
   }
 }

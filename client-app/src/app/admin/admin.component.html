@@ -1,5 +1,5 @@
 <div style="text-align:center">
-  <h1>ADC2019 Administration</h1>
+  <h1>{{title}}</h1>
 </div>
 
 <h2>Timekeeper</h2>
@@ -39,6 +39,22 @@
     <input type="radio" name="test_mode" id="tm_state" #tm1 [value]="1"
       [checked]="true == testMode" (change)="setTestMode(true)">True
       <span class="tooltiptext">テストモード</span>
+  </span>
+</div>
+
+
+<h2>View score mode</h2>
+
+<div *ngIf="viewScoreModeIsDefined()">
+  <span class="tooltip">
+    <input type="radio" name="view_score_mode" id="vsm_state" #vsm0 [value]="0"
+      [checked]="false == viewScoreMode" (change)="setViewScoreMode(false)">False
+    <span class="tooltiptext">スコア表示を禁止</span>
+  </span>
+  <span class="tooltip">
+    <input type="radio" name="view_score_mode" id="vsm_state" #vsm1 [value]="1"
+      [checked]="true == viewScoreMode" (change)="setViewScoreMode(true)">True
+      <span class="tooltiptext">スコア表示を許可</span>
   </span>
 </div>
 
@@ -103,3 +119,43 @@
 <div *ngIf="adminAAll" class="msg">
 {{adminAAll['msg']}}
 </div>
+
+
+<h1>User account management</h1>
+
+<h2>Get user list</h2>
+
+<span class="tooltip">
+  <button title="GET" (click)="getUserList($event)">get</button>
+  <span class="tooltiptext">click to show user list</span>
+</span>
+
+<div *ngIf="userInfoList">
+  <table>
+    <tr>
+      <th></th>
+      <th>team name</th>
+      <th>displayname</th>
+      <th>uid</th>
+      <th>gid</th>
+    </tr>
+    <tr *ngFor="let v of userInfoList; let i = index">
+      <td><input type="checkbox" name="user{{i}}" [(ngModel)]="v.selected" [value]="v.username"></td>
+      <td>{{v.username}}</td>
+      <td>{{v.displayname}}</td>
+      <td>{{v.uid}}</td>
+      <td>{{v.gid}}</td>
+    </tr>
+  </table>
+
+  <span class="tooltip">
+    <button title="DELETE" (click)="deleteCheckedUsers($event)">delete users</button>
+    <span class="tooltiptext">Alt + ctrl + shift + click to delete checked users</span>
+  </span>
+</div>
+
+<h2>Create users (Upload adcusers_in.yaml)</h2>
+<app-file3 (cleared)="onCleared($event)" #uploadFile [accept_file_type]="'application/x-yaml,.yaml,.yml'"></app-file3>
+<button title="Start upload YAML file" (click)="postUsersYamlFile(uploadFile)">Start upload</button>
+
+<div *ngIf="uploadResults" class="msg-view">{{uploadResults}}</div>

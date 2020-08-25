@@ -1,7 +1,6 @@
 #! /bin/bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-TOP="$( cd ${DIR}/../ >/dev/null 2>&1 && pwd )"
-echo TOP=$TOP
+script=$(readlink -f "$0")
+top_dir=$(cd $(dirname "$script")/../; pwd)
 
-${TOP}/client/adccli create-users ${TOP}/server/adcusers_in.py
+${top_dir}/client/adccli create-users ${top_dir}/server/adcusers_in.yaml

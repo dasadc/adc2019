@@ -31,11 +31,21 @@
 
 <app-file-view [text]="myQText" [filename]="myQFilename"></app-file-view>
 
+
 <h3>Upload Q</h3>
+<!-- 旧式ユーザーインターフェイス
 <app-file (cleared)="onCleared($event)" #uploadFile></app-file>
 <div *ngFor="let i of myQNumber">
    <input type="radio" name="qnumber" [value]="i" [checked]="i == postQNumber" (change)="postQNumber = i">Q{{i}}
 </div>
 <button title="Start upload Q file" (click)="postQFile(uploadFile)">Start upload</button>
+
+<div *ngIf="uploadResults" class="msg-view">{{uploadResults}}</div>
+-->
+<app-files (cleared)="onCleared($event)" #upload_files></app-files>
+<button title="Start upload Q files" (click)="startUploadQFiles()">Start upload</button>
+<!--
+  <button title="Start upload Q files" (click)="startUploadQFiles_localvariable(upload_files)">Start upload</button>
+  -->
 
 <div *ngIf="uploadResults" class="msg-view">{{uploadResults}}</div>

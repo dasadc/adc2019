@@ -7,10 +7,13 @@ import { AppRoutingModule }   from './app-routing.module';
 import { AppComponent }       from './app.component';
 import { FileComponent }      from './file/file.component';
 import { FileComponent2 }     from './file/file2.component';
+import { FileComponent3 }     from './file/file3.component';
+import { FilesComponent }     from './file/files.component';
 
 import { NgxFileDropModule }  from 'ngx-file-drop';
 import { FileViewComponent }  from './file-view/file-view.component';
 import { FileViewComponent2 } from './file-view/file-view2.component';
+import { FileViewComponent3 } from './file-view/file-view3.component';
 import { FileCheckerComponent } from './file-checker/file-checker.component';
 import { ResultViewComponent } from './result-view/result-view.component';
 import { BoardViewComponent } from './board-view/board-view.component';
@@ -27,8 +30,11 @@ import { AdminComponent } from './admin/admin.component';
     AppComponent,
     FileComponent,
     FileComponent2,
+    FileComponent3,
+    FilesComponent,
     FileViewComponent,
     FileViewComponent2,
+    FileViewComponent3,
     FileCheckerComponent,
     ResultViewComponent,
     BoardViewComponent,

@@ -12,6 +12,7 @@ import stat
 import sys
 import urllib.error
 import urllib.request
+import yaml
 
 
 class ADCClient:
@@ -231,6 +232,13 @@ class ADCClient:
         self.token = None
         return self.fin(res)
 
+    def get_api_version(self):
+        """
+        サーバーからAPIのバージョン番号を取得する
+        """
+        res = self.http_request('GET', '/version')
+        return self.fin(res)
+
     def whoami(self):
         """
         (動作確認用) サーバーからユーザー名を取得する
@@ -322,19 +330,27 @@ class ADCClient:
     def create_users(self, file):
         """
         サーバ側のdatastoreに、ユーザーを登録する。
-        adcusers_in.pyと同じフォーマットのファイルにアカウント情報を記述して、一括作成する。
+        adcusers_in.{py,yaml}と同じフォーマットのファイルにアカウント情報を記述して、一括作成する。
 
         Parameters
         ==========
         file : str
-            adcusers_in.py形式のファイルの名前
+            adcusers_in.{py,yaml}形式のファイルの名前
         """
-        glo = {}
-        exec(open(file).read(), glo)
-        res2 = []
-        for u in glo['USERS']:
-            res2.append(self.create_user(u))
-        return res2
+        res = []
+        _, ext = os.path.splitext(file)
+        if ext.lower() == '.py':
+            glo = {}
+            exec(open(file).read(), glo)
+            for u in glo['USERS']:
+                res.append(self.create_user(u))
+        elif ext.lower() in ('.yaml', '.yml'):
+            with open(file, 'r') as f:
+                o = yaml.load(f, Loader=yaml.FullLoader)
+            for i in o:
+                u = [i['username'], i['password'], i['displayname'], i['uid'], i['gid']]
+                res.append(self.create_user(u))
+        return res
 
     def delete_user(self, username):
         # info = {'username': username}
@@ -348,6 +364,30 @@ class ADCClient:
         for username in args:
             res2.append(self.delete_user(username))
         return res2
+
+
+    def convert_users(self, file_in, file_out):
+        """
+        adcusers_in.pyファイルを、YAML形式に変換する。
+
+        Parameters
+        ==========
+        file : str
+            adcusers_in.py形式のファイルの名前
+        """
+        glo = {}
+        exec(open(file_in).read(), glo)
+        res = []
+        for i in glo['USERS']:
+            res.append({'username': i[0],
+                        'password': i[1],
+                        'displayname': i[2],
+                        'uid': i[3],
+                        'gid': i[4]})
+        with open(file_out, 'w') as f:
+            yaml.dump(res, f, encoding='utf-8', allow_unicode=True)
+        return True
+
 
     def get_admin_q_all(self):
         res = self.http_request('GET',    '/admin/Q/all')
@@ -635,9 +675,37 @@ class ADCClient:
             elif a.lower() == 'false':
                 param = False
             else:
-                print
                 raise RuntimeError('bad argument: %s' % a)
 
             dat = {'test_mode': param}
+            res = self.http_request('PUT', path, params=json.dumps(dat))
+            return self.fin(res)
+
+
+    def view_score_mode(self, args=None):
+        """
+        VIEW_SCORE_MODEの値を取得する(GET)、変更する(PUT)。
+        
+        Parameters
+        ==========
+        args : None or str
+            'True', 'False'
+        """
+        path = '/admin/config/view_score_mode'
+        if args is None or len(args)==0:
+            res = self.http_request('GET', path)
+            # print(res)
+            return self.fin(res)
+        else:
+            assert len(args) == 1
+            a = args[0]
+            if a.lower() == 'true':
+                param = True
+            elif a.lower() == 'false':
+                param = False
+            else:
+                raise RuntimeError('bad argument: %s' % a)
+
+            dat = {'view_score_mode': param}
             res = self.http_request('PUT', path, params=json.dumps(dat))
             return self.fin(res)

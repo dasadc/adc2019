@@ -1,7 +1,13 @@
 #! /bin/bash
 
-source $HOME/adc2019/venv36/bin/activate
-export GOOGLE_APPLICATION_CREDENTIALS=$HOME/adc2019/server/keyfile.json
-$(gcloud beta emulators datastore --data-dir $HOME/adc2019/work/datastore env-init)
-cd $HOME/adc2019/server/
-gunicorn -b :8888 --access-logfile '-' main:app
+script=$(readlink -f "$0")
+top_dir=$(cd $(dirname "$script")/../; pwd)
+
+source $(conda info --base)/etc/profile.d/conda.sh
+conda activate py38
+
+#export GOOGLE_APPLICATION_CREDENTIALS="${top_dir}/server/keyfile.json"
+$(gcloud beta emulators datastore env-init)
+cd "${top_dir}/server/"
+#gunicorn -b :8888 --access-logfile '-' main:app
+gunicorn -b :8888 --access-logfile adc_access.log --error-logfile adc_error.log --log-level info main:app

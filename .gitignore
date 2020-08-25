@@ -3,3 +3,4 @@ __pycache__
 /venv
 *~
 CURL_COOKIES
+*.no-git.*

@@ -1,0 +1,30 @@
+<div class="center">
+    <ngx-file-drop dropZoneLabel="Drop files here" (onFileDrop)="dropped($event)"
+		   accept="txt" directory="false" [showBrowseBtn]="true" multiple="False">
+        <ng-template ngx-file-drop-content-tmp let-openFileSelector="openFileSelector">
+	         Drag and drop files here or select files &nbsp;
+	         <input type="file" multiple accept="{{accept_file_type}}" id="my-file" #myfile (change)="onchangeFile(myfile.files)" />
+        </ng-template>
+    </ngx-file-drop>
+
+    <h3>List of files to upload</h3>
+    <table>
+      <tr>
+        <th>No.</th>
+        <th>filename</th>
+        <th>size</th>
+        <th></th>
+        <th></th>
+      </tr>
+      <tr *ngFor="let i of list_of_files">
+        <td>{{i.qnum}}</td>
+        <td>{{i.filename}}</td>
+        <td>{{i.size}}</td>
+        <td><button title="confirm this file before upload" (click)="view_file(i.qnum)">View</button></td>
+        <td><button title="exclude this file" (click)="cut_file(i.qnum)">Cut</button></td>
+      </tr>
+    </table>
+
+    <app-file-view [text]="text" [filename]="filename"></app-file-view>
+    <button *ngIf="text" title="clear" (click)="clear_data()">Clear</button>
+</div>

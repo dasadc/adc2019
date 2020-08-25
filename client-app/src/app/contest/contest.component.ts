@@ -16,10 +16,15 @@ export class ContestComponent implements OnInit {
   uploadResults: string;
   aNumberList: ANumberList;
   aPosted: boolean[];
+  title: string;
 
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
+    this.adcService.version()
+      .subscribe((ver: number) => {
+        this.title = `ADC${ver} Arena`;
+      });
     this.getQNumberList();
     // ?????
     let n = 50;

@@ -51,10 +51,16 @@ from tz import gae_datetime_JST
 #    client = datastore.Client()
 from google.auth.credentials import AnonymousCredentials
 from os import getenv
-client = datastore.Client(
-    credentials=AnonymousCredentials(),
-    project=getenv('PROJECT_ID')
-)
+# https://github.com/googleapis/python-datastore/issues/11
+if 0:
+    # 2019年8月に必要だったworkaround
+    client = datastore.Client(
+        credentials=AnonymousCredentials(),
+        project=getenv('PROJECT_ID')
+    )
+else:
+    # 2020-08-21 バグ修正後
+    client = datastore.Client()
 
 def qdata_key(year=YEAR):
     "問題データのparent"
@@ -1019,7 +1025,9 @@ def calc_score_all():
     qla = admin_Q_list_get()
     adata = query_a_data().fetch()
 
-    authors = [None] + qla.get('author_list')  # Q1から始まるので1つずらす
+    authors = [None]
+    if qla:
+        authors = [None] + qla.get('author_list')  # Q1から始まるので1つずらす
 
     ok_point = {}     # ok_point   [番号][ユーザ名] = 0, 1
     q_factors = {}    # q_factors  [番号][ユーザ名] = 小数の値

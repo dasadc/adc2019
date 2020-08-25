@@ -1,0 +1,10 @@
+SIZE 72X72
+BLOCK_NUM 2
+
+BLOCK#1 3X2
+1,+,0
+0,+,+
+
+BLOCK#2 3X2
+1,+,0
+0,+,+

@@ -1,35 +1,75 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+//import { NgxFileDropEntry, FileSystemFileEntry, FileSystemDirectoryEntry } from 'ngx-file-drop';
+import { readFile } from '../rx-file-reader';
+import { Observable, of, from } from 'rxjs';
+import { catchError, map, tap, flatMap } from 'rxjs/operators';
 
 import { AdcService } from '../adc.service';
-import { UserQEntry, ResUserQList } from '../apiresponse';
+import { UserQEntry, ResUserQList, ResMsgOnly } from '../apiresponse';
+
+import { FilesComponent } from '../file/files.component';
 
 @Component({
   selector: 'app-upload-q',
   templateUrl: './upload-q.component.html',
   styleUrls: ['./upload-q.component.css']
 })
-export class UploadQComponent implements OnInit {
-myQList: UserQEntry[];
-myQText: string;
-myQFilename: string;
-myQNumber: number[] = [1, 2, 3];
-postQNumber: number = 1;
-uploadResults: string;
+export class UploadQComponent implements OnInit, AfterViewInit {
+  myQList: UserQEntry[];
+  myQText: string;
+  myQFilename: string;
+  myQNumber: number[] = [1, 2, 3];
+  postQNumber: number = 1;
+  uploadResults: string;
+
+  @ViewChild(FilesComponent)
+  private filesComponent: FilesComponent;
 
   constructor(private adcService: AdcService) { }
 
+/*
   ngOnInit() {
+    from([1,2,3,4])
+      .pipe(
+        map(n => n * 2),
+        map(m => m + 1)
+      )
+      .subscribe(x => console.log(x));
+*/
+  ngOnInit() {
+    /*
+    from([1,2,3,4])
+    .pipe(
+      flatMap(n => {
+        console.log('fm0', n);
+        return of(n * 2);
+      }),
+      flatMap(m => {
+        console.log('fm1', m);
+        return of(m + 1);
+      })
+    )
+    .subscribe(x => console.log(x));
+    */
+    //this.getUserQList();  // うまくいかない
+  }
+
+  ngAfterViewInit() {
     this.getUserQList();
   }
 
   getUserQList() {
-    let username: string = this.adcService.getUsername();
-    this.adcService.getUserQList(username)
-      .subscribe(res => {
-        //console.log('getUserQList: res=', res);
-        if (res !== void 0) {
-          this.myQList = res.entries;
-        }
+    //let username: string = this.adcService.getUsername();
+    this.adcService.whoami()
+      .subscribe((res: ResMsgOnly) => {
+        let username: string = res.msg;
+        this.adcService.getUserQList(username)
+          .subscribe(res => {
+            //console.log('getUserQList: res=', res);
+            if (res !== void 0) {
+              this.myQList = res.entries;
+            }
+          });
       });
   }
 
@@ -81,6 +121,72 @@ uploadResults: string;
         //console.log('ERROR', res);
         this.uploadResults = res;
       });
+  }
+
+  startUploadQFiles_localvariable(a: Object) {
+    console.log('startUploadQFiles_localvariable', a['list_of_files']);
+  }
+
+  startUploadQFiles() {
+    //console.log('startUploadQFiles', this.filesComponent);
+    let list_of_files: Object[] = this.filesComponent.list_of_files;
+    //let files: NgxFileDropEntry[] = this.filesComponent.files;
+    let username: string = this.adcService.getUsername();
+    this.uploadResults = '';
+    for (const f of list_of_files) {
+      let file: File = f['file'];
+      console.log(file);
+      readFile(file)
+        .subscribe(
+          (txt: string) => {
+            //console.log(`Q${f['qnum']}\n${f['filename']}\n${file.name}\n${txt}`);
+            this.adcService.postUserQ(username, f['qnum'], txt, f['filename'])
+              .subscribe( // ネスティングしてるのが汚い。pipe? flatmap?
+                (res: string) => {
+                //console.log('res=', res);
+                this.uploadResults += res + '\n';
+              },
+              (res: string) => {
+                //console.log('ERROR', res);
+                this.uploadResults += res + '\n';
+              },
+              () => {
+                console.log('completed');
+                this.getUserQList();
+                this.filesComponent.clear_data();
+              });
+          });
+      }
+      /*
+      let qnum: number = 0;
+      let filename: string = '';
+      from(list_of_files)
+        .pipe(
+          flatMap((x: Object) => {
+            let file: File = x['file'];
+            qnum = x['qnum'];
+            filename = file.name;
+            //let xx: Observable<string> = readFile(file);
+            console.log('pipe0', file);
+            return readFile(file);
+          }),
+          flatMap((txt: string) => {
+            console.log('pipe1', qnum, filename, txt);
+            return this.adcService.postUserQ(username, qnum, txt, filename);
+          })
+        )
+        .subscribe(
+          (res) => {
+            console.log('res', res);
+          },
+          (err) => {
+            console.log('ERROR', err);
+          },
+          () => {
+            console.log('completed.')
+          }
+        );
+      */
   }
 
   onCleared(c: boolean) {

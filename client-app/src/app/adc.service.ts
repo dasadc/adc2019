@@ -17,8 +17,10 @@ const httpOptions = {
 export class AdcService {
   text1: string; // Q
   text2: string; // A
+  text3: string; // misc.
   filename1: string;
   filename2: string;
+  filename3: string;
 
   // for ADC API
   username: string;
@@ -26,6 +28,7 @@ export class AdcService {
   dummy_login_failed: boolean = false;
   not_login: number = 0;
   whoami_error_count: number = 0;
+  view_score_mode: boolean = true;
 
   //constructor(private messageService: MessageService) { }
   constructor(private http: HttpClient) { }
@@ -34,10 +37,10 @@ export class AdcService {
     this.filename1 = file.name;
     return readFile(file)
       .pipe(
-	tap((txt: string) => {
-	  this.text1 = txt;
-	  //console.log('readFile1', txt);
-	})
+      	tap((txt: string) => {
+      	  this.text1 = txt;
+      	  //console.log('readFile1', txt);
+      	})
       );
     //return readFile(file).subscribe(txt => this.text1 = txt);
     //return readFile(file).subscribe((txt) => { this.txt = txt; console.log(txt); });
@@ -55,10 +58,21 @@ export class AdcService {
     //return readFile(file).subscribe(txt => this.text2 = txt);
     return readFile(file)
       .pipe(
-	tap((txt: string) => {
-	  this.text2 = txt;
-	  //console.log('readFile2', txt);
-	})
+      	tap((txt: string) => {
+      	  this.text2 = txt;
+      	  //console.log('readFile2', txt);
+      	})
+      );
+  }
+
+  readFile3(file: File): Observable<string> {
+    this.filename3 = file.name;
+    return readFile(file)
+      .pipe(
+	       tap((txt: string) => {
+	          this.text3 = txt;
+	          //console.log('readFile3', txt);
+	         })
       );
   }
 
@@ -72,6 +86,11 @@ export class AdcService {
     this.text2 = undefined;
   }
 
+  clearText3() {
+    this.filename3 = undefined;
+    this.text3 = undefined;
+  }
+
   /** checkFilesの後処理。テキストメッセージを整形する。 */
   formatResultText(res: Object): string {
     let txt = '';
@@ -79,26 +98,26 @@ export class AdcService {
       txt += 'ERROR\n';
       let e: [string] = res['error']
       for (let i=0; i <e.length; i++) {
-	txt += '[' + i + '] ' + e[i] + '\n';
+	       txt += '[' + i + '] ' + e[i] + '\n';
       }
       txt += res['stack_trace'];
     } else {
       ['check_file', 'area', 'dim', 'line_corner', 'line_length', 'ban_data', 'corner', 'count'].forEach(key => {
-	if (key in res) {
-	  txt += key + '\n' + res[key] + '\n\n';
-	}
+      	if (key in res) {
+      	  txt += key + '\n' + res[key] + '\n\n';
+      	}
       });
       if ('terminal' in res) {
-	txt += 'terminal\n';
-	let terminal: [[]] = res['terminal'];
-	for (let i=0; i < terminal.length; i++) {
-	  txt += i + ':';
-	  for (let j=0; j < terminal[i].length; j++) {
-	    txt += ' BLOCK ' + terminal[i][j]['block'];
-	    txt += ' (' + terminal[i][j]['xy'][0] + ',' + terminal[i][j]['xy'][1] + ') ';
-	  }
-	  txt += '\n';
-	}
+      	txt += 'terminal\n';
+      	let terminal: [[]] = res['terminal'];
+      	for (let i=0; i < terminal.length; i++) {
+      	  txt += i + ':';
+      	  for (let j=0; j < terminal[i].length; j++) {
+      	    txt += ' BLOCK ' + terminal[i][j]['block'];
+      	    txt += ' (' + terminal[i][j]['xy'][0] + ',' + terminal[i][j]['xy'][1] + ') ';
+      	  }
+      	  txt += '\n';
+      	}
       }
     }
     return txt;
@@ -112,13 +131,13 @@ export class AdcService {
     //return this.http.post<Object>('http://127.0.0.1:4280/api/test_post', data, httpOptions).pipe( // !!CORS!!
     return this.http.post<Object>('/api/check_file', data, httpOptions)
       .pipe(
-	map((res: Object) => {
-	  //this.log(`checkFiles: res=${res}`);
-	  //console.log('AdcService: checkFiles', res);
-	  let txt = this.formatResultText(res);
-	  return new CheckResults(txt, this.text1, this.text2);
-	}),
-	catchError(this.handleError<Object>('checkFiles'))
+      	map((res: Object) => {
+      	  //this.log(`checkFiles: res=${res}`);
+      	  //console.log('AdcService: checkFiles', res);
+      	  let txt = this.formatResultText(res);
+      	  return new CheckResults(txt, this.text1, this.text2);
+      	}),
+      	catchError(this.handleError<Object>('checkFiles'))
       );
   }
 
@@ -140,9 +159,10 @@ export class AdcService {
       //this.log(`${operation} failed: ${error.message}`);
       //console.log(`${operation} failed: ${error.message}`);
       //console.log(`${operation} failed: ${error['msg']}`);
-      console.log('handleError: result=', result);
+      console.log(`handleError:  ${operation}, result=`, result);
       if (result !== void 0) {
-	result['msg'] = error.error.msg + '\n' + `${operation} failed: ${error.message}`;
+	       //result['msg'] = error.error.msg + '\n' + `${operation} failed: ${error.message}`;
+         result['error_msg'] = error.error.msg + '\n' + `${operation} failed: ${error.message}`;
       }
 
       // 空の結果を返して、アプリを持続可能にする
@@ -163,18 +183,18 @@ export class AdcService {
   getUsername(): string {
     if (this.username === void 0) {
       if (this.dummy_login_failed && 5 < this.not_login) {
-	console.log('Please login');
+	       console.log('Please login');
       }
       this.whoami()
-	.subscribe(
-	  (res: ResMsgOnly) => {
-	    this.username = res.msg;
-	  },
-	  (err) => {
-	    console.log('getUsername ERROR:', err['message']);
-	    //throw new Error('getUsername ERROR');
-	  }
-	);
+      	.subscribe(
+      	  (res: ResMsgOnly) => {
+      	    this.username = res.msg;
+      	  },
+      	  (err) => {
+      	    console.log('getUsername ERROR:', err['message']);
+      	    //throw new Error('getUsername ERROR');
+      	  }
+      	);
     } // 非同期処理なので、おそらく１発めはundefinedのまま。ダメじゃん…
     return this.username;
   }
@@ -208,12 +228,12 @@ export class AdcService {
       let data = {'username': 'dummy',
 		  'password': 'dummy'};
       this.http.post<Object>('/api/login', data, this.apiHttpOptions())
-	.subscribe((res: Object) => {
-	  this.access_token = res['token'];
-	}, (err) => {
-	  console.log('AdcService: getAccessToken ERROR', err['message']);
-	  this.dummy_login_failed = true;
-	});
+      	.subscribe((res: Object) => {
+      	  this.access_token = res['token'];
+      	}, (err) => {
+      	  console.log('AdcService: getAccessToken ERROR', err['message']);
+      	  this.dummy_login_failed = true;
+      	});
     } // 非同期処理なので、おそらく１発めはundefinedのまま。ダメじゃん…
     return this.access_token;
   }
@@ -238,13 +258,13 @@ export class AdcService {
 		'password': password};
     return this.http.post<Object>('/api/login', data, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: loginADCservice', res);
-	  let r = new ResLogin(res['msg'], res['token']);
-	  this.access_token = r.token;
-	  return r;
-	}),
-	catchError(this.handleError<ResLogin>('loginADCservice', new ResLogin('', 'ERROR')))
+      	map((res: Object) => {
+      	  //console.log('AdcService: loginADCservice', res);
+      	  let r = new ResLogin(res['msg'], res['token']);
+      	  this.access_token = r.token;
+      	  return r;
+      	}),
+      	catchError(this.handleError<ResLogin>('loginADCservice', new ResLogin('', 'ERROR')))
       );
   }
 
@@ -254,13 +274,13 @@ export class AdcService {
 		'password': 'dummy'};
     return this.http.post<Object>('/api/login', data, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: loginADCservice', res);
-	  let r = new ResLogin(res['msg'], res['token']);
-	  this.access_token = r.token;
-	  return r;
-	}),
-	catchError(this.handleError<ResLogin>('getAccessTokenFromServer', new ResLogin('', 'ERROR')))
+      	map((res: Object) => {
+      	  //console.log('AdcService: loginADCservice', res);
+      	  let r = new ResLogin(res['msg'], res['token']);
+      	  this.access_token = r.token;
+      	  return r;
+      	}),
+      	catchError(this.handleError<ResLogin>('getAccessTokenFromServer', new ResLogin('', 'ERROR')))
       );
   }
 
@@ -272,13 +292,26 @@ export class AdcService {
     let data = {}; // dummy
     return this.http.post<Object>('/api/logout', data, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: logoutADCservice', res);
-	  let r = new ResLogout(res['msg']);
-	  this.access_token = undefined;
-	  return r;
-	}),
-	catchError(this.handleError<ResLogout>('logoutADCservice'))
+      	map((res: Object) => {
+      	  //console.log('AdcService: logoutADCservice', res);
+      	  let r = new ResLogout(res['msg']);
+      	  this.access_token = undefined;
+      	  return r;
+      	}),
+      	catchError(this.handleError<ResLogout>('logoutADCservice'))
+      );
+  }
+
+  /** API, GET /api/versionを実行する */
+  version(): Observable<number> {
+    return this.http.get<Object>('/api/version', this.apiHttpOptions())
+      .pipe(
+      	map((res: Object) => {
+      	  //console.log('AdcService: version', res);
+      	  let v = res['version'] as number;
+      	  return v;
+      	}),
+      	catchError(this.handleError<number>('version', -1))
       );
   }
 
@@ -287,18 +320,18 @@ export class AdcService {
     //console.log('AdcService: whoami', this.whoami_error_count);
     return this.http.get<Object>('/api/whoami', this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: whoami', res);
-	  this.username = res['msg'];
-	  return new ResMsgOnly(res['msg']);
-	}),
-	catchError((err) => {
-	  //this.handleError<ResMsgOnly>('whoami', new ResMsgOnly('error'))
-	  console.log('Error whoami', err['message']);
-	  this.whoami_error_count ++;
-	  //throw new Error(err['error']['msg']);
-	  throw new Error('whoami error');
-	})
+        map((res: Object) => {
+          //console.log('AdcService: whoami', res);
+          this.username = res['msg'];
+          return new ResMsgOnly(res['msg']);
+        }),
+        catchError((err) => {
+          //this.handleError<ResMsgOnly>('whoami', new ResMsgOnly('error'))
+          console.log('Error whoami', err['message']);
+          this.whoami_error_count ++;
+          //throw new Error(err['error']['msg']);
+          throw new Error('whoami error');
+        })
       );
   }
 
@@ -310,11 +343,32 @@ export class AdcService {
     }
     return this.http.get<Object>(`/api/admin/user/${user}`, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: getUserInfo', res);
-	  return new ResMsgOnly(res['msg']);
-	}),
-	catchError(this.handleError<ResMsgOnly>('getUserInfo'))
+      	map((res: Object) => {
+      	  //console.log('AdcService: getUserInfo', res);
+      	  return new ResMsgOnly(res['msg']);
+      	}),
+        //catchError(this.handleError<ResMsgOnly>('getUserInfo', new ResMsgOnly('forbidden:?:?:?')))
+        catchError(this.handleError<ResMsgOnly>('getUserInfo', new ResMsgOnly(undefined)))
+        /*
+        catchError((err) => {
+          console.log('getUserInfo ERROR', err);
+          //throw new Error(err['message']);
+          return this.handleError<ResMsgOnly>('getUserInfo', new ResMsgOnly(''));
+          //return new ResMsgOnly('');
+        })
+        */
+      );
+  }
+
+  /** API, DELETE /admin/user/<usernm> を実行する。ユーザーを削除する。 */
+  deleteUserInfo(user: string): Observable<ResMsgOnly> {
+    return this.http.delete<Object>(`/api/admin/user/${user}`, this.apiHttpOptions())
+      .pipe(
+        map((res: Object) => {
+          //console.log('delete user', res['msg']);
+          return new ResMsgOnly(res['msg']);
+        }),
+        catchError(this.handleError<ResMsgOnly>('deleteUserInfo', new ResMsgOnly(undefined)))
       );
   }
 
@@ -330,11 +384,11 @@ export class AdcService {
                 'password_new': passwd1}
     return this.http.post<Object>(`/api/user/${usernm}/password`, data, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: changePassword', res);
-	  return new ResMsgOnly(res['msg']);
-	}),
-	catchError(this.handleError<ResMsgOnly>('changePassword', new ResMsgOnly('')))
+      	map((res: Object) => {
+      	  //console.log('AdcService: changePassword', res);
+      	  return new ResMsgOnly(res['msg']);
+      	}),
+      	catchError(this.handleError<ResMsgOnly>('changePassword', new ResMsgOnly('')))
       );
   }
 
@@ -342,11 +396,11 @@ export class AdcService {
   getTimekeeper(): Observable<ResTimekeeper> {
     return this.http.get<Object>('/api/admin/timekeeper', this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: getTimekeeper', res);
-	  return new ResTimekeeper(res['enabled'], res['state'], new Date(res['lastUpdate']));
-	})/*,
-	catchError(this.handleError<ResTimekeeper>('getTimekeeper'))*/
+      	map((res: Object) => {
+      	  //console.log('AdcService: getTimekeeper', res);
+      	  return new ResTimekeeper(res['enabled'], res['state'], new Date(res['lastUpdate']));
+      	})/*,
+      	catchError(this.handleError<ResTimekeeper>('getTimekeeper'))*/
       );
   }
 
@@ -356,22 +410,22 @@ export class AdcService {
 		       'state': obj.state};
     return this.http.put<Object>('/api/admin/timekeeper', dat, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: setTimekeeper', res);
-	  return new ResTimekeeper(res['enabled'], res['state'], res['lastUpdate']);
-	})/*,
-	catchError(this.handleError<ResTimekeeper>('setTimekeeper'))*/
+      	map((res: Object) => {
+      	  //console.log('AdcService: setTimekeeper', res);
+      	  return new ResTimekeeper(res['enabled'], res['state'], res['lastUpdate']);
+      	})/*,
+      	catchError(this.handleError<ResTimekeeper>('setTimekeeper'))*/
       );
   }
-    
+
   /** TEST_MODEの値を取得する。 */
   getTestMode(): Observable<boolean> {
     return this.http.get<Object>('/api/admin/config/test_mode', this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: getTestMode', res);
-	  return res['test_mode'];
-	})
+      	map((res: Object) => {
+      	  //console.log('AdcService: getTestMode', res);
+      	  return res['test_mode'];
+      	})
       );
   }
 
@@ -380,36 +434,61 @@ export class AdcService {
     let dat: Object = {'test_mode': mode};
     return this.http.put<Object>('/api/admin/config/test_mode', dat, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: setTestMode', res);
-	  return res['test_mode'];
-	})
+      	map((res: Object) => {
+      	  //console.log('AdcService: setTestMode', res);
+      	  return res['test_mode'];
+      	})
       );
   }
+
+
+    /** VIEW_SCORE_MODEの値を取得する。 */
+    getViewScoreMode(): Observable<boolean> {
+      return this.http.get<Object>('/api/admin/config/view_score_mode', this.apiHttpOptions())
+        .pipe(
+          	map((res: Object) => {
+          	  //console.log('AdcService: getViewScoreMode', res);
+              this.view_score_mode = res['view_score_mode']
+          	  return res['view_score_mode'];
+          	})
+        );
+    }
+
+    /** VIEW_SCORE_MODEの値を変更する。 */
+    setViewScoreMode(mode: boolean): Observable<boolean> {
+      let dat: Object = {'view_score_mode': mode};
+      return this.http.put<Object>('/api/admin/config/view_score_mode', dat, this.apiHttpOptions())
+        .pipe(
+        	map((res: Object) => {
+        	  //console.log('AdcService: setViewScoreMode', res);
+        	  return res['view_score_mode'];
+        	})
+        );
+    }
 
 
 
   getUserQList(usernm: string): Observable<ResUserQList> {
     return this.http.get<Object[]>(`/api/user/${usernm}/Q`, this.apiHttpOptions())
       .pipe(
-	map((res: Object[]) => {
-	  //console.log('AdcService: getUserQList', res);
-	  let tmp: UserQEntry[] = []
-	  if (res !== void 0) {
-	    for (let i=0; i<res.length; i++) {
-	      let e = new UserQEntry(res[i]['qnum'],
-				     res[i]['cols'],
-				     res[i]['rows'],
-				     res[i]['blocknum'],
-				     res[i]['linenum'],
-				     new Date(res[i]['date']/1000), // UTCを指定すべきところに、localtimeを指定してる
-				     res[i]['filename']);
-	      tmp.push(e);
-	    }
-	  }
-	  return new ResUserQList(tmp);
-	}),
-	catchError(this.handleError<ResUserQList>('getUserQList'))
+      	map((res: Object[]) => {
+      	  //console.log('AdcService: getUserQList', usernm, res);
+      	  let tmp: UserQEntry[] = []
+      	  if (res !== void 0) {
+      	    for (let i=0; i<res.length; i++) {
+      	      let e = new UserQEntry(res[i]['qnum'],
+      				     res[i]['cols'],
+      				     res[i]['rows'],
+      				     res[i]['blocknum'],
+      				     res[i]['linenum'],
+      				     new Date(res[i]['date']/1000), // UTCを指定すべきところに、localtimeを指定してる
+      				     res[i]['filename']);
+      	      tmp.push(e);
+      	    }
+      	  }
+      	  return new ResUserQList(tmp);
+      	}),
+      	catchError(this.handleError<ResUserQList>('getUserQList'))
       );
   }
 
@@ -418,14 +497,14 @@ export class AdcService {
   getUserQ(usernm: string, qnum: number): Observable<string> {
     return this.http.get<Object>(`/api/user/${usernm}/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: getUserQ', res);
-	  return res['text'];
-	}),
-	catchError((err) => {
-	  console.log('AdcService: getUserQ ERROR', err);
-	  return 'ERROR';
-	})
+      	map((res: Object) => {
+      	  //console.log('AdcService: getUserQ', res);
+      	  return res['text'];
+      	}),
+      	catchError((err) => {
+      	  console.log('AdcService: getUserQ ERROR', err);
+      	  return 'ERROR';
+      	})
       );
   }
 
@@ -434,14 +513,14 @@ export class AdcService {
   deleteUserQ(usernm: string, qnum: number): Observable<string> {
     return this.http.delete<Object>(`/api/user/${usernm}/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  console.log('AdcService: deleteUserQ', res);
-	  return 'done';
-	}),
-	catchError((err) => {
-	  console.log('AdcService: getUserQ ERROR', err);
-	  return 'ERROR';
-	})
+      	map((res: Object) => {
+      	  console.log('AdcService: deleteUserQ', res);
+      	  return 'done';
+      	}),
+      	catchError((err) => {
+      	  console.log('AdcService: getUserQ ERROR', err);
+      	  return 'ERROR';
+      	})
       );
   }
 
@@ -452,15 +531,15 @@ export class AdcService {
 		'Q_filename': qfilename};
     return this.http.post<Object>(`/api/user/${usernm}/Q/${qnum}`, data, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: postUserQ', res);
-	  return res['msg'];
-	}),
-	catchError((err) => {
-	  //console.log('AdcService: postUserQ ERROR', err);
-	  //return 'ERROR ' + err['error']['msg'];
-	  throw new Error(err['error']['msg']);
-	})
+      	map((res: Object) => {
+      	  //console.log('AdcService: postUserQ', res);
+      	  return res['msg'];
+      	}),
+      	catchError((err) => {
+      	  //console.log('AdcService: postUserQ ERROR', err);
+      	  //return 'ERROR ' + err['error']['msg'];
+      	  throw new Error(err['error']['msg']);
+      	})
       );
   }
 
@@ -468,16 +547,16 @@ export class AdcService {
   getQNumberList(): Observable<QNumberList> {
     return this.http.get<Object>('/api/Q', this.apiHttpOptions())
       .pipe(
-	map((res: Object[]) => {
-	  // console.log('AdcService: getQList', res);
-	  return new QNumberList(res['msg'],
-				 res['qnum_list'],
-				 res['cols_list'],
-				 res['rows_list'],
-				 res['blocknum_list'],
-				 res['linenum_list']);
-	})/*,
-	catchError(this.handleError<QNumberList>('getQList'))*/
+      	map((res: Object[]) => {
+      	  // console.log('AdcService: getQList', res);
+      	  return new QNumberList(res['msg'],
+      				 res['qnum_list'],
+      				 res['cols_list'],
+      				 res['rows_list'],
+      				 res['blocknum_list'],
+      				 res['linenum_list']);
+      	})/*,
+      	catchError(this.handleError<QNumberList>('getQList'))*/
       );
   }
 
@@ -485,20 +564,20 @@ export class AdcService {
   getQ(qnum: number): Observable<QData> {
     return this.http.get<Object>(`/api/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
-	map((res: Object[]) => {
-	  //console.log('AdcService: getQ', res);
-	  return new QData(res['author'],
-			   res['qnum'],
-			   res['filename'],
-			   res['date'],
-			   qnum,
-			   res['cols'],
-			   res['rows'],
-			   res['blocknum'],
-			   res['linenum'],
-			   res['text']);
-	})/*,
-	catchError(this.handleError<QData>('getQ'))*/
+      	map((res: Object[]) => {
+      	  //console.log('AdcService: getQ', res);
+      	  return new QData(res['author'],
+      			   res['qnum'],
+      			   res['filename'],
+      			   res['date'],
+      			   qnum,
+      			   res['cols'],
+      			   res['rows'],
+      			   res['blocknum'],
+      			   res['linenum'],
+      			   res['text']);
+      	})/*,
+      	catchError(this.handleError<QData>('getQ'))*/
       );
   }
 
@@ -624,6 +703,19 @@ export class AdcService {
 	  //console.log('AdcService: getUserList', res);
 	  return res as string[];
 	})
+      );
+  }
+
+  /** ユーザー登録 */
+  createUser(data: Object): Observable<ResMsgOnly> {
+    let username :string = data['username'];
+    return this.http.post<Object>(`/api/admin/user/${username}`, data, this.apiHttpOptions())
+      .pipe(
+        map((res: Object) => {
+          //console.log('createUser', res);
+          return new ResMsgOnly(res['msg']);
+        }),
+        catchError(this.handleError<ResMsgOnly>('createUser', new ResMsgOnly(undefined)))
       );
   }
 

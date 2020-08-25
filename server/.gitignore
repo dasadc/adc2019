@@ -1,5 +1,6 @@
 /adcconfig.py
 /adcusers_in.py
+/adcusers_in.yaml
 /adcusers.py
 /test813*.json
 /devel_secret.md

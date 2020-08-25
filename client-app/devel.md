@@ -7,15 +7,29 @@ ADC2019 Web application
 
 Ubuntu 18.04では、aptでインストールされるnode.jsが古い。anacondaのnpmを使う。
 
+```
+conda install nodejs
+```
+
+2020年8月時点でのメモ
+
+- node.js 10.13.0がインストールされた。
+- angularは、10.0.6がインストールされてしまうが、ngx-file-dropが、angular 10に対応していないらしいので、angular 9を明示指定してインストールする。
+
 一番最初のとき
 
 ```
 npm init
-npm install @angular/cli
+npm install @angular/cli@9
 npm install typescript
 npm install http-server
 npm install ngx-file-drop --save
+npm install js-yaml --save
+npm install --save-dev @angular/core@9
+npm install --save-dev zone.js@~0.10.3
+npm install --save-dev @angular/common@9
 ```
+
 
 2回目以降
 
@@ -37,7 +51,7 @@ npm run test-run
 http://localhost:4200/
 
 
-## deploy前のテスト実行方法
+### deploy前のテスト実行方法
 
 ビルドする。
 
@@ -63,3 +77,15 @@ gunicorn -b :28000 --access-logfile '-' main:app
 もしも、開発中のAPI serverのdevelopment serverが動き続けているなら、それも使える。
 
 - http://127.0.0.1:4280/static/app/index.html
+
+
+カスタマイズ
+------------
+
+### 年号を変えたい
+
+`src/app/adc.service.ts`で年号を設定できる。
+
+``` typescript
+  year: number = 2020;  // 毎年この西暦年を変更すればよい
+```
