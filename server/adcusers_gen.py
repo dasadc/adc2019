@@ -2,15 +2,36 @@
 # coding: utf-8
 #
 """
-read `adcusers_in.py` and write `adcusers.py`
+read `adcusers_in.yaml`, if not exists `adcusers_in.py`, and write `adcusers.py`.
 """
 
-from adcusers_in import USERS
+from adcusers_in import USERS  # adcusers_in.py
 from adcconfig import SALT
 from hashlib import sha256
-import os, stat
+import os
+import stat
+import yaml
 
-filename = "adcusers.py"
+input_filename  = 'adcusers_in.yaml'  # used if exists
+output_filename = 'adcusers.py'
+output_file_yaml = 'adcusers.yaml'
+
+users_out = []
+if os.path.exists(input_filename):
+    USERS = []   # overwrite
+    with open(input_filename, 'r') as f:
+        users = yaml.load(f, Loader=yaml.FullLoader)
+        for i in users:
+            u = [i['username'], i['password'], i['displayname'], i['uid'], i['gid']]
+            USERS.append(u)
+    users_out = users
+else:
+    for t in USERS:
+        users_out.append({'username': t[0],
+                          'password': t[1],
+                          'displayname': t[2],
+                          'uid': t[3],
+                          'gid': t[4]})
 
 u = """# coding: utf-8
 # DO NO EDIT THIS FILE.
@@ -28,6 +49,9 @@ for t in USERS:
         u +="    ('%s', '%s', u'%s', %4d, %4d),\n" % (t[0], h, t[2], t[3], t[4])
         u += "]\n"
 
-with open(filename, 'w') as f:
+with open(output_filename, 'w') as f:
     f.write(u)
-os.chmod(filename, stat.S_IRUSR|stat.S_IWUSR)
+os.chmod(output_filename, stat.S_IRUSR|stat.S_IWUSR)
+
+with open(output_file_yaml, 'w') as f:
+    yaml.dump(users_out, f, encoding='utf-8', allow_unicode=True)

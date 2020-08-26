@@ -1,8 +1,15 @@
-adc2019 API server
-==================
+adc2019 API server version 20200825
+===================================
 
-初期設定
---------
+(注意) ドキュメントを更新していないため、古い情報が書かれているところがあります。
+
+
+開発・実行のための環境構築
+--------------------------
+
+Anacondaの「Minicoda3」の利用を推奨する。[>> How?](../devel.md)
+
+以下は、2019年時点での推奨であり、現在は非推奨。
 
 ```
 sudo apt install virtualenv
@@ -11,8 +18,46 @@ source /work/venv36/bin/activate
 pip install -r requirements.txt
 ```
 
+サーバー設定ファイル`adcconfig.py`
+-------------------------------------
+
+`adcconfig.py`は、サーバー起動時に読み込まれる設定ファイルである。
+
+1. `YEAR`を、今年の西暦年(e.g. 2020)にする。この値は、ウェブアプリ(client-app)での画面表示にも反映される
+2. `SECRET_KEY`を、設定する。これは秘密にすべき情報である
+3. `SALT`を、設定する。これは秘密にすべき情報である
+4. `TEST_MODE`と`VIEW_SCORE_MODE`は、サーバーのデフォルト値として使われるものであり、client-appのAdminメニューでいつでも変更可能である
+
+
+ユーザーアカウント登録
+----------------------
+
+サーバーにアクセスできるユーザーアカウントは、2箇所で管理されている。
+
+1. ファイル(`adcusers.py`)
+    - ここでは、管理者ユーザー(administrator, uid=0, gid=0)のみを登録する
+	- この`adcusers.py`は、`adcusers_in.yaml`から生成する
+2. データストア
+    - ここでは、すべてのユーザーを登録する。1と同じ管理者ユーザーも登録されている
+
+### ユーザーアカウント登録について
+
+(2020年変更) 以前は、Python形式のファイル`adcusers_in.py`を使っていたが、YAML形式に変更した。
+
+- ウェブアプリ(client-app)では、管理者がYAML形式のファイルをアップロードすることで、ユーザー登録が可能である
+- 以前の方式(コマンド`adccli create-users ${top_dir}/server/adcusers_in.py`)でも、ユーザー登録が可能である
+
+ウェブアプリを使ったユーザーアカウント登録手順については、[client-app/README.md](../client-app/README.md)を参照してほしい。
+
+
+
 実行する
 --------
+
+2019年、Google Cloud PlatformにてPython 3がサポートされるようになって以降、`dev_appserver.py`の利用は非推奨となったらしい。
+
+- ADC2019では、まだ使っていた
+- ADC2020では、もう使うのをあきらめた（いろいろ、メンドクサすぎる…）
 
 
 ### 開発時
@@ -32,7 +77,9 @@ export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keyfile.json
 $(gcloud beta emulators datastore env-init)
 ```
 
-dev_appserver.pyの立ち上げ方は、[../hello_world/README.md](../hello_world/README.md)を参照。
+(ADC2020 注) `dev_appserver.py`は、もう使わないことにした。
+
+`dev_appserver.py`の立ち上げ方は、[../hello_world/README.md](../hello_world/README.md)を参照。
 
 Datastore Viewerは
 http://localhost:8000/datastore
@@ -56,9 +103,9 @@ http://127.0.0.1:4280/ で動いている。
 adc2019 API server
 ==================
 
+Google App Engineへ、deployする。
 
-
-deploy
+テスト用プロジェクト
 
 ```
 cd server/
@@ -66,6 +113,8 @@ gcloud app deploy
 プロジェクト名を指定する場合
 gcloud app deploy --project=trusty-obelisk-631
 ```
+
+本番(?予定?)用プロジェクト
 
 ```
 gcloud app deploy --project=das-adc
@@ -309,6 +358,7 @@ adccli --alt-username test-04 put-a 16 sample_hiromoto_2_A.txt
 
 # 2019-08-28 BUG
 
+```
   File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1813, in full_dispatch_request
     rv = self.dispatch_request()
   File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/flask/app.py", line 1799, in dispatch_request
@@ -317,15 +367,16 @@ adccli --alt-username test-04 put-a 16 sample_hiromoto_2_A.txt
     msg, data = cds.get_or_delete_A_data(delete=True)
 ValueError: not enough values to unpack (expected 2, got 0)
 127.0.0.1 - - [28/Aug/2019:16:44:25 +0900] "DELETE /api/A HTTP/1.1" 500 290 "-" "adcclient/2019.08.21"
+```
 
 
 とりあえず修正
 
 
-# 1500 bytes
+# 2019-08-28 1500 bytes制限バグ
 
 
-
+```
 [2019-08-28 16:52:50,223] ERROR in app: Exception on /user/administrator/Q/30 [POST]
 Traceback (most recent call last):
   File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/grpc_helpers.py", line 57, in error_remapped_callable
@@ -382,12 +433,14 @@ Traceback (most recent call last):
   File "<string>", line 3, in raise_from
 google.api_core.exceptions.InvalidArgument: 400 The value of property "text" is longer than 1500 bytes.
 127.0.0.1 - - [28/Aug/2019:16:52:50 +0900] "POST /api/user/administrator/Q/30 HTTP/1.1" 500 290 "-" "adcclient/2019.08.21"
+```
 
 
 
 Aも同様
 
 
+```
 [2019-08-28 17:47:36,328] ERROR in app: Exception on /A/administrator/Q/30 [PUT]
 Traceback (most recent call last):
   File "/home/USER/adc2019/venv36/lib/python3.6/site-packages/google/api_core/grpc_helpers.py", line 57, in error_remapped_callable
@@ -449,3 +502,4 @@ e= check-QA1: number of block mismatch
 [2019-08-28 18:08:48 +0900] [9167] [CRITICAL] WORKER TIMEOUT (pid:9170)
 [2019-08-28 18:08:48 +0900] [9170] [INFO] Worker exiting (pid: 9170)
 [2019-08-28 18:08:49 +0900] [9386] [INFO] Booting worker with pid: 9386
+```

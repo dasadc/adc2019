@@ -4,3 +4,8 @@ __pycache__
 *~
 CURL_COOKIES
 *.no-git.*
+*.pyc
+/samples/A/*_A.A*.txt
+/server/adcusers.yaml
+/server/adc*.log
+/server/adcusers_in.2019.py
