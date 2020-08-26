@@ -65,7 +65,7 @@ npm run build
 実行する。
 
 ```
-cd server/
+cd ../server/
 gunicorn main:app
 ポート番号8000がすでに使われていて変更したいとき
 gunicorn -b :28000 --access-logfile '-' main:app
@@ -84,8 +84,10 @@ gunicorn -b :28000 --access-logfile '-' main:app
 
 ### 年号を変えたい
 
-`src/app/adc.service.ts`で年号を設定できる。
+年号は、サーバー側で設定されているので、サーバーの設定ファイルを修正する。
 
-``` typescript
-  year: number = 2020;  // 毎年この西暦年を変更すればよい
+ファイル `adc2019/server/adcconfig.py`
+
+``` python
+YEAR = 2020
 ```

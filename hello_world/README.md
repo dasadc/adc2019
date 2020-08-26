@@ -48,7 +48,10 @@ gcloud beta emulators datastore --data-dir /work/datastore start
 
 ### (参考)  `$HOME/.config/gcloud/emulators/datastore/env.yaml`
 
-このファイルは、datastore emulatorの初回起動時に作られるらしい。[関連情報](#troubleshooting)
+このファイルは、コマンド`gcloud beta emulators datastore start`を実行して、datastore emulatorを起動した時に作られるらしい。[関連情報](#troubleshooting)
+
+しかもオプション`--data-dir`で指定したディレクトリに作られるようだ。上記ディレクトリは、`--data-dir`を指定しなかったときのデフォルトのディレクトリらしい。
+
 
 
 ### ダミーアプリを実行する
