@@ -1,0 +1,16 @@
+[Unit]
+Description=DA Symposium Algorithm Design Contest (DAS ADC) API server
+After=network.target syslog.target nss-lookup.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/adc/adc2019/server
+ExecStart=/home/adc/adc2019/scripts/04_server.sh
+ExecStop=/bin/kill ${MAINPID}
+Restart=on-success
+KillSignal=SIGINT
+User=adc
+Group=adc
+
+[Install]
+WantedBy=multi-user.target

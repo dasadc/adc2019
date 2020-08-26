@@ -41,7 +41,11 @@ RUN	yum clean all && \
 	usermod -a -G wheel adc && \
 	cd /home/adc/ && \
 	git clone -b adc2020-yt --single-branch https://github.com/dasadc/adc2019.git && \
-	chown -R 1000:1000 /home/adc/
+	chown -R 1000:1000 /home/adc/ && \
+	cp /home/adc/adc2019/server/adc-datastore.service /etc/systemd/system/ && \
+	systemctl enable adc-datastore && \
+	cp /home/adc/adc2019/server/adc-apiserver.service /etc/systemd/system/ && \
+	systemctl enable adc-apiserver
 
 USER	adc
 
@@ -50,6 +54,9 @@ RUN	source /opt/miniconda3/bin/activate py38 && \
 	npm install && \
 	gcloud config set project test813
 
-EXPOSE	80 4200 4280 8000 8080 18000 28000
+COPY	dot_bash_profile /home/adc/.bash_profile
+COPY	dot_bash_logout  /home/adc/.bash_logout
 
 USER	root
+
+EXPOSE	80 4200 4280 8000 8080 8888 18000 28000

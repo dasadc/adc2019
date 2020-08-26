@@ -5,6 +5,7 @@ __pycache__
 CURL_COOKIES
 *.no-git.*
 *.pyc
+/docker/opt_miniconda3.tar.gz
 /samples/A/*_A.A*.txt
 /server/adcusers.yaml
 /server/adc*.log

@@ -27,14 +27,14 @@ docker build
 ------------
 
 ``` bash
-sudo docker build --tag ipsjdasadc/adc:20200826 .
+sudo docker build --tag ipsjdasadc/adc:20200827 .
 ```
 
 ### docker push to Docker Hub
 
 ```
 sudo docker login
-sudo docker push ipsjdasadc/adc:20200826
+sudo docker push ipsjdasadc/adc:20200827
 ```
 
 Docker Hub  
@@ -47,9 +47,10 @@ docker run
 参考 https://hub.docker.com/_/centos
 
 ``` bash
-sudo docker run -it -u root --name adc2020 -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v /tmp/adc2020:/run -p 20022:22 ipsjdasadc/adc:20200826
+sudo docker run -it -u root --name adc2020 -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v /tmp/adc2020:/run -p 20022:22 -p 20080:8888 ipsjdasadc/adc:20200827
 ```
-`/tmp/snap.docker/tmp/adc2020/`が使われていた。
+
+- Ubuntuでは、`/run`のvolume mountが必要だと[書かれていた](https://hub.docker.com/_/centos)。snapでインストールしたdockerのせいか、実際には`/tmp/snap.docker/tmp/adc2020/`が使われていた。
 
 ### コンテナにSSHログインする
 
@@ -78,3 +79,13 @@ datastore emulator
 ``` bash
 /home/adc/adc2019/scripts/00_datastore.sh >/tmp/datastore.log 2>&1 &
 ```
+
+cp /home/adc/adc2019/server/adc-datastore.service /etc/systemd/system/
+systemctl enable adc-datastore
+
+
+cp /home/adc/adc2019/server/adc-apiserver.service /etc/systemd/system/
+systemctl enable adc-apiserver
+
+
+
