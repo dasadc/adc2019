@@ -1,6 +1,12 @@
 Docker image
 =================
 
+ADC serverをかんたんに起動できるようにするDocker iamgeについて説明する。
+
+開発者以外の、serverを実行するだけの人は、[docker run](#docker-run)から読めばよい。
+
+ADC参加者(`adccli`を実行するだけの人)も、このDocker imageを使って、`adccli`を実行できるが、Docker imageのサイズが大きすぎるため、あまりメリットは無いかもしれない。
+
 
 事前の準備作業
 --------------
@@ -51,11 +57,14 @@ Docker Hub
 https://hub.docker.com/repository/docker/ipsjdasadc/adc
 
 
+<a name="docker-run"></a>
 docker run
 ----------
 
 
 ### カスタマイズ（必須）
+
+#### 背景説明
 
 dockerに関係なく一般に、serverを起動する前には、ファイル`adc2019/server/adcconfig.py`、`adc2019/server/adcusers.py`を生成しておく必要がある。
 
@@ -67,10 +76,11 @@ dockerに関係なく一般に、serverを起動する前には、ファイル`a
 - `ADC_SECRET_KEY`の値が、`adcconfig.py`の`SECRET_KEY`に設定される(default: `Change_this_secret_key!!`)
 - `ADC_SALT`の値が、`adcconfig.py`の`SALT`に設定される(default: `Change_this_salt!!!`)
 - `ADC_PASS_ADMIN`の値が、ユーザーadministratorのパスワードになる（ファイル`adcusers.py`に反映される。default: `Change_admin_password!!`）
-- `ADC_USER_ADMIN`の値が、ファイル`adcusers.yaml`に反映される(default: `Change_user_password!!!`)。このファイルはserver起動には、何も影響しない。ユーザー登録作業のためのskeltonファイルのようなものである。(注意) 初回起動時に、administrator以外の全ユーザーが、自動登録されるようなことはない。[adc2019/client-app/README.md](../client-app/README.md)にて説明している方法で、ユーザー登録をする必要がある
+- `ADC_PASS_USER`の値が、ファイル`adcusers.yaml`に反映される(default: `Change_user_password!!!`)。`adcusers.yaml`はserverの動作には何も影響せず、ユーザー登録作業のためのskeltonファイルのようなものである。初回起動時に、administrator以外の全ユーザーが、自動登録されるようなことはない。[adc2019/client-app/README.md](../client-app/README.md)にて説明している方法で、ユーザー登録をする必要がある
 
+#### dockerコンテナを起動するとき
 
-ところが、このdockerコンテナでは、serverはsystemd経由で起動するため、unitファイル`/etc/systemd/system/adc-server.service`へ、dockerホスト側から環境変数を渡すのが容易ではないため、ファイル`/etc/systemd/system/adc-server.service.d/env.conf`をコンテナ内に置くことにした。
+ところが、このdockerコンテナでは、serverはsystemd経由で起動するため、unitファイル`/etc/systemd/system/adc-server.service`へ、dockerホスト側から環境変数を渡すのは困難である。そのため、コンテナ内にでファイル`/etc/systemd/system/adc-server.service.d/env.conf`をマウントさせることにした。
 
 参考用のファイル`env.sample.conf`をもとにして、以下のような内容のファイル`env.conf`を作成し、適切な値を設定する。`env.conf`は他人からアクセスされないように、厳重に管理する。
 
@@ -100,14 +110,14 @@ docker run \
        ipsjdasadc/adc:latest
 ```
 
+- コンテナのTCP/IP port 22 (SSH)が、ホスト側の20022に出てくる。必要に応じて変更すること
+- コンテナのTCP/IP port 8888 (ADC server。`adc2019/scripts/04_server.sh`にて指定)が、ホスト側の20080に出てくる。必要に応じて変更すること
 - ホストがUbuntuの場合、`/run`のvolume mountが必要だと[書かれていた](https://hub.docker.com/_/centos)。snapでインストールしたdockerのせいか、実際には`/tmp/snap.docker/tmp/adc2020/`が使われていた。
-- コンテナのTCP/IP port 22 (SSH)が、ホスト側の20022に出てくる
-- コンテナのTCP/IP port 8888 (ADC server。`adc2019/scripts/04_server.sh`にて指定)が、ホスト側の20080に出てくる
-
-
 
 
 ### serverの動作確認
+
+dockerホストから
 
 ``` bash
 curl http://localhost:20080/api/version
@@ -119,10 +129,24 @@ $ curl http://localhost:20080/api/version
 {"version": 2020}
 ```
 
+### コンテナ内のユーザーアカウント
+
+- ユーザーadcのパスワードは、上の方のperl〜の行に、わかりにくく書いてある8文字である
+- ユーザーrootのパスワードは無効化されているが、SSH公開鍵認証を使ってrootでSSHログイン可能である
+- ユーザーadcは、wheelグループに属しているため、sudoコマンドを実行可能である
+
 ### コンテナの中に入る
+
+ユーザーadcとして
 
 ``` bash
 sudo docker exec -it -u adc adc2020 bash
+```
+
+ユーザーrootとして
+
+``` bash
+sudo docker exec -it -u root adc2020 bash
 ```
 
 ### コンテナにSSHログインする
@@ -132,8 +156,6 @@ SSHは必須ではないが、Emacsのtrampのように、SSH経由でファイ�
 ``` bash
 ssh -v -p 20022 adc@localhost
 ```
-
-初期パスワードは、上の方に、わかりにくくして書いてある。
 
 `$HOME/.ssh/config`に以下のようなエントリを追加すると便利である。
 
@@ -145,6 +167,8 @@ host adc2020
 ```
 こうしておくと、Emacs trampでは、`/ssh:adc@adc2020:`でアクセスできる。
 
+
+コンテナ起動後、`/home/adc/.ssh/authorized_keys`、`/root/.ssh/authorized_keys`に、公開鍵を登録しておくと便利である。
 
 ### コンテナを止める
 
@@ -165,3 +189,10 @@ sudo docker rm adc2020
 dockerホスト上で実行しているウェブブラザなら以下のURLにアクセスする。
 
 http://localhost:20080/
+
+
+dockerホスト以外で実行しているウェブブラザなら、localhostではなく、dockerホストのアドレスを指定してアクセスする。
+
+例 http://192.168.1.20:20080/
+
+(備考) おそらくファイアウォールの許可ルールを追加しなくても、dockerのせいでアクセスできてしまうはず。

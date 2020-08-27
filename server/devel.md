@@ -1,13 +1,15 @@
-adc2019 API server version 20200825
+adc2019 API server version 20200827
 ===================================
 
 (注意) ドキュメントを更新していないため、古い情報が書かれているところがあります。
+
+以下で説明する手順をスキップして、[Dockerコンテナでかんたんに動かすこともできます](../docker/README.md)。
 
 
 開発・実行のための環境構築
 --------------------------
 
-Anacondaの「Minicoda3」の利用を推奨する。[>> How?](../devel.md)
+Anacondaの「Minicoda3」の利用を推奨する。[>> How?](../devel.md#miniconda)
 
 以下は、2019年時点での推奨であり、現在は非推奨。
 
@@ -23,7 +25,7 @@ pip install -r requirements.txt
 
 `adcconfig.py`は、サーバー起動時に読み込まれる設定ファイルである。
 
-1. `YEAR`を、今年の西暦年(e.g. 2020)にする。この値は、ウェブアプリ(client-app)での画面表示にも反映される
+1. `YEAR`を、今年の西暦年(e.g. 2020)にする。この値は、[ウェブアプリ(client-app)](../client-app/README.md)での画面表示にも反映される
 2. `SECRET_KEY`を、設定する。これは秘密にすべき情報である
 3. `SALT`を、設定する。これは秘密にすべき情報である
 4. `TEST_MODE`と`VIEW_SCORE_MODE`は、サーバーのデフォルト値として使われるものであり、client-appのAdminメニューでいつでも変更可能である

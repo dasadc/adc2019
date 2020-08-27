@@ -50,7 +50,7 @@ gcloud config set project test813
 
 
 
-
+<a name="miniconda"></a>
 Anaconda (Miniconda)でPython 3.8の環境を作る
 -------------------------------------------
 
@@ -58,7 +58,11 @@ Anaconda (Miniconda)でPython 3.8の環境を作る
 
 Linuxディストリビューションで提供されているPython 3のバージョンが古いことが多いため、Anacondaを使うのがよい（ファイルサイズの小さいMinicondaで十分である）。
 
-インストール
+※ Anaconda(Miniconda)は、Windows、Mac、Linux版がある。
+
+ADC参加者で、[コマンドライン環境のクライアントadccli](client/README.md)を実行したい場合も、MinicondaでPythonの実行環境を構築するのを推奨する。
+
+#### Linux版Minicondaのインストール例
 
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -72,10 +76,16 @@ sh Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 -u
 /opt/miniconda3/bin/conda config --set auto_activate_base false  # 好みで
 ```
 
-環境を作成する
+環境を作成する（server開発・実行ユーザー用）
 
 ```
-/opt/miniconda3/bin/conda create -n py38 python=3.8 Flask=1.1.2 numpy gunicorn grpcio pytz requests protobuf pyyaml
+/opt/miniconda3/bin/conda create -n py38 python=3.8 Flask=1.1.2 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs
+```
+
+環境を作成する（ADC参加者、[adccli](client/README.md)を実行するだけのユーザー用）
+
+```
+/opt/miniconda3/bin/conda create -n py38 python=3.8 numpy pyyaml
 ```
 
 環境を使う
@@ -84,9 +94,17 @@ sh Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 -u
 conda activate py38
 ```
 
-##### datastore emulator
+##### datastore emulator (ADC参加者は不要)
 
-google-cloud-datastoreは、仮想環境へpipでインストール…する必要もなくて、
+datastore emulator (google-cloud-datastore)は、serverを実行するときに必要であり、adccliコマンドを実行するだけでの場合は不要である。
+
+`conda activate py38`したあとなら、これだけで十分。
+
+```
+pip install google-cloud-datastore
+```
+
+google-cloud-datastoreは、仮想環境へpipでインストールする例
 
 ```
 python3 -m venv --system-site-packages ./venv
@@ -94,8 +112,3 @@ source venv/bin/activate
 pip install google-cloud-datastore
 ```
 
-`conda activate py38`したあとなら、これだけで十分。
-
-```
-pip install google-cloud-datastore
-```

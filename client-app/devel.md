@@ -1,5 +1,5 @@
-ADC2019 Web application
-=======================
+ADC2019 Web application (client-app)
+====================================
 
 
 初期設定
