@@ -1,0 +1,13 @@
+FROM	ipsjdasadc/adc:latest
+
+RUN	yum install -y \
+	    epel-release \
+	    gcc-c++ \
+	    make
+
+USER	adc
+RUN	source /opt/miniconda3/bin/activate py38 && \
+	cd /home/adc/adc2019/client-app/ && \
+	npm install
+
+USER	root

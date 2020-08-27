@@ -22,11 +22,8 @@ RUN	yum clean all && \
 	yum update -y && \
 	yum install -y \
 	    bash-completion \
-	    epel-release \
-	    gcc-c++ \
 	    git \
 	    less \
-	    make \
 	    openssh-server \
 	    rsync \
 	    sudo \
@@ -50,10 +47,7 @@ RUN	yum clean all && \
 	systemctl enable adc-server
 
 USER	adc
-RUN	source /opt/miniconda3/bin/activate py38 && \
-	cd /home/adc/adc2019/client-app/ && \
-	npm install && \
-	gcloud config set project test813
+RUN	gcloud config set project test813
 
 USER	root
 

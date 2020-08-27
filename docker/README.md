@@ -26,9 +26,16 @@ $6$ipsjdasadc$j3jCv7RIO3CDs4dBWBsRHvLAjQe3tln.TdQdRVcBTM6fa3FL7.jz7hkCRxtoQxq4eX
 docker build
 ------------
 
+2種類のdocker imageを作成できる
+
+- `Dockerfile` ... 実行専用。サイズは下記"-dev"よりも小さめ
+- `Dockerfile-dev` ... 実行に加えて、ソフトウェア開発もできる
+
 ``` bash
 sudo docker build --tag ipsjdasadc/adc:20200827 .
 sudo docker tag         ipsjdasadc/adc:20200827 ipsjdasadc/adc:latest
+
+sudo docker build --tag ipsjdasadc/adc:20200827dev --file Dockerfile-dev .
 ```
 
 ### docker push to Docker Hub
@@ -37,6 +44,7 @@ sudo docker tag         ipsjdasadc/adc:20200827 ipsjdasadc/adc:latest
 sudo docker login  # when required
 sudo docker push ipsjdasadc/adc:20200827
 sudo docker push ipsjdasadc/adc:latest
+sudo docker push ipsjdasadc/adc:20200827dev
 ```
 
 Docker Hub  
@@ -46,26 +54,12 @@ https://hub.docker.com/repository/docker/ipsjdasadc/adc
 docker run
 ----------
 
-以下のようなコマンドを実行すればよい。シェルスクリプト`docker-run.sh`を用意してある。ただし、後述のように、必ず環境変数を設定してから実行すべきである。
 
-``` bash
-docker run \
-       --name adc2020 \
-       -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-       -v /tmp/adc2020:/run \
-       -p 20022:22 \
-       -p 20080:8888 \
-       ipsjdasadc/adc:latest
-```
-
-- ホストがUbuntuの場合、`/run`のvolume mountが必要だと[書かれていた](https://hub.docker.com/_/centos)。snapでインストールしたdockerのせいか、実際には`/tmp/snap.docker/tmp/adc2020/`が使われていた。
-
-
-### 環境変数を用いたカスタマイズ（必須）
+### カスタマイズ（必須）
 
 dockerに関係なく一般に、serverを起動する前には、ファイル`adc2019/server/adcconfig.py`、`adc2019/server/adcusers.py`を生成しておく必要がある。
 
-dockerコンテナが起動する場合、`adc2019/scripts/04_server.sh`の初回実行時に、環境変数の値に基づいて、ファイル`adc2019/server/adcconfig.py`、`adc2019/server/adcusers.py`が生成される。
+スクリプト`adc2019/scripts/04_server.sh`の初回実行時に、環境変数の値に基づいて、ファイル`adc2019/server/adcconfig.py`、`adc2019/server/adcusers.py`が生成される。
 
 設定すべき環境変数は以下の通り。
 
@@ -75,27 +69,65 @@ dockerコンテナが起動する場合、`adc2019/scripts/04_server.sh`の初�
 - `ADC_PASS_ADMIN`の値が、ユーザーadministratorのパスワードになる（ファイル`adcusers.py`に反映される。default: `Change_admin_password!!`）
 - `ADC_USER_ADMIN`の値が、ファイル`adcusers.yaml`に反映される(default: `Change_user_password!!!`)。このファイルはserver起動には、何も影響しない。ユーザー登録作業のためのskeltonファイルのようなものである。(注意) 初回起動時に、administrator以外の全ユーザーが、自動登録されるようなことはない。[adc2019/client-app/README.md](../client-app/README.md)にて説明している方法で、ユーザー登録をする必要がある
 
-以上の理由から、`docker-run.sh`は、たとえば以下のように実行する。
+
+ところが、このdockerコンテナでは、serverはsystemd経由で起動するため、unitファイル`/etc/systemd/system/adc-server.service`へ、dockerホスト側から環境変数を渡すのが容易ではないため、ファイル`/etc/systemd/system/adc-server.service.d/env.conf`をコンテナ内に置くことにした。
+
+参考用のファイル`env.sample.conf`をもとにして、以下のような内容のファイル`env.conf`を作成し、適切な値を設定する。`env.conf`は他人からアクセスされないように、厳重に管理する。
+
+```
+[Service]
+Environment="ADC_YEAR=2020"
+Environment="ADC_SECRET_KEY=__change_here__"
+Environment="ADC_SALT=__change_here__"
+Environment="ADC_PASS_ADMIN=__change_here__"
+Environment="ADC_PASS_USER=__change_here__"
+```
+
+### dockerコンテナを実行する
+
+シェルスクリプト`docker-run.sh`を用意してある。
+
+`docker-run.sh`より抜粋
 
 ``` bash
-env ADC_YEAR="2020" ADC_SECRET_KEY="__change_here__" ADC_SALT="__change_here__" ADC_PASS_ADMIN="__change_here__" sudo -E ./docker-run.sh
+docker run \
+       --name adc2020 \
+       -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+       -v /tmp/adc2020:/run \
+       -v "${docker_dir}/env.conf":/etc/systemd/system/adc-server.service.d/env.conf \
+       -p 20022:22 \
+       -p 20080:8888 \
+       ipsjdasadc/adc:latest
 ```
+
+- ホストがUbuntuの場合、`/run`のvolume mountが必要だと[書かれていた](https://hub.docker.com/_/centos)。snapでインストールしたdockerのせいか、実際には`/tmp/snap.docker/tmp/adc2020/`が使われていた。
+- コンテナのTCP/IP port 22 (SSH)が、ホスト側の20022に出てくる
+- コンテナのTCP/IP port 8888 (ADC server。`adc2019/scripts/04_server.sh`にて指定)が、ホスト側の20080に出てくる
+
+
+
 
 ### serverの動作確認
 
 ``` bash
 curl http://localhost:20080/api/version
 ```
+実行例
 
 ```
 $ curl http://localhost:20080/api/version
 {"version": 2020}
 ```
 
+### コンテナの中に入る
+
+``` bash
+sudo docker exec -it -u adc adc2020 bash
+```
 
 ### コンテナにSSHログインする
 
-SSHは必須ではないが、Emacsのtrampのように、SSH経由でファイルを編集できるエディタがあるので、あればあったで便利である。
+SSHは必須ではないが、Emacsのtrampのように、SSH経由でファイルを編集できるエディタがあるので、SSHは、あればあったで便利である。
 
 ``` bash
 ssh -v -p 20022 adc@localhost
@@ -103,7 +135,7 @@ ssh -v -p 20022 adc@localhost
 
 初期パスワードは、上の方に、わかりにくくして書いてある。
 
-#### `$HOME/.ssh/config`の記述例
+`$HOME/.ssh/config`に以下のようなエントリを追加すると便利である。
 
 ```
 host adc2020
@@ -111,6 +143,25 @@ host adc2020
      port 20022
      User adc
 ```
+こうしておくと、Emacs trampでは、`/ssh:adc@adc2020:`でアクセスできる。
 
-Emacs trampでは、`/ssh:adc@adc2020:`でアクセス。
 
+### コンテナを止める
+
+``` bash
+sudo docker stop adc2020
+```
+
+### コンテナを削除する(コンテストのデータがすべて消える!!)
+
+``` bash
+sudo docker rm adc2020
+```
+
+
+ウェブブラウザからserverにアクセスする
+------------------------------------
+
+dockerホスト上で実行しているウェブブラザなら以下のURLにアクセスする。
+
+http://localhost:20080/
