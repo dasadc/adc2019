@@ -1,6 +1,5 @@
-see also [devel.md](../server/devel.md)
-
-# Client Application for DA Symposium 2020, Algorithm Design Contest (ADC2020)
+Client Application for DA Symposium 2020, Algorithm Design Contest (ADC2020)
+============================================================================
 
 ADC2020で使うウェブアプリについて説明する。
 
@@ -42,10 +41,9 @@ Username、Passwordに、事前に通知されたユーザー名とパスワー�
 
 ### ユーザーを登録する
 
-2020年バージョンから、ウェブアプリでユーザー登録ができるようになっている。
+従来、コマンドライン環境でコマンド`adccli create-users adcusers_in.py`を実行してユーザー登録をしていたが、2020年バージョンから、ウェブアプリでユーザー登録ができるようになっている。
 
-
-1. YAML形式のファイル(以下の説明では、ファイル名を`adcusers_in.yaml`とする)にアカウント情報を書く。参考用のファイル`adc2019/server/adcusers_in.sample.yaml`がある
+1. YAML形式のファイル`adcusers_in.yaml`にアカウント情報を書く。参考用のファイル`adc2019/server/adcusers_in.sample.yaml`がある
     - `password`は平文で記述する。
 2. ディレクトリ`adc2019/server/`にて、コマンド`python adcusers_gen.py`を実行すると、2つのファイル`adcusers.py`と`adcusers.yaml`が生成される
     - `adcusers.py`には、管理者ユーザーのみが記述されていて、データストア内に登録されたアカウント情報に関係なく、固定登録のアカウントとして利用できる。

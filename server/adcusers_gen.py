@@ -5,7 +5,10 @@
 read `adcusers_in.yaml`, if not exists `adcusers_in.py`, and write `adcusers.py`.
 """
 
-from adcusers_in import USERS  # adcusers_in.py
+try:
+    from adcusers_in import USERS  # adcusers_in.py
+except ModuleNotFoundError:
+    pass
 from adcconfig import SALT
 from hashlib import sha256
 import os

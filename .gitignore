@@ -10,3 +10,4 @@ CURL_COOKIES
 /server/adcusers.yaml
 /server/adc*.log
 /server/adcusers_in.2019.py
+/work/

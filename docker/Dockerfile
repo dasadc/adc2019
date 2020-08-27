@@ -14,7 +14,9 @@ CMD ["/usr/sbin/init"]
 
 ADD	opt_miniconda3.tar.gz /
 COPY	google-cloud-sdk.repo /etc/yum.repos.d/
-COPY	dot_bashrc /home/adc/.bashrc
+COPY	dot_bashrc            /home/adc/.bashrc
+COPY	dot_bash_profile      /home/adc/.bash_profile
+COPY	dot_bash_logout       /home/adc/.bash_logout
 WORKDIR	/home/adc
 RUN	yum clean all && \
 	yum update -y && \
@@ -44,18 +46,14 @@ RUN	yum clean all && \
 	chown -R 1000:1000 /home/adc/ && \
 	cp /home/adc/adc2019/server/adc-datastore.service /etc/systemd/system/ && \
 	systemctl enable adc-datastore && \
-	cp /home/adc/adc2019/server/adc-apiserver.service /etc/systemd/system/ && \
-	systemctl enable adc-apiserver
+	cp /home/adc/adc2019/server/adc-server.service /etc/systemd/system/ && \
+	systemctl enable adc-server
 
 USER	adc
-
 RUN	source /opt/miniconda3/bin/activate py38 && \
 	cd /home/adc/adc2019/client-app/ && \
 	npm install && \
 	gcloud config set project test813
-
-COPY	dot_bash_profile /home/adc/.bash_profile
-COPY	dot_bash_logout  /home/adc/.bash_logout
 
 USER	root
 

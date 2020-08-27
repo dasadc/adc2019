@@ -2,12 +2,14 @@
 #
 """
 a sample config file for DAS2020 ADC
+
+adc2019/scripts/04_server.sh will replace "@...@" and create adcconfig.py.
 """
 
-YEAR = 2020
+YEAR = @CHANGE_YEAR@  # 2020
 
-SECRET_KEY = '***CHANGE HERE!!!***'
-SALT = '***CHANGE HERE!!!***'
+SECRET_KEY = '@CHANGE_SECRET_KEY@'  # 'secret_key_0123456789'
+SALT = '@CHANGE_SALT@'  # 'secret_salt_XXX'
 
 TEST_MODE = True     # テストモード
 # TEST_MODE = False  # コンテスト本番モード
