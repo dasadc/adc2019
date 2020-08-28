@@ -75,7 +75,7 @@ gcloud config set project test813
 
 ```
 source /work/venv36/bin/activate
-export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keyfile.json
+# export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keyfile.json <<< 2020年8月現在、不要。どうも、2019年8月当時のgoogleのバグではないか？
 $(gcloud beta emulators datastore env-init)
 ```
 

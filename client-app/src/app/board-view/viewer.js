@@ -1,4 +1,5 @@
 var canvas = document.getElementById("canvas");
+//if (canvas.getContext){
 if (canvas && canvas.getContext){
     var ctx = canvas.getContext('2d');
 }
@@ -19,6 +20,7 @@ var blockNum = 2;
 var blocks = [];
 var blockLoc = [];
 var blockColor = [];
+var blockContour = [];
 
 var colors = [
     'gray',   // 0: monomino
@@ -44,39 +46,83 @@ function checkBlockShape() {
 	switch(block.join('')) {
 	case '1':
 	    blockColor[n] = 0; // monomino
+	    blockContour[n] = 'eswn'
 	    break;
 	case '11110':
+	    blockColor[n] = 1; // I
+	    blockContour[n] = 'eeeeswwwwn'
+	    break;
 	case '10101010':
 	    blockColor[n] = 1; // I
+	    blockContour[n] = 'esssswnnnn'
 	    break;
 	case '110110':
 	    blockColor[n] = 2; // O
+	    blockContour[n] = 'eesswwnn'
 	    break;
 	case '01001110':
+	    blockColor[n] = 3; // T
+	    blockContour[n] = '>eseswwwnen'
+	    break;
 	case '100110100':
+	    blockColor[n] = 3; // T
+	    blockContour[n] = 'eseswswnnn'
+	    break;
 	case '11100100':
+	    blockColor[n] = 3; // T
+	    blockContour[n] = 'eeeswswnwn'
+	    break;
 	case '010110010':
 	    blockColor[n] = 3; // T
+	    blockContour[n] = '>essswnwnen'
 	    break;
 	case '010010110':
+	    blockColor[n] = 4; // J
+	    blockContour[n] = '>essswwnenn'
+	    break;
 	case '10001110':
+	    blockColor[n] = 4; // J
+	    blockContour[n] = 'eseeswwwnn'
+	    break;
 	case '110100100':
+	    blockColor[n] = 4; // J
+	    blockContour[n] = 'eeswsswnnn'
+	    break;
 	case '11100010':
 	    blockColor[n] = 4; // J
+	    blockContour[n] = 'eeesswnwwn'
 	    break;
 	case '100100110':
+	    blockColor[n] = 5; // L
+	    blockContour[n] = 'esseswwnnn'
+	    break;
 	case '11101000':
+	    blockColor[n] = 5; // L
+	    blockContour[n] = 'eeeswwswnn'
+	    break;
 	case '110010010':
+	    blockColor[n] = 5; // L
+	    blockContour[n] = 'eessswnnwn'
+	    break;
 	case '00101110':
 	    blockColor[n] = 5; // L
+	    blockContour[n] = '>>esswwwneen'
 	    break;
 	case '01101100':
+	    blockColor[n] = 6; // S
+	    blockContour[n] = '>eeswswwnen'
+	    break;
 	case '100110010':
 	    blockColor[n] = 6; // S
+	    blockContour[n] = 'esesswnwnn'
 	    break;
 	case '11000110':
+	    blockColor[n] = 7; // Z
+	    blockContour[n] = 'eeseswwnwn'
+	    break;
 	case '010110100':
 	    blockColor[n] = 7; // Z
+	    blockContour[n] = '>esswswnnen'
 	    break;
 	default:
 	    console.log("block shape error!");
@@ -155,11 +201,12 @@ function drawBoard() {
 
     // draw blocks
     for (var n = 0; n < blockNum; ++n) {
-	ctx.strokeStyle = 'black';
+	ctx.strokeStyle = 'rgba(50%, 50%, 50%, 0.2)';
 	ctx.fillStyle = colors[blockColor[n]];
 	ctx.lineWidth = 2;
 	var blockX = boardOrigX + blockLoc[n][0] * gridSize;
 	var blockY = boardOrigY + blockLoc[n][1] * gridSize
+	// fill blocks
 	blocks[n].forEach(function(row,y) {
 	    row.forEach(function(val,x) {
 		if (blocks[n][y][x] != 0) {
@@ -168,6 +215,34 @@ function drawBoard() {
 		}
 	    });
 	});
+	// draw contour
+	ctx.beginPath();
+	var curX = blockX
+	var curY = blockY
+	ctx.moveTo(curX, curY);
+	for (var i = 0; i < blockContour[n].length; ++i) {
+	    switch(blockContour[n][i]) {
+	    case 'e':
+		curX = curX + gridSize;
+		break;
+	    case 'w':
+		curX = curX - gridSize;
+		break;
+	    case 's':
+		curY = curY + gridSize;
+		break;
+	    case 'n':
+		curY = curY - gridSize;
+		break;
+	    case '>':
+		curX = curX + gridSize;
+		ctx.moveTo(curX, curY);
+		break;
+	    }
+	    ctx.lineTo(curX, curY);
+	}
+	ctx.strokeStyle = 'black';
+	ctx.stroke();
     }
 
     // draw number
@@ -188,7 +263,7 @@ function drawBoard() {
     }
 
     // draw bbox
-    ctx.strokeStyle = 'red';
+    ctx.strokeStyle = 'rgba(100%, 0%, 0%, 0.6)';
     ctx.lineWidth = 2;
     ctx.strokeRect(boardOrigX, boardOrigY, bboxW * gridSize, bboxH * gridSize);
 

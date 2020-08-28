@@ -139,7 +139,7 @@
       <th>uid</th>
       <th>gid</th>
     </tr>
-    <tr *ngFor="let v of userInfoList; let i = index">
+    <tr *ngFor="let v of userInfoList_sort(); let i = index">
       <td><input type="checkbox" name="user{{i}}" [(ngModel)]="v.selected" [value]="v.username"></td>
       <td>{{v.username}}</td>
       <td>{{v.displayname}}</td>

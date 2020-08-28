@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { Observable, of, from } from 'rxjs';
+import { catchError, map, tap, filter, flatMap } from 'rxjs/operators';
 
 import { readFile } from './rx-file-reader';
 import { CheckResults } from './checkresults';
-import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList, QNumberList, QData, ANumberList, AdminQList } from './apiresponse';
+import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList, QNumberList, QData, ANumberList, AdminQList, ResUserInfo } from './apiresponse';
 
 const httpOptions = {
   headers: new HttpHeaders({ 'Content-Type': 'application/json' })
@@ -373,6 +373,35 @@ export class AdcService {
   }
 
   /**
+   *  get user info of all users.
+   *  for each user in getUserList(), call getUserInfo(user)
+   *  どうも、結果(ResUserInfo)の順序は、一定ではないようだ。
+   *  server APIをcallするのは、ソートされた順序通りらしいが、
+   *  serverのレスポンスを受理完了するのが、順不同になってしまうためらしい
+   */
+  getAllUserInfo(): Observable<ResUserInfo> {
+    return this.getUserList()
+      .pipe(
+        flatMap((users: string[]) => {
+          //console.log('(flatMap) users=', users);
+          return from(users);
+        }),
+        flatMap((username: string) => {
+          //console.log('flatMap: username', username);
+          return this.getUserInfo(username);
+        }),
+        filter((res: Object) => {
+          return res['msg'] !== void 0;
+        }),
+        map((res: Object) => {
+          //console.log('map', res['msg']);
+          let tmp = res['msg'].split(':');
+          return new ResUserInfo(tmp[0], tmp[1], tmp[2], tmp[3]);
+        })
+      );
+  }
+
+  /**
    *  API, POST /user/<usernm>/password を実行する。パスワードを変更する。
    *
    *  @param passwd0  現在のパスワード。
@@ -688,10 +717,10 @@ export class AdcService {
   getA(username: string, qnum: number): Observable<Object> {
     return this.http.get<Object>(`/api/A/${username}/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: getA', res);
-	  return res;
-	})
+      	map((res: Object) => {
+      	  //console.log('AdcService: getA', res);
+      	  return res;
+      	})
       );
   }
 
@@ -699,10 +728,10 @@ export class AdcService {
   getUserList(): Observable<string[]> {
     return this.http.get<Object>(`/api/admin/user`, this.apiHttpOptions())
       .pipe(
-	map((res: Object) => {
-	  //console.log('AdcService: getUserList', res);
-	  return res as string[];
-	})
+      	map((res: Object) => {
+      	  //console.log('AdcService: getUserList', res);
+      	  return res as string[];
+      	})
       );
   }
 

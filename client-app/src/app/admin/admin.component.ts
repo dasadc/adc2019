@@ -3,9 +3,24 @@ import { Observable, of, from } from 'rxjs';
 import { catchError, map, tap, flatMap, filter } from 'rxjs/operators';
 
 import { AdcService } from '../adc.service';
-import { ResTimekeeper, AdminQList } from '../apiresponse';
+import { ResTimekeeper, AdminQList, ResUserInfo, ResMsgOnly } from '../apiresponse';
 
 import * as yaml from 'js-yaml';
+
+class UserInfo extends ResUserInfo {
+  constructor(
+    public username: string,
+    public displayname: string,
+    public uid: number,
+    public gid: number,
+    public selected: boolean = false
+  ) {
+    super(username, displayname, uid, gid);
+  }
+  static from_ResUserInfo(o: ResUserInfo): UserInfo {
+    return new UserInfo(o.username, o.displayname, o.uid, o.gid);
+  }
+};
 
 @Component({
   selector: 'app-admin',
@@ -24,8 +39,8 @@ export class AdminComponent implements OnInit {
   viewScoreMode: boolean;
   adminQAll: Object;
   adminAAll: Object;
-  userList: string[];
-  userInfoList: Object[] = [];
+  //userList: string[];
+  userInfoList: UserInfo[] = [];  // Object[] = [];
   uploadResults: string;
   title: string = 'ADC Administration';
 
@@ -206,6 +221,7 @@ export class AdminComponent implements OnInit {
     }
   }
 
+  /*
   getUserList(event?: Object) {
     this.userInfoList = [];
     this.adcService.getUserList()
@@ -228,6 +244,21 @@ export class AdminComponent implements OnInit {
       	} // for i
       });
   }
+  */
+
+  userInfoList_sort() {
+    this.userInfoList.sort((a, b) => {return a.uid - b.uid});
+    return this.userInfoList;
+  }
+
+  getUserList(event?: Object) {
+    this.userInfoList = [];
+    this.adcService.getAllUserInfo()
+      .subscribe((x: ResUserInfo) => {
+        //console.log('getUserList x', x);
+        this.userInfoList.push(UserInfo.from_ResUserInfo(x));
+      });
+  }
 
   deleteCheckedUsers($event) {
     let mod: boolean = event['altKey'] && event['ctrlKey'] && event['shiftKey'];
@@ -235,12 +266,10 @@ export class AdminComponent implements OnInit {
       //console.log('deleteCheckedUsers', this.userInfoList);
       from(this.userInfoList)
         .pipe(
-          filter((u: Object) => {
-            return u['selected'];
-          }),
-          flatMap((u: Object) => {
+          filter((u: UserInfo) => u.selected),
+          flatMap((u: UserInfo) => {
             //return of(u['username']);
-            return this.adcService.deleteUserInfo(u['username']);
+            return this.adcService.deleteUserInfo(u.username);
           })
         )
         .subscribe(
@@ -280,13 +309,35 @@ export class AdminComponent implements OnInit {
   }
 
   postUsersYamlFile(f: Object) {
-    console.log('postUsersYamlFile');
+    //console.log('postUsersYamlFile');
     //console.log('filename', f['filename']);
     //console.log('text', f['text']);
     if (f['filename'] === void 0 || f['text'] === void 0) {
       return;
     }
-    let o = yaml.safeLoad(f['text']) as Object[];
+    let users = yaml.safeLoad(f['text']) as Object[];
+    from(users)
+      .pipe(
+        flatMap((user: Object) => {
+          //console.log('postUsersYamlFile: user=', user);
+          return this.adcService.createUser(user);
+        })
+      )
+      .subscribe(
+        (res: ResMsgOnly) => {
+          if (res.msg !== void 0) {
+            console.log('postUsersYamlFile ', res.msg);
+          } else { // error
+            console.log('postUsersYamlFile ERROR', res);
+          }
+        },
+        (err) => console.log('postUsersYamlFile ERROR err=', err),
+        () => {
+          //console.log('complete');
+          this.getUserList();
+        }
+      );
+    /*
     //console.log(o);
     for (let i=0; i<o.length; i++) {
       console.log('postUsersYamlFile', i, o[i]);
@@ -299,6 +350,8 @@ export class AdminComponent implements OnInit {
           }
         });
     }
+    */
+
     /*
     let username: string = this.adcService.getUsername();
     this.adcService.postUserQ(username, this.postQNumber, f['text'], f['filename'])

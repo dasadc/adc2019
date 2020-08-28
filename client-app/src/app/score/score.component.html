@@ -12,11 +12,11 @@
       <th>uid</th>
       <th>gid</th>
     </tr>
-    <tr *ngFor="let v of userInfo; let i = index">
-      <td>{{v['username']}}</td>
-      <td>{{v['displayname']}}</td>
-      <td>{{v['uid']}}</td>
-      <td>{{v['gid']}}</td>
+    <tr *ngFor="let v of userInfo_sort(); let i = index">
+      <td>{{v.username}}</td>
+      <td>{{v.displayname}}</td>
+      <td>{{v.uid}}</td>
+      <td>{{v.gid}}</td>
     </tr>
   </table>
 </div>

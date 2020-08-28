@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
+import { from, of } from 'rxjs';
+import { map, flatMap, mergeMap, filter } from 'rxjs/operators';
 
 import { AdcService } from '../adc.service';
 import { CheckResults } from '../checkresults';
-//import { QNumberList, ANumberList } from '../apiresponse';
+import { ResUserInfo } from '../apiresponse';
 
 @Component({
   selector: 'app-score',
@@ -19,8 +21,8 @@ export class ScoreComponent implements OnInit {
   q_point: Object;
   bonus_point: Object;
   boardData: CheckResults;
-  userList: string[];
-  userInfo: Object[] = [];
+  //userList: string[];
+  userInfo: ResUserInfo[] = [];
 
   constructor(private adcService: AdcService) { }
 
@@ -77,15 +79,15 @@ export class ScoreComponent implements OnInit {
       });
   }
 
-  getUserList() {
-    this.userList = [];
+  /*
+  getUserList_OLD() {
     this.userInfo = [];
     this.adcService.getUserList()
       .subscribe(res => {
         //console.log('getUserList: res=', res);
-        this.userList = res;
-      	for (let i=0; i<this.userList.length; i++) {
-      	  let userName = this.userList[i];
+        let userList = res;
+      	for (let i=0; i<userList.length; i++) {
+      	  let userName = userList[i];
       	  this.adcService.getUserInfo(userName)
       	    .subscribe(res2 => {
       	      //console.log('getUserList: res2=', res2);
@@ -99,6 +101,72 @@ export class ScoreComponent implements OnInit {
       	    });
       	} // for i
       });
+  }
+
+  getUserList_OLD_BETTER() {
+    this.userInfo = [];
+    this.adcService.getUserList()
+      .subscribe((userList: string[]) => {
+        //console.log('getUserList: userList=', userList);
+      	for (let username of userList) {
+      	  this.adcService.getUserInfo(username)
+      	    .subscribe(res2 => {
+      	      //console.log('getUserList: res2=', res2);
+              if (res2['msg'] !== void 0) {
+                let tmp = res2['msg'].split(':');
+        	      this.userInfo.push(
+                  {'username': tmp[0],
+        				   'displayname': tmp[1],
+        				   'uid': tmp[2],
+        				   'gid': tmp[3]}
+                 );
+              }
+      	    });
+      	} // for
+      });
+  }
+
+  getUserList_OK() {
+    this.userInfo = [];
+    this.adcService.getUserList()
+      .pipe(
+        flatMap((users: string[]) => {
+          //console.log('(flatMap) users=', users);
+          return from(users);
+        }),
+        flatMap((username: string) => {
+          return this.adcService.getUserInfo(username);
+        }),
+        filter((res: Object) => {
+          return res['msg'] !== void 0;
+        }),
+        map((res: Object) => {
+          let tmp = res['msg'].split(':');
+          return {'username': tmp[0],
+                  'displayname': tmp[1],
+                  'uid': tmp[2],
+                  'gid': tmp[3]};
+        })
+      )
+      .subscribe((x: Object) => {
+        //console.log('getUserList x', x);
+        this.userInfo.push(x);
+      });
+  }
+  */
+
+  getUserList() {
+    this.userInfo = [];
+    this.adcService.getAllUserInfo()
+      .subscribe((x: ResUserInfo) => {
+        //console.log('getUserList x', x);
+        this.userInfo.push(x);
+      });
+  }
+
+  userInfo_sort() {
+    this.userInfo.sort((a, b) => {return a.uid - b.uid});
+    return this.userInfo;
   }
 
   viewA(q: string, username: string, i: number, j: number) {

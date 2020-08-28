@@ -43,12 +43,22 @@ npm install
 ### (frontend) Angular, development server
 
 ```
-$(npm bin)/ng serve --proxy-config proxy.conf.json --live-reload --watch --poll 9999
+$(npm bin)/ng serve --proxy-config proxy.conf.json --live-reload --watch --poll 9999 --host 0.0.0.0
 または
 npm run test-run
 ```
 
 http://localhost:4200/
+
+#### (Trouble shooting) ウェブブラウザのページに"Invalid Host header"とだけ表示されるとき
+
+ウェブブラウザ(http client)が送ってきた、HTTPのHostヘッダが違うので、Angularの開発用httpサーバが拒否しているのだと思われる。たとえば、routerで、NATのような中継をやっていて、ウェブブラウザで指定したホスト名がlocalhostではないとき、そうなる。
+
+`--disable-host-check`を追加する。
+
+```
+$(npm bin)/ng serve --proxy-config proxy.conf.json --live-reload --watch --poll 9999  --host 0.0.0.0 --disable-host-check
+
 
 
 ### deploy前のテスト実行方法
@@ -62,7 +72,7 @@ $(npm bin)/ng build --prod --base-href=/static/app/index.html --output-path=../s
 npm run build
 ```
 
-実行する。
+実行する。 ---> スクリプト[99_server.sh](../scripts/99_server.sh)が使える。
 
 ```
 cd ../server/

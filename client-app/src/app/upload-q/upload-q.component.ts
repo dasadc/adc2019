@@ -2,7 +2,7 @@ import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
 //import { NgxFileDropEntry, FileSystemFileEntry, FileSystemDirectoryEntry } from 'ngx-file-drop';
 import { readFile } from '../rx-file-reader';
 import { Observable, of, from } from 'rxjs';
-import { catchError, map, tap, flatMap } from 'rxjs/operators';
+import { catchError, map, tap, flatMap, reduce } from 'rxjs/operators';
 
 import { AdcService } from '../adc.service';
 import { UserQEntry, ResUserQList, ResMsgOnly } from '../apiresponse';
@@ -27,16 +27,19 @@ export class UploadQComponent implements OnInit, AfterViewInit {
 
   constructor(private adcService: AdcService) { }
 
-/*
   ngOnInit() {
+    //this.getUserQList();  // 希望通りには動作しない
+
+    /*
     from([1,2,3,4])
       .pipe(
         map(n => n * 2),
         map(m => m + 1)
       )
-      .subscribe(x => console.log(x));
-*/
-  ngOnInit() {
+      .subscribe(x => console.log('(map)', x));
+      // 3, 5, 7, 9
+    */
+
     /*
     from([1,2,3,4])
     .pipe(
@@ -49,9 +52,58 @@ export class UploadQComponent implements OnInit, AfterViewInit {
         return of(m + 1);
       })
     )
-    .subscribe(x => console.log(x));
+    .subscribe(x => console.log('(flatMap)', x));
     */
-    //this.getUserQList();  // うまくいかない
+    /*
+    from([1,2,3,4])
+    .pipe(
+      flatMap((n: number) => {
+        console.log('fm0', n);
+        return of([n * 2, n]);
+      }),
+      flatMap((m: number[]) => {
+        console.log('fm1', m);
+        m.unshift(m[0] + 1)
+        return of(m);
+      })
+    )
+    .subscribe((x: number[]) => console.log('(flatMap)', x));
+    */
+    /*
+    fm0 1
+    fm1 Array [ 2, 1 ]
+    (flatMap) Array(3) [ 3, 2, 1 ]
+
+    fm0 2
+    fm1 Array [ 4, 2 ]
+    (flatMap) Array(3) [ 5, 4, 2 ]
+
+    fm0 3
+    fm1 Array [ 6, 3 ]
+    (flatMap) Array(3) [ 7, 6, 3 ]
+
+    fm0 4
+    fm1 Array [ 8, 4 ]
+    (flatMap) Array(3) [ 9, 8, 4 ]
+    */
+
+    /*
+    from([1,2,3,4])
+    .pipe(
+      reduce((acc: number, curr: number) => {
+        console.log('acc=', acc, ' curr=', curr);
+        return acc + curr;
+      }, 10)
+    )
+    .subscribe((x: number) => console.log('(reduce)', x));
+    */
+    /*
+    acc= 10  curr= 1
+    acc= 11  curr= 2
+    acc= 13  curr= 3
+    acc= 16  curr= 4
+    (reduce) 20
+    */
   }
 
   ngAfterViewInit() {
@@ -97,7 +149,12 @@ export class UploadQComponent implements OnInit, AfterViewInit {
     let username: string = this.adcService.getUsername();
     this.adcService.deleteUserQ(username, i)
       .subscribe(res => {
-        console.log('res=', res);
+        console.log('res=', res);      flatMap((m: number[]) => {
+        console.log('fm1', m);
+        m.unshift(m[0] + 1)
+        return of(m);
+      })
+
         this.getUserQList();
       })
   }

@@ -120,6 +120,11 @@ def adc_get_user_list(users):
     ==========
     users : list
         adcusers.pyのUSERSで定義されたリスト。adcusers.USERS
+
+    Returns
+    =======
+    res : list of str
+        ユーザー名のリスト
     """
     res = []
     # まずはローカルに定義されたユーザを検索

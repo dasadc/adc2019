@@ -102,3 +102,11 @@ export class AdminQList { // API: '/admin/Q/list', datastore kind: 'q_list_all'
   }
 }
 
+export class ResUserInfo {
+  constructor(
+    public username: string,
+    public displayname: string,
+    public uid: number,
+    public gid: number
+  ) { }
+}

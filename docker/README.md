@@ -32,7 +32,7 @@ $6$ipsjdasadc$j3jCv7RIO3CDs4dBWBsRHvLAjQe3tln.TdQdRVcBTM6fa3FL7.jz7hkCRxtoQxq4eX
 docker build
 ------------
 
-2種類のdocker imageを作成できる
+2種類のdocker imageを作成できる。
 
 - `Dockerfile` ... 実行専用。サイズは下記"-dev"よりも小さめ
 - `Dockerfile-dev` ... 実行に加えて、ソフトウェア開発もできる
@@ -57,6 +57,16 @@ Docker Hub
 https://hub.docker.com/repository/docker/ipsjdasadc/adc
 
 
+### patch20200828
+
+``` bash
+sudo docker build --tag ipsjdasadc/adc:20200828 --file Dockerfile-patch20200828 .
+sudo docker tag         ipsjdasadc/adc:20200828 ipsjdasadc/adc:latest
+sudo docker push        ipsjdasadc/adc:20200828
+sudo docker push        ipsjdasadc/adc:latest
+```
+
+
 <a name="docker-run"></a>
 docker run
 ----------
@@ -78,9 +88,9 @@ dockerに関係なく一般に、serverを起動する前には、ファイル`a
 - `ADC_PASS_ADMIN`の値が、ユーザーadministratorのパスワードになる（ファイル`adcusers.py`に反映される。default: `Change_admin_password!!`）
 - `ADC_PASS_USER`の値が、ファイル`adcusers.yaml`に反映される(default: `Change_user_password!!!`)。`adcusers.yaml`はserverの動作には何も影響せず、ユーザー登録作業のためのskeltonファイルのようなものである。初回起動時に、administrator以外の全ユーザーが、自動登録されるようなことはない。[adc2019/client-app/README.md](../client-app/README.md)にて説明している方法で、ユーザー登録をする必要がある
 
-#### dockerコンテナを起動するとき
+#### dockerコンテナ内でserverを起動する場合
 
-ところが、このdockerコンテナでは、serverはsystemd経由で起動するため、unitファイル`/etc/systemd/system/adc-server.service`へ、dockerホスト側から環境変数を渡すのは困難である。そのため、コンテナ内にでファイル`/etc/systemd/system/adc-server.service.d/env.conf`をマウントさせることにした。
+ところが、このdockerコンテナでは、serverはsystemd経由で起動するため、unitファイル`/etc/systemd/system/adc-server.service`へ、dockerホスト側から環境変数を渡すのは困難である。そのため、コンテナ内でファイル`/etc/systemd/system/adc-server.service.d/env.conf`をマウントさせることにした。
 
 参考用のファイル`env.sample.conf`をもとにして、以下のような内容のファイル`env.conf`を作成し、適切な値を設定する。`env.conf`は他人からアクセスされないように、厳重に管理する。
 
@@ -183,6 +193,28 @@ sudo docker rm adc2020
 ```
 
 
+### serverの状態を調べる／ログを見る
+
+
+API server + httpd (gunicorn)のログ
+
+``` bash
+sudo docker exec -it -u root adc2020 systemctl status adc-server
+
+sudo docker exec -it -u root adc2020 journalctl -xu adc-server
+```
+
+Google datastore emulatorのログ
+
+``` bash
+sudo docker exec -it -u root adc2020 systemctl status adc-datastore
+
+sudo docker exec -it -u root adc2020 journalctl -xu adc-datastore
+```
+
+
+
+
 ウェブブラウザからserverにアクセスする
 ------------------------------------
 
@@ -196,3 +228,5 @@ dockerホスト以外で実行しているウェブブラザなら、localhost�
 例 http://192.168.1.20:20080/
 
 (備考) おそらくファイアウォールの許可ルールを追加しなくても、dockerのせいでアクセスできてしまうはず。
+
+
