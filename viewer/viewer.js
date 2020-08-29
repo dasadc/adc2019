@@ -337,7 +337,7 @@ function parseAFile(text) {
 		boardH = bboxH;
 	    }
 	}
-	else if (m = /BLOCK#(\d+)\s+@\((\d+),(\d+)\)/.exec(line)) {
+	else if (m = /BLOCK#(\d+)\s+@\(\s*(\d+),\s*(\d+)\)/.exec(line)) {
 	    n = Number(m[1]) - 1;
 	    blockLoc[n] = [Number(m[2]), Number(m[3])];
 	}
