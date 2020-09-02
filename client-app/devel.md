@@ -5,6 +5,9 @@ ADC2019 Web application (client-app)
 初期設定
 --------
 
+[Anaconda(Miniconda)の環境を使う](../devel.md#miniconda)
+
+
 Ubuntu 18.04では、aptでインストールされるnode.jsが古い。anacondaのnpmを使う。
 
 ```
@@ -40,7 +43,21 @@ npm install
 実行する
 ---------
 
-### (frontend) Angular, development server
+### google datastore emulatorを実行しておく
+
+```
+../scripts/00_datastore.sh
+```
+
+### ADCのAPI serverを実行しておく
+
+port番号は8888を使う(以下の`proxy.conf.json`で指定されているため)。
+
+```
+../scripts/04_server.sh
+```
+
+### (frontend) Angular, development serverを実行する
 
 ```
 $(npm bin)/ng serve --proxy-config proxy.conf.json --live-reload --watch --poll 9999 --host 0.0.0.0
@@ -58,7 +75,17 @@ http://localhost:4200/
 
 ```
 $(npm bin)/ng serve --proxy-config proxy.conf.json --live-reload --watch --poll 9999  --host 0.0.0.0 --disable-host-check
+```
 
+#### (Trouble shooting) npm installで、`fibers@5.0.0`がエラーと言われる
+
+g++がインストールされていなかったのが原因だった。
+
+`sudo apt install g++`
+
+#### (Trouble shooting) `npm run build`したとき、意味不明なエラーがでた
+
+ディレクトリ`node_modules`を消して、`npm install`からやり直したら、不思議なことに、直った。
 
 
 ### deploy前のテスト実行方法
@@ -101,3 +128,15 @@ gunicorn -b :28000 --access-logfile '-' main:app
 ``` python
 YEAR = 2020
 ```
+
+
+d3.js
+-----
+
+https://medium.com/better-programming/reactive-charts-in-angular-8-using-d3-4550bb0b4255
+
+npm info d3 versions
+npm install d3@5 --save
+
+> d3@5.16.0 がインストールされた
+

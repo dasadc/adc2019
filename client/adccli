@@ -78,6 +78,7 @@ def main():
     #
     cli = ADCClient()
     cli.read_config()
+    url_default = cli.url
 
     parser = argparse.ArgumentParser(
         description='DA Symposium 2020 Algorithm Design Contest, Command Line Interface tool')
@@ -87,7 +88,7 @@ def main():
     parser.add_argument('-u', '--username', default=cli.username, help='set username (default: %(default)s)')
     parser.add_argument('--alt-username', help='set alternative username. admin only')
     parser.add_argument('-p', '--password', help='set password')
-    parser.add_argument('-U', '--URL', default=cli.url, help='set server URL (default: %(default)s)')
+    parser.add_argument('-U', '--URL', default=url_default, help='set server URL (default: %(default)s)')
     parser.add_argument('-o', '--output', metavar='FILE', default=cli.output_file,
                         help='output file name (default: %(default)s)')
     parser.add_argument('cmd', nargs=1, help='"adccli help" will show help of cmd.')
@@ -98,13 +99,13 @@ def main():
     cli.debug = args.debug
     cli.verbose = args.verbose
     cli.config = args.config
-    cli.read_config()
+    cli.read_config()  # This may change cli.url
     cli.output_file = args.output
     cli.username = args.username
     cli.alt_username = args.alt_username
     if args.password:
         cli.password = args.password
-    if args.URL:
+    if args.URL != url_default:
         cli.url = args.URL
 
     a = args.cmd[0]

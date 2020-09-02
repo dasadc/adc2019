@@ -8,6 +8,7 @@ import { UploadQComponent } from './upload-q/upload-q.component';
 import { ContestComponent } from './contest/contest.component';
 import { ScoreComponent } from './score/score.component';
 import { AdminComponent } from './admin/admin.component';
+import { BoardEditComponent } from './board-edit/board-edit.component';
 
 const routes: Routes = [
   { path: 'file-checker', component: FileCheckerComponent },
@@ -17,6 +18,7 @@ const routes: Routes = [
   { path: 'arena', component: ContestComponent },
   { path: 'score', component: ScoreComponent },
   { path: 'admin', component: AdminComponent },
+  { path: 'edit', component: BoardEditComponent },
 ];
 
 @NgModule({

@@ -79,26 +79,26 @@ sh Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 -u
 環境を作成する（server開発・実行ユーザー用）
 
 ```
-/opt/miniconda3/bin/conda create -n py38 python=3.8 Flask=1.1.2 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs
+/opt/miniconda3/bin/conda create -n adc2019 python=3.8 Flask=1.1.2 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs
 ```
 
 環境を作成する（ADC参加者、[adccli](client/README.md)を実行するだけのユーザー用）
 
 ```
-/opt/miniconda3/bin/conda create -n py38 python=3.8 numpy pyyaml
+/opt/miniconda3/bin/conda create -n adc2019 python=3.8 numpy pyyaml
 ```
 
 環境を使う
 
 ```
-conda activate py38
+conda activate adc2019
 ```
 
 ##### datastore emulator (ADC参加者は不要)
 
 datastore emulator (google-cloud-datastore)は、serverを実行するときに必要であり、adccliコマンドを実行するだけでの場合は不要である。
 
-`conda activate py38`したあとなら、これだけで十分。
+`conda activate adc2019`したあとなら、これだけで十分。
 
 ```
 pip install google-cloud-datastore

@@ -61,11 +61,12 @@ class ADCClient:
         """
         設定情報をファイルから読み出す。
         """
+        #print('read_config', self.config)
         r = True
         try:
             with open(self.config, "r") as f:
                 data = json.load(f)
-                # print("data=",data)
+                #print("data=", data)
                 for i in ['username', 'cookie', 'url', 'token']:
                     if i in data and data[i] is not None:
                         self.__dict__[i] = data[i]
