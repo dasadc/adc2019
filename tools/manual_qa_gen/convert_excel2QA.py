@@ -1,4 +1,6 @@
 import xlrd
+import base64
+import binascii
 
 def genA(x):
     ret = []
@@ -102,6 +104,15 @@ def genQ(x):
 def convert(xlsname):
     x = xlrd.open_workbook(xlsname)
     return genA(x), genQ(x)
+
+def genA_from_b64(data):
+    try:
+        data_decoded = base64.b64decode(data)
+        x = xlrd.open_workbook(file_contents=data_decoded)
+        return genA(x)
+    except binascii.Error:
+        # maybe not b64 encoded data, and it is text
+        return data
 
 if __name__ == "__main__":
     import sys
