@@ -1,74 +1,138 @@
+#my_base {
+  fill: #f8f8f8;
+  stroke-width: 1;
+  stroke: #a0a0a0;
+}
+
+.tick {
+  stroke-width: 1;
+  stroke: black;
+}
+
 rect.block01 {
   fill: red;
   stroke: black;
   stroke-width: 5;
-  opacity: 0.5
+  opacity: 0.5;
 }
 
 
 .straight-tetromino {
+  /* 上にのせたtextも、透けてしまう
   fill: #00ffff;
   stroke: #00b4b4;
-  stroke-width: 1;
   opacity: 0.5
+  */
+  fill: #00ffff7f;
+  stroke: #00b4b47f;
+  stroke-width: 1;
 }
 
 .square-tetromino {
-  fill: #fffe45;
-  stroke: #b3b230;
+  fill: #fffe457f;
+  stroke: #b3b2307f;
   stroke-width: 1;
-  opacity: 0.5
 }
 
 .T-tetromino {
-  fill: #ff00f9;
-  stroke: #b300ae;
+  fill: #ff00f97f;
+  stroke: #b300ae7f;
   stroke-width: 1;
-  opacity: 0.5
 }
 
 .L-tetromino {
-  fill: #ff7c25;
-  stroke: #b1561a;
+  fill: #ff7c257f;
+  stroke: #b1561a7f;
   stroke-width: 1;
-  opacity: 0.5
 }
 
 .J-tetromino {
-  fill: #001ff8;
-  stroke: #0015ab;
+  fill: #001ff87f;
+  stroke: #0015ab7f;
   stroke-width: 1;
-  opacity: 0.5
 }
 
 .S-tetromino {  /* skew */
-  fill: #00ff44;
-  stroke: #00b631;
+  fill: #00ff447f;
+  stroke: #00b6317f;
   stroke-width: 1;
-  opacity: 0.5
 }
 
 .Z-tetromino {  /* skew */
-  fill: #ff000c;
-  stroke: #b30008;
+  fill: #ff000c7f;
+  stroke: #b300087f;
   stroke-width: 1;
-  opacity: 0.5
 }
 
 .monomino {
-  fill: #9b9b9b;
-  stroke: #5a5a5a;
+  fill: #9b9b9b7f;
+  stroke: #5a5a5a7f;
   stroke-width: 1;
-  opacity: 0.5
 }
 
 
 .blank-cell {
-  fill: #ffff;
-  stroke: #cfcfcf;
+  fill: #ececec7f;
+  stroke: #cfcfcf7f;
   stroke-width: 1;
+  /*
   opacity: 0.5;
   fill-opacity: 0.0
+  */
+}
+
+.line-cell {
+  fill: #ffffffff;
+  stroke: #808080ff;
+  stroke-width: 1;
+  /*
+  opacity: 1.0;
+  fill-opacity: 1.0
+  */
+}
+
+.cell-label {
+  fill: black;
+  font-family: arial narrow;
+  font-size: 7pt;
+  stroke: none;
+  dominant-baseline: middle;
+  text-anchor: middle;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.status-number-value {
+    padding: 2px 2px 2px 2px;
+    border: solid 1px lightgray;
+    margin: 0px 10px 0px 10px;
+    width: 280px;
+    height: 24px;
+    display: inline-block;
+    font-size: 22px;
+}
+
+.selected {
+  stroke-width: 3;
+}
+
+.temporally {
+  opacity: 0.4;
+}
+
+
+input.line-number {
+  width: 5ch;
+}
+
+input.Q-number {
+  width: 4ch;
+}
+
+input.board-size {
+  width: 3ch;
 }
 
 /*

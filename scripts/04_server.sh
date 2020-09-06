@@ -1,4 +1,14 @@
 #! /bin/bash
+#
+# Launch adc2019 API server
+#
+# environment variable
+# - CONDA_ENV
+# - ADC_YEAR
+# - ADC_SECRET_KEY
+# - ADC_SALT
+# - ADC_PASS_ADMIN
+# - ADC_PASS_USER
 
 script=$(readlink -f "$0")
 top_dir=$(cd $(dirname "$script")/../; pwd)

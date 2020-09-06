@@ -1,9 +1,54 @@
 <p>
-  テトロミノを描画してみるテスト。<br />
-  「こいつ動くぞ！」
+  <a href="{{'https://github.com/dasadc/adc2019/blob/adc2020-yt/client-app/README.md#edit'}}" target="{{'_blank'}}">(HELP) How to use</a>
 </p>
+<div>
+  <ng-container *ngFor="let b of working_modes; index as i">
+    <label>
+      <input type="radio" name="workingmode" id="workingmode{{i}}" [(ngModel)]="working_mode_selected" [value]="b.value" [checked]="working_mode_selected==b.value" (change)="on_change_mode()">{{b.title}}
+    </label>
+  </ng-container>
+  &nbsp;
 
-<div id="my_board">
-  <svg>
-  </svg>
+Number:
+  <input type="text" class="line-number" [(ngModel)]="in_number" #inputnumber (keyup.enter)="input_number()">
+  &nbsp;
+
+  <ng-container *ngFor="let b of edit_modes; index as i">
+    <label>
+      <input type="checkbox" name="editmode{{i}}" id="editmode{{i}}" [(ngModel)]="b.selected" [value]="b.value" (change)="on_change_mode()">{{b.title}}
+    </label>
+  </ng-container>
+  &nbsp;
+
+  Q-Number:
+  <input type="text" class="Q-number" [(ngModel)]="q_number" #qnumber>
+  &nbsp;
+
+  Cell: <span class="status-number-value">{{hover_number}}</span>
+
+  <button (click)="onClick_config()">config</button>
+  <button (click)="onClick_readQ()">read Q</button>
+  <button (click)="onClick_writeA()">write A</button>
+  <button (click)="onClick_refresh()">refresh blocks</button>
+</div>
+
+<div *ngIf="do_config" #config>
+<h3>Configuration</h3>
+Board size:
+<input type="text" class="board-size" [(ngModel)]="board_size_temp.x" >
+X
+<input type="text" class="board-size" [(ngModel)]="board_size_temp.y" >
+<br />
+<button title="OK" (click)="onClick_config_OK()">OK</button>
+<button title="Cancel" (click)="onClick_config_Cancel()">Cancel</button>
+</div>
+
+<div *ngIf="do_readQFile" #readQFile>
+<h3>Read Q file</h3>
+<app-file (cleared)="onCleared_openQFile($event)" #openQFile></app-file>
+<button title="OK, use this file" (click)="onClick_readQ_OK()">OK, use this file</button>
+</div>
+
+<div id="my_board" (window:resize)="onResize($event)">
+  <svg id="my_svg"></svg>
 </div>
