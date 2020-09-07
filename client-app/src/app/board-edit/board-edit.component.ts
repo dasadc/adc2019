@@ -39,6 +39,19 @@ class BlockData {
   static create(id: string, x: number, y: number): BlockData {
     return new BlockData(id, new Pos(x, y));
   }
+
+  block_bounding_box(): number[] {
+    return RectData.block_bounding_box(QData.blocks[this.id]);
+  }
+
+  block_size(): number[] {
+    let bb: number[] = this.block_bounding_box();
+    return this.block_size_bb(bb);
+  }
+
+  block_size_bb(bb: number[]): number[] {
+    return [bb[2] - bb[0] + 1, bb[3] - bb[1] + 1];
+  }
 };
 
 /**
@@ -97,6 +110,40 @@ class RectData {
     } // y
     return new RectData(rect, new Pos(pos.x, pos.y), cls);
   }
+
+  /**
+   *  block(blocksの要素1つ)の、bounding boxを求める。
+   *
+   > block_bounding_box(blocks['I0'])
+   [ 0, 0, 0, 3 ]
+   > block_bounding_box(blocks['I1'])
+   [ 0, 0, 3, 0 ]
+   > block_bounding_box(blocks['O0'])
+   [ 0, 0, 1, 1 ]
+   > block_bounding_box(blocks['T0'])
+   [ 0, 0, 2, 1 ]
+   */
+  static block_bounding_box(block: string[][]): number[] {
+    let xsum = [0, 0, 0, 0];
+    let ysum = [0, 0, 0, 0];
+    for (let y = 0; y < 4; y ++) {
+      for (let x = 0; x < 4; x ++) {
+        if (block[y][x] != ' ') {
+          ysum[y] ++;
+          xsum[x] ++;
+        }
+      }
+    }
+    let x0 = 0, y0 = 0, x1 = 3, y1 = 3;
+    while (xsum[x0] == 0 && x0 < 4) { x0++; }
+    while (ysum[y0] == 0 && y0 < 4) { y0++; }
+    while (xsum[x1] == 0 && 0 < x1) { x1--; }
+    while (ysum[y1] == 0 && 0 < y1) { y1--; }
+    if ( x1 < x0 || y1 < y0 ) {
+      throw "unexpected block";
+    }
+    return [x0, y0, x1, y1];
+  }
 };
 
 /** d3.js data()として使う、ブロックのデータ */
@@ -105,6 +152,7 @@ class BlockData_d3 {
   dragstart_pos: Pos;
   temporally: boolean = false;
   delete_ok;
+  block_num: number;  // Qデータで指定されている"BLOCK#番号"。Aデータ出力時に必要
 
   constructor(public block: BlockData,
               public rect: RectData,
@@ -120,6 +168,35 @@ class BlockData_d3 {
     let rect = RectData.from_QData(q_b_type, q_b_size, q_b_data, pos);
     let posxy = new Pos(pos.x * Cell.width, pos.y * Cell.height);
     return new BlockData_d3(block, rect, posxy, id, _component);
+  }
+
+  block_size(): number[] {
+    return this.block.block_size();
+  }
+
+  /** ADC-Q形式のテキストを返す */
+  block_text(): string {
+    let tmp = [ ['0', '0', '0', '0'],
+                ['0', '0', '0', '0'],
+                ['0', '0', '0', '0'],
+                ['0', '0', '0', '0'] ];
+    let cell_width = 3;
+    for (let cell of this.rect.rect) {
+      let val = (cell.value === void 0) ? '+' : cell.value;
+      tmp[cell.y][cell.x] = val;
+      cell_width = Math.max(cell_width, val.length)
+    }
+    let size = this.block.block_size();  // bounding boxからブロックサイズを求める
+    //console.log(this.rect.rect, tmp);
+    let res = '';
+    for (let y=0; y<size[1]; y++) {
+      for (let x=0; x <size[0]; x++) {
+        if (0 < x) res += ',';
+        res += ('    ' + tmp[y][x]).slice(-cell_width);
+      }
+      res += '\n';
+    }
+    return res;
   }
 };
 
@@ -293,40 +370,6 @@ export class BoardEditComponent implements OnInit, OnChanges {
   }
 
   /**
-   *  block(blocksの要素1つ)の、bounding boxを求める。
-   *
-   > block_bounding_box(blocks['I0'])
-   [ 0, 0, 0, 3 ]
-   > block_bounding_box(blocks['I1'])
-   [ 0, 0, 3, 0 ]
-   > block_bounding_box(blocks['O0'])
-   [ 0, 0, 1, 1 ]
-   > block_bounding_box(blocks['T0'])
-   [ 0, 0, 2, 1 ]
-   */
-  private block_bounding_box(block: string[][]): number[] {
-    let xsum = [0, 0, 0, 0];
-    let ysum = [0, 0, 0, 0];
-    for (let y = 0; y < 4; y ++) {
-      for (let x = 0; x < 4; x ++) {
-        if (block[y][x] != ' ') {
-          ysum[y] ++;
-          xsum[x] ++;
-        }
-      }
-    }
-    let x0 = 0, y0 = 0, x1 = 3, y1 = 3;
-    while (xsum[x0] == 0 && x0 < 4) { x0++; }
-    while (ysum[y0] == 0 && y0 < 4) { y0++; }
-    while (xsum[x1] == 0 && 0 < x1) { x1--; }
-    while (ysum[y1] == 0 && 0 < y1) { y1--; }
-    if ( x1 < x0 || y1 < y0 ) {
-      throw "unexpected block";
-    }
-    return [x0, y0, x1, y1];
-  }
-
-  /**
   parts_block_data = [
     {block: 'I0', x: 0, y: 0},
     {block: 'I1', x: 2, y: 0},
@@ -403,7 +446,7 @@ export class BoardEditComponent implements OnInit, OnChanges {
     //console.log('svg_size=', this.svg_size);
     // pass 1
     for (let bd of blocks) {
-      let bb: number[] = this.block_bounding_box(QData.blocks[bd.block.id]);
+      let bb: number[] =RectData.block_bounding_box(QData.blocks[bd.block.id]);
       //console.log(area, cx, cy, bd, bb);
       bd.rect.pos.x = cx;
       bd.rect.pos.y = cy;
@@ -567,6 +610,8 @@ export class BoardEditComponent implements OnInit, OnChanges {
       }
       bd.block.pos.x = Math.round(bd.pos.x / Cell.width);
       bd.block.pos.y = Math.round(bd.pos.y / Cell.height);
+      bd.rect.pos.x = bd.block.pos.x;  // 同じデータが2箇所にある???重複
+      bd.rect.pos.y = bd.block.pos.y;
       // ctrl + dragのときは、ブロックを複製する
       if (d3.event.sourceEvent.ctrlKey &&  // ctrl + drag
           d._component.construction_mode()) { // 問題作成モードである
@@ -1226,7 +1271,7 @@ export class BoardEditComponent implements OnInit, OnChanges {
       this.board_size_temp.x = this.board_size.x;
       this.board_size_temp.y = this.board_size.y;
     }
-    console.log(this.board_size, this.board_size_temp);
+    //console.log(this.board_size, this.board_size_temp);
   }
 
   onClick_readQ() {
@@ -1248,6 +1293,7 @@ export class BoardEditComponent implements OnInit, OnChanges {
     for (let i=1; i<= q.block_num; i++) {
       let id = this.next_mino_id();
       let bd: BlockData_d3 = BlockData_d3.from_QData(q.block_type[i], q.block_size[i], q.block_data[i], pos, id, this);
+      bd.block_num = i;
       blocks.push(bd);
       //console.log(pos, bd);
       //this.blocks_on_board.push(bd);  // ブロックを盤に追加
@@ -1284,9 +1330,9 @@ export class BoardEditComponent implements OnInit, OnChanges {
   }
 
   onClick_writeA() {
-    console.log('onClick_writeA');
+    //console.log('onClick_writeA');
     let bd_on_board: BlockData_d3[] = this.get_blocks_on_board();
-    console.log(bd_on_board);
+    //console.log(bd_on_board);
     let a_data: string = '';
     a_data += `A${this.q_number}\n`;
     a_data += `SIZE ${this.board_size.x}X${this.board_size.y}\n`;
@@ -1300,9 +1346,22 @@ export class BoardEditComponent implements OnInit, OnChanges {
     }
     let a_data2 = '';
     let block_num = 1;
+    let renumber = false;
     for (let bd of bd_on_board) {
-      a_data2 += `BLOCK#${block_num} @(${bd.rect.pos.x},${bd.rect.pos.y})\n`;
-      block_num ++;
+      if (bd.block.id != 'l0') {  // ラインのセルではない
+        if (bd.block_num === void 0) {
+          // (BLOCK#番号の指定がない)Qデータ由来ではなく、Constructionモードで追加されたブロック
+          renumber = true;
+          break;
+        }
+      }
+    }
+    //console.log('renumber=', renumber);
+    for (let bd of bd_on_board) {
+      if (bd.block.id != 'l0') {  // ラインのセルではない
+        let n: number = (renumber) ? (block_num++) : bd.block_num;
+        a_data2 += `BLOCK#${n} @(${bd.rect.pos.x},${bd.rect.pos.y})\n`;
+      }
       for (let cell of bd.rect.rect) {
         let value: string;
         if (cell.value === void 0 || cell.value == '+') {  // undefined
@@ -1326,7 +1385,32 @@ export class BoardEditComponent implements OnInit, OnChanges {
       a_data += '\n';
     }
     a_data += a_data2;
-    console.log(board);
-    console.log(a_data);
+    //console.log(board);
+    //console.log(a_data);
+    let filename = `A${this.q_number}.txt`;
+    this.adcService.downloadFile(a_data, 'text/plain', filename);
+  }
+
+  onClick_writeQ() {
+    //console.log('onClick_writeQ');
+    let bd_on_board: BlockData_d3[] = this.get_blocks_on_board();
+    //console.log(bd_on_board);
+    let block_num = 1;
+    let q_data2 = '';
+    for (let bd of bd_on_board) {
+      if (bd.block.id != 'l0') {  // ラインのセルではない
+        q_data2 += '\n';
+        let size: number[] = bd.block_size();
+        q_data2 += `BLOCK#${block_num} ${size[0]}X${size[1]}\n`;
+        block_num ++;
+        q_data2 += bd.block_text();
+      }
+    }
+    let q_data = `SIZE ${this.board_size.x}X${this.board_size.y}\n`;
+    q_data += `BLOCK_NUM ${block_num - 1}\n`;
+    q_data += q_data2;
+    //console.log(q_data);
+    let filename = `Q${this.q_number}.txt`;
+    this.adcService.downloadFile(q_data, 'text/plain', filename);
   }
 }
