@@ -1,4 +1,4 @@
-FROM python:3.7-slim-buster
+FROM python:3.8-slim-buster
 
 ENV HOME /api/
 
@@ -12,5 +12,6 @@ ADD ./ ${HOME}
 RUN python ./adcusers_gen.py
 
 #ENTRYPOINT ["python", "./main.py", "--ip", "0.0.0.0", "--p", "4280", "--anonymous"]
-ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:4280", "main:app"]
+#ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:4280", "main:app"]
+ENTRYPOINT ["./entry.sh"]
 
