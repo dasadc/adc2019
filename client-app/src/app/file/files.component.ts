@@ -87,6 +87,7 @@ export class FilesComponent implements OnInit {
     //console.log('files: clear_data()');
     this.files = [];
     this.list_of_files = [];
+    this.qnum = 0;
     this.text = undefined;
     this.filename = undefined;
     this.adcService.clearText3();
@@ -119,5 +120,10 @@ export class FilesComponent implements OnInit {
     }
     this.list_of_files = tmp_list_of_files;
     this.qnum = tmp_qnum;
+  }
+
+  resetQFileList() {
+    this.qnum = 0;
+    this.list_of_files = [];
   }
 }

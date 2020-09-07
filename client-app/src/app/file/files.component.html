@@ -25,6 +25,8 @@
       </tr>
     </table>
 
+    <button title="Reset list" (click)="resetQFileList()">Reset list</button>
+
     <app-file-view [text]="text" [filename]="filename"></app-file-view>
     <button *ngIf="text" title="clear" (click)="clear_data()">Clear</button>
 </div>
