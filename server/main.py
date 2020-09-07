@@ -23,7 +23,7 @@ import adcusers
 import adcutil
 import conmgr_datastore as cds
 
-from convert_excel2QA import genA_from_b64
+#from convert_excel2QA import genA_from_b64
 
 #werkzeug_logger = logging.getLogger("werkzeug")
 #werkzeug_logger.setLevel(logging.ERROR)
@@ -224,7 +224,7 @@ def check_file():
         # if success (= if b64 encoded file),
         # decode it and return adata by converting it into A file.
         # otherwise (= just a text data), return adata as it is.
-        adata = genA_from_b64(adata) 
+        #adata = genA_from_b64(adata) 
     if 'Qfile' in request.files:
         qdata = request.files['Qfile'].read().decode('utf-8')
     if 'Afile' in request.files:
