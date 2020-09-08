@@ -75,6 +75,15 @@ sudo docker push        ipsjdasadc/adc:20200902
 sudo docker push        ipsjdasadc/adc:latest
 ```
 
+### patch20200907
+
+``` bash
+sudo docker build --tag ipsjdasadc/adc:20200907 --file Dockerfile-patch20200907 --no-cache .
+sudo docker tag         ipsjdasadc/adc:20200907 ipsjdasadc/adc:latest
+sudo docker push        ipsjdasadc/adc:20200907
+sudo docker push        ipsjdasadc/adc:latest
+```
+
 
 <a name="docker-run"></a>
 docker run

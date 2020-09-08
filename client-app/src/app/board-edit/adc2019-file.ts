@@ -78,7 +78,7 @@ export class QData {
     this.block_num = 0;
     this.line_num = 0;
 
-    let input_line_cnt = 0
+    let input_line_cnt = 0;
     let in_block = false;
     let block_size_x = 0;
     let block_size_y = 0;
@@ -212,6 +212,149 @@ export class QData {
       return k;
     }
     return '???';
+  }
+
+  constructor() {
+    // https://stackoverflow.com/questions/1418050/string-strip-for-javascript
+    if(typeof(String.prototype.trim) === "undefined")
+    {
+      String.prototype.trim = function()
+      {
+        return String(this).replace(/^\s+|\s+$/g, '');
+      };
+    }
+  }
+};
+
+/**
+ * To represent "BLOCK#1 @(0,0)"
+ */
+class BlockPos {
+  constructor(public n: number, public x: number, public y: number) { }
+};
+
+/**
+ *   ADC A-data (回答データ)
+ */
+export class AData {
+
+  a_number: number;
+  size: number[];
+  board: number[][];
+  block_pos: BlockPos[];
+
+  get_block_pos(i: number): number[] {
+    return [this.block_pos[i].x, this.block_pos[i].y];
+  }
+
+  parse(a_data: string) {
+    //this.a_number = undefined;
+    //this.size = undefined;
+    //this.board = undefined;
+    let input_line_cnt: number = 0;
+    let size: number[] = [0, 0];
+    let in_size = false;
+    let ban_data: string[][] = [];
+    let block_pos: BlockPos[] = [];
+    let aid: number;
+    let re_AID   = /A([0-9]+)/i;
+    let re_SIZE  = /SIZE\s+([0-9]+)X([0-9]+)/i;
+    let re_BLOCK = /BLOCK\s*#\s*([0-9]+)\s+@\s*\(\s*([0-9]+)\s*,\s*([0-9]+)\s*\)/i;
+    for (let line of a_data.split(/\r?\n/)) {
+      input_line_cnt += 1;
+      line = line.trim();
+      if (line == '') {
+        if (in_size) {
+          if (0 < ban_data.length) {
+            in_size = false;
+          }
+        }
+        continue;
+      }
+      let m = line.match(re_AID);
+      if (m) {
+        in_size = false;
+        aid = + m[1];
+        continue;
+      }
+      m = line.match(re_SIZE);
+      if (m) {
+        if (in_size) {
+          throw 'check-A1: syntax error in SIZE';
+        }
+        in_size = true;
+        size[0] = + m[1];
+        size[1] = + m[2];
+        if (! (1 <= size[0] && size[0] <= 72) &&
+              (1 <= size[1] && size[1] <= 72)) {
+          throw 'check-A1: syntax error in SIZE: ' + line;
+        }
+        continue;
+      }
+      m = line.match(re_BLOCK);
+      if (m) {
+        in_size = false;
+        let b: number = + m[1];
+        let x: number = + m[2];
+        let y: number = + m[3];
+        if (block_pos[b] !== void 0) {
+          throw `check-A3: duplicated BLOCK#${b}: ` + line;
+        }
+        if (size[0] == 0 && size[1] == 0) {
+          throw 'check-A4: SIZE not found';
+        }
+        if (! (0 <= x && x < size[0] &&
+               0 <= y && y < size[1])) {
+          throw 'check-A5: invalid block position: ' + line;
+        }
+        block_pos[b] = new BlockPos(b, x, y);
+        continue;
+      }
+      if (in_size) {
+       let line2 = line.replace(/\+/g, '-1');
+       //console.log(line2);
+       let tmp_data = [];
+       for (let tmp of line2.split(',')) {
+         let v = + tmp;
+         if (isNaN(v)) {
+           throw `check-A6: syntax error: ${input_line_cnt}: ${line}`;
+         }
+         tmp_data.push(v);
+       }
+       ban_data.push(tmp_data);
+       continue;
+      }
+      throw `check-A6: unknown line: ${input_line_cnt}, ${line}`;
+    } // for line2
+    let block_num = block_pos.length;
+    if (block_pos[0] === void 0) block_num -= 1;
+    if (in_size || block_num == 0) {
+      throw 'check-A7: BLOCK not found';
+    }
+    //console.log('size', size);
+    //console.log('ban_data', ban_data);
+    let tmp_board: number[][] = [];
+    for (let y = 0; y < size[1]; y ++) {
+      //console.log(y, ban_data[y]);
+      if (ban_data[y] === void 0 || ban_data[y].length != size[0]) {
+        throw `check-A9: size mismatch: ${size}: [${y}]: ${ban_data}`;
+      }
+      let tmp_data: number[] = [];
+      for (let x = 0; x < size[0]; x ++ ) {
+        tmp_data.push(+ ban_data[y][x]);
+      }
+      tmp_board.push(tmp_data);
+    }
+    if (aid === void 0) {
+      throw 'check-A10: Answer ID should be specified';
+    }
+    if (aid <= 0) {
+      throw 'check-A11: Answer ID should be >= 1';
+    }
+    this.a_number = aid;
+    this.size = size;
+    this.board = tmp_board;
+    this.block_pos = block_pos;
   }
 
   constructor() {

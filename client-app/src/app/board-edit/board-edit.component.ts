@@ -3,7 +3,7 @@ import { Component, OnInit, ElementRef, ViewEncapsulation, Input, SimpleChanges,
 import * as d3 from 'd3';
 
 import { AdcService } from '../adc.service';
-import { QData } from './adc2019-file';
+import { QData, AData } from './adc2019-file';
 
 /** XY座標 */
 class Pos {
@@ -174,6 +174,18 @@ class BlockData_d3 {
     return this.block.block_size();
   }
 
+  /** ブロックを、セル座標(cx, cy)へ移動する */
+  move_to(cx: number, cy: number, all: boolean = false) {
+    this.block.pos.x = cx;
+    this.block.pos.y = cy;
+    this.rect.pos.x = cx;  // 同じデータが2箇所にある???重複
+    this.rect.pos.y = cy;
+    if (all) {
+      this.pos.x = cx * Cell.width;
+      this.pos.y = cy * Cell.height;
+    }
+  }
+
   /** ADC-Q形式のテキストを返す */
   block_text(): string {
     let tmp = [ ['0', '0', '0', '0'],
@@ -226,6 +238,7 @@ export class BoardEditComponent implements OnInit, OnChanges {
   hover_number: string = "-";
   svg; // Top level SVG element, id = 'my_svg'
   g; // SVG Group element, id = 'main_board'
+  d3_brush;
   //dragstart_pos: Pos;  // マス目の座標ではなく、gの座標
   dragstart_block_visible: boolean = false;
   num_mino = 0;
@@ -239,14 +252,17 @@ export class BoardEditComponent implements OnInit, OnChanges {
   edit_modes = [
     /*0*/ {title: 'Set number', value: 'set_number', selected: false},
     //{title: 'Solve', value: 'solve', selected: false},
-    /*1*/ {title: 'Draw line', value: 'draw_line', selected: false}
+    /*1*/ {title: 'Draw line', value: 'draw_line', selected: false},
+    /*2*/ {title: 'Select blocks', value: 'select_blocks', selected: false},
   ];
   edit_mode = {set_number: this.edit_modes[0]['selected'],
                draw_line: this.edit_modes[1]['selected']
   };
 
   qData;
+  aData;
   do_readQFile = false;
+  do_readAFile = false;
   do_config = false;
 
   /** 問題作成モードである */
@@ -266,11 +282,19 @@ export class BoardEditComponent implements OnInit, OnChanges {
     return this.edit_mode['draw_line'];
   }
 
+  select_blocks_mode(): boolean {
+    return this.edit_mode['select_blocks'];
+  }
+
   /** チェックボックスの状態 */
   on_change_mode() {
     //console.log('show', 'working_mode_selected=', this.working_mode_selected, 'edit_modes=', this.edit_modes);
     for (let i of this.edit_modes) {
       this.edit_mode[i['value']] = i['selected'];
+    }
+
+    if (this.select_blocks_mode()) {
+      this.enable_brush();
     }
   }
 
@@ -300,6 +324,23 @@ export class BoardEditComponent implements OnInit, OnChanges {
     }
     if (move) {
       this.blocks_on_board = on_board;
+    }
+    return res;
+  }
+
+  /** (x0, y0)-(x1, y1)の範囲内にあるブロックのリストを返す */
+  private blocks_in_range(x0, y0, x1, y1): BlockData_d3[] {
+    let res = [];
+    for (let bd of this.blocks_on_board) {
+      let size = bd.block_size();
+      let bx0 = bd.pos.x;
+      let by0 = bd.pos.y;
+      let bx1 = bd.pos.x + size[0] * Cell.width;
+      let by1 = bd.pos.y + size[1] * Cell.height;
+      if (x0 <= bx0 && bx0 <= x1 && y0 <= by0 && by0 <= y1 &&
+          x0 <= bx1 && bx1 <= x1 && y0 <= by1 && by1 <= y1) {
+        res.push(bd);
+      }
     }
     return res;
   }
@@ -529,6 +570,28 @@ export class BoardEditComponent implements OnInit, OnChanges {
                             this);
   }
 
+  /** ボードの情報を、数値の２次元配列にして返す */
+  private get_board(): number[][] {
+    let board: number[][] = [];
+    let value: string[][] = [];
+    for (let bd of this.blocks_on_board) {
+      for (let cell of bd.rect.rect) {
+        let x = bd.rect.pos.x + cell.x;
+        let y = bd.rect.pos.y + cell.y;
+        if (value[y] === void 0) {
+          value[y] = [];
+        }
+        if (board[y] === void 0) {
+          board[y] = [];
+        }
+        value[y][x] = cell.value;
+        board[y][x] = (cell.value == '+') ? (-1) : (+ cell.value);
+      }
+    }
+    console.log(board);
+    return board;
+  }
+
   /**
    * ブロックのドラッグを開始したときの、イベントハンドラ。
    *  プレスしたブロックが未選択のときは、どのブロックだけ移動する。選択中のブロックがあった場合、それらはすべて選択解除してから、ドラッグ開始する。
@@ -608,10 +671,12 @@ export class BoardEditComponent implements OnInit, OnChanges {
       if (r.height < bd.pos.y + (bd.rect.lower_right.y+1) * Cell.height) {
          bd.pos.y = r.height - ((bd.rect.lower_right.y+1) * Cell.height);
       }
-      bd.block.pos.x = Math.round(bd.pos.x / Cell.width);
-      bd.block.pos.y = Math.round(bd.pos.y / Cell.height);
-      bd.rect.pos.x = bd.block.pos.x;  // 同じデータが2箇所にある???重複
-      bd.rect.pos.y = bd.block.pos.y;
+      //bd.block.pos.x = Math.round(bd.pos.x / Cell.width);
+      //bd.block.pos.y = Math.round(bd.pos.y / Cell.height);
+      //bd.rect.pos.x = bd.block.pos.x;  // 同じデータが2箇所にある???重複
+      //bd.rect.pos.y = bd.block.pos.y;
+      bd.move_to(Math.round(bd.pos.x / Cell.width),
+                 Math.round(bd.pos.y / Cell.height));
       // ctrl + dragのときは、ブロックを複製する
       if (d3.event.sourceEvent.ctrlKey &&  // ctrl + drag
           d._component.construction_mode()) { // 問題作成モードである
@@ -719,13 +784,15 @@ export class BoardEditComponent implements OnInit, OnChanges {
   }
 
   /** add = 追加選択 */
-  private select_block(block_data: BlockData_d3, add: boolean = false, update: boolean = true) {
+  private select_block(block_data: BlockData_d3, add: boolean = false, update: boolean = true, always: boolean = false) {
     //console.log('select_block: block_id=', block_id, 'index=', index, 'block_data=', block_data, 'add=', add);
     let block_id: string = block_data.id;
     if (! add) {
       this.unselect_all_blocks([block_id]);
     }
-    if (block_data.dragstart_pos !== void 0) { // drag開始している
+    if (always) {
+      block_data.selected = true; // 選択する
+    } else if (block_data.dragstart_pos !== void 0) { // drag開始している
        /*
         1. drag開始イベント発生後は、ブロックは選択中になる
         2. ボタンをリリースすると、clickイベント発生。このselect_blockが呼ばれる
@@ -939,7 +1006,7 @@ export class BoardEditComponent implements OnInit, OnChanges {
     this.blocks_on_board = [];
   }
 
-  private put_line_cell(cx: number, cy: number, num: number) {
+  private put_line_cell(cx: number, cy: number, num: number, update: boolean = true) {
     //console.log('put_line_cell:', cx, cy, num);
     let block_dat = BlockData.create('l0', cx, cy);
     let id = this.next_line_cell_id();
@@ -949,7 +1016,9 @@ export class BoardEditComponent implements OnInit, OnChanges {
     //this.line_cell_on_board.push(bd);
     this.put_mino(bd);
     let selection = d3.selectAll("#main_board");
-    this.update_mino(selection, bd, id);  // 描画
+    if (update) {
+      this.update_mino(selection, bd, id);  // 描画
+    }
   }
 
   /** ブロックを描画する／描画を更新する */
@@ -1162,6 +1231,7 @@ export class BoardEditComponent implements OnInit, OnChanges {
           .attr("width",  e)
           .attr("height", f);
     this.svg_size = {a: a, b: b, c: c, d: d, e: e, f: f};
+    console.log(this.svg_size);
     this.svg
       .selectAll('rect#my_base')
       .data([this])
@@ -1223,13 +1293,65 @@ export class BoardEditComponent implements OnInit, OnChanges {
     d3.select('body')
       .on('keydown', this.keydown)
       .on('keyup', this.keyup);
+    this.d3_brush =
+      d3.brush()
+        .extent([[0, 0], [e, f]])
+        /*
+        .on('start', (d, i, n) => {
+          console.log('brush start', d, i, n, d3.event.selection);
+        })
+        */
+        .on('end', this.on_brush_end);
   }
 
+  enable_brush() {
+    this.svg
+      .call(this.d3_brush);
+  }
+
+  disable_brush() {
+    this.svg.on('.brush', null); // event listenerを消す？
+    //bec.svg.attr('cursor', 'default');
+    this.svg.selectAll('.overlay').remove();
+    this.svg.selectAll('.selection').remove();
+    this.svg.selectAll('.handle').remove();
+    this.edit_mode['select_blocks'] = false;
+    this.edit_modes[2].selected = false;  // [2]がわかりにくい
+  }
+
+  static get_component(): BoardEditComponent {
+    let _component: BoardEditComponent = undefined;
+    d3.select('#my_base')
+      .each((d2) => { _component = d2 as BoardEditComponent; });
+    return _component;
+  }
+
+  on_brush_end(d, i, n) {
+    //console.log('brush end', d, i, n, d3.event.selection);
+    if (d3.event.selection === null) {
+      return;
+    }
+    let bec = BoardEditComponent.get_component();
+    let x0 = d3.event.selection[0][0] - bec.margin.left;
+    let y0 = d3.event.selection[0][1] - bec.margin.top;
+    let x1 = d3.event.selection[1][0] - bec.margin.left;
+    let y1 = d3.event.selection[1][1] - bec.margin.top;
+    let blocks: BlockData_d3[] = bec.blocks_in_range(x0, y0, x1, y1);
+    //console.log(blocks);
+    bec.unselect_all_blocks();
+    for (let bd of blocks) {
+      bec.select_block(bd, true, false, true);
+    }
+    bec.svg.call(bec.d3_brush.move, null);
+    bec.disable_brush();
+    bec.update_all_blocks();  // 再描画
+  }
 
   constructor(private adcService: AdcService) {
     Cell.width = this.cell_width;
     Cell.height = this.cell_height;
     this.qData = new QData();
+    this.aData = new AData();
   }
 
   ngOnInit(): void {
@@ -1276,6 +1398,7 @@ export class BoardEditComponent implements OnInit, OnChanges {
 
   onClick_readQ() {
     //console.log('readQ');
+    this.adcService.clearText1();
     this.do_readQFile = true;
   }
 
@@ -1308,7 +1431,9 @@ export class BoardEditComponent implements OnInit, OnChanges {
     this.board_size.y = q.size[1];
     this.board_size_temp.x = q.size[0];
     this.board_size_temp.y = q.size[1];
-    //this.update_all_blocks();  // 再描画
+    // 再描画
+    this.draw_board();
+    this.update_all_blocks();
   }
 
   onCleared_openQFile(c: boolean) {
@@ -1318,6 +1443,56 @@ export class BoardEditComponent implements OnInit, OnChanges {
   openQFile() {
     console.log('openQFile');
   }
+
+  onClick_readA() {
+    //console.log('readQ');
+    this.adcService.clearText1();
+    this.adcService.clearText2();
+    this.do_readAFile = true;
+  }
+
+  onClick_readA_OK() {
+    //console.log('onClick_readA_OK');
+    if (this.do_readQFile && this.adcService.text1 !== void 0) {
+      // Qデータも同時に読み込む
+      this.onClick_readQ_OK();
+    }
+    this.do_readAFile = false;
+    //console.log(this.adcService.text2);
+    this.aData.parse(this.adcService.text2);
+    console.log('aData', this.aData);
+    // ブロックをA-dataで指定された座標へ移動する
+    for (let bd of this.blocks_on_board) {
+      if (bd.block_num !== void 0) { // BLOCK#番号 が指定されている
+        let cxy: number[] = this.aData.get_block_pos(bd.block_num);
+        //console.log(bd.block_num, cxy[0], cxy[1]);
+        bd.move_to(cxy[0], cxy[1], true);
+      }
+    }
+    let board = this.get_board();
+    for (let y = 0; y < this.aData.size[1]; y ++) {
+      for (let x = 0; x < this.aData.size[0]; x ++) {
+        let a_n = this.aData.board[y][x];
+        let b_n = board[y][x];
+        if (b_n === void 0) {
+          b_n = 0;
+        }
+        if (a_n != 0) {
+          if (b_n == 0) {
+            // 線セルを配置する
+            this.put_line_cell(x, y, a_n, false);
+          }
+        }
+      }  // for x
+    }  // for y
+    this.update_all_blocks();  // 再描画
+  }
+
+
+  onCleared_openAFile(c: boolean) {
+    console.log('onCleared_readA', c);
+  }
+
 
   onClick_refresh() {
     //console.log('refresh');

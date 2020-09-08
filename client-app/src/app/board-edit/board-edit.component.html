@@ -29,8 +29,9 @@ Number:
 
   <button (click)="onClick_config()">config</button>
   <button (click)="onClick_readQ()">read Q</button>
-  <button (click)="onClick_writeA()">write A</button>
+  <button (click)="onClick_readA()">read A</button>
   <button (click)="onClick_writeQ()">write Q</button>
+  <button (click)="onClick_writeA()">write A</button>
   <button (click)="onClick_refresh()">refresh blocks</button>
 </div>
 
@@ -49,6 +50,12 @@ X
 <h3>Read Q file</h3>
 <app-file (cleared)="onCleared_openQFile($event)" #openQFile></app-file>
 <button title="OK, use this file" (click)="onClick_readQ_OK()">OK, use this file</button>
+</div>
+
+<div *ngIf="do_readAFile" #readAFile>
+<h3>Read A file</h3>
+<app-file2 (cleared)="onCleared_openAFile($event)" #openAFile></app-file2>
+<button title="OK, use this file" (click)="onClick_readA_OK()">OK, use this file</button>
 </div>
 
 <div id="my_board" (window:resize)="onResize($event)">
