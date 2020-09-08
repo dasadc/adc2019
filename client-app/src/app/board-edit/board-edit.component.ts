@@ -1503,7 +1503,7 @@ export class BoardEditComponent implements OnInit, OnChanges, OnDestroy {
     for (let y = 0; y < this.aData.size[1]; y ++) {
       for (let x = 0; x < this.aData.size[0]; x ++) {
         let a_n = this.aData.board[y][x];
-        let b_n = board[y][x];
+        let b_n = (board[y] === void 0) ? 0 : board[y][x];
         if (b_n === void 0) {
           b_n = 0;
         }
