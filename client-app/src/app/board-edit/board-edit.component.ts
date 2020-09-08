@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewEncapsulation, Input, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, OnInit, OnChanges, OnDestroy, ElementRef, ViewEncapsulation, Input, SimpleChanges } from '@angular/core';
 
 import * as d3 from 'd3';
 
@@ -219,7 +219,7 @@ class BlockData_d3 {
   templateUrl: './board-edit.component.html',
   styleUrls: ['./board-edit.component.css']
 })
-export class BoardEditComponent implements OnInit, OnChanges {
+export class BoardEditComponent implements OnInit, OnChanges, OnDestroy {
   @Input() transitionTime = 1000;
   @Input() margin = {top: 10, right: 10, bottom: 10, left: 10};
   //@Input() width0  = 1280;
@@ -233,8 +233,8 @@ export class BoardEditComponent implements OnInit, OnChanges {
   svg_size = {a: 0, b: 0, c: 0, d: 0, e: 0, f: 0};  // 描画座標系での、各種サイズ
   board_size = {x: this.max_block_num['x'], y: this.max_block_num['y']};
   board_size_temp = {x: this.max_block_num['x'], y: this.max_block_num['y']}; // numberではなくてstringになっている!!
-  in_number: string = "";
-  q_number: string = "777";
+  in_number: string;
+  q_number: string;
   hover_number: string = "-";
   svg; // Top level SVG element, id = 'my_svg'
   g; // SVG Group element, id = 'main_board'
@@ -243,7 +243,7 @@ export class BoardEditComponent implements OnInit, OnChanges {
   dragstart_block_visible: boolean = false;
   num_mino = 0;
   num_line_cell = 0;
-  blocks_on_board: BlockData_d3[] = [];
+  blocks_on_board: BlockData_d3[];
   working_mode_selected: string = 'construction';
   working_modes = [
     {title: 'Construction', value: 'construction'},
@@ -1348,6 +1348,20 @@ export class BoardEditComponent implements OnInit, OnChanges {
   }
 
   constructor(private adcService: AdcService) {
+    console.log('BoardEditComponent constructor()', this.blocks_on_board);
+    if (this.blocks_on_board === void 0) {
+      console.log('recover');
+      this.blocks_on_board       = this.adcService.bec_keep.blocks_on_board;
+      this.board_size            = this.adcService.bec_keep.board_size;
+      this.in_number             = this.adcService.bec_keep.in_number;
+      this.q_number              = this.adcService.bec_keep.q_number;
+      this.num_mino              = this.adcService.bec_keep.num_mino;
+      this.num_line_cell         = this.adcService.bec_keep.num_line_cell;
+      this.working_mode_selected = this.adcService.bec_keep.working_mode_selected;
+      for (let i=0; i <=2; i ++) {
+        this.edit_modes[i].selected = this.adcService.bec_keep.edit_modes_selected[i];
+      }
+    }
     Cell.width = this.cell_width;
     Cell.height = this.cell_height;
     this.qData = new QData();
@@ -1357,14 +1371,30 @@ export class BoardEditComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.draw_board();
 
-    let block_data: BlockData[] = this.get_parts_block_data();
-    //let block_data = this.all_block_data();
-    let data = this.initial_blocks(block_data);
-    this.put_blocks_on_staging_area(data);
+    if (this.blocks_on_board.length == 0) {
+      let block_data: BlockData[] = this.get_parts_block_data();
+      //let block_data = this.all_block_data();
+      let data = this.initial_blocks(block_data);
+      this.put_blocks_on_staging_area(data);
+    } else {
+      this.update_all_blocks();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
     console.log('ngOnChanges', changes)
+  }
+
+  ngOnDestroy(): void {
+    console.log('ngOnDestroy');
+    this.adcService.bec_keep.blocks_on_board = this.blocks_on_board;
+    this.adcService.bec_keep.in_number       = this.in_number;
+    this.adcService.bec_keep.q_number        = this.q_number;
+    this.adcService.bec_keep.num_mino        = this.num_mino;
+    this.adcService.bec_keep.num_line_cell   = this.num_line_cell;
+    this.adcService.bec_keep.working_mode_selected = this.working_mode_selected;
+    this.adcService.bec_keep.edit_modes_selected = [this.edit_modes[0].selected, this.edit_modes[1].selected, this.edit_modes[2].selected];
+    //this.adcService.bec_keep. = this.;
   }
 
   input_number(): void {

@@ -30,6 +30,19 @@ export class AdcService {
   whoami_error_count: number = 0;
   view_score_mode: boolean = true;
 
+  // BoardEditComponentのデータを保持する
+  bec_keep = {
+    board_size: {x: 72, y: 72},
+    in_number: '',
+    q_number: '777',
+    num_mino: 0,
+    num_line_cell: 0,
+    blocks_on_board: [],
+    working_mode_selected: 'construction',
+    edit_modes_selected: [false, false, false],
+  };
+
+
   //constructor(private messageService: MessageService) { }
   constructor(private http: HttpClient) { }
 
