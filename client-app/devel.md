@@ -116,6 +116,17 @@ gunicorn -b :28000 --access-logfile '-' main:app
 - http://127.0.0.1:4280/static/app/index.html
 
 
+### GitHub Pagesへdeployする
+
+client-appのファイルをコピーする。
+
+``` bash
+rsync -avpr --delete ../server/static/ /DIR/dasadc.github.io/static/
+```
+
+そのあと、git commit、git pushする
+
+
 カスタマイズ
 ------------
 
