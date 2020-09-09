@@ -717,6 +717,9 @@ def check_data(data_Q, data_A):
     ban_count, ban_corner, _, _, _, _ = count_neighbors(ban_data_A)
     line_length, line_corner = check_lines(ban_data_A, terminal, ban_count, ban_corner, n_lines_Q)
     x0, y0, x1, y1 = bounding_box(ban_data_F)
+    # Aの面積は、Qの面積以下であること issues#26
+    if (size_Q[0] * size_Q[1]) < (size_A[0] * size_A[1]):
+        raise RuntimeError('check-QA4: A-area oversized', size_Q, size_A)
     info = {'terminal': terminal,
             'count': ban_count,
             'corner': ban_corner,
