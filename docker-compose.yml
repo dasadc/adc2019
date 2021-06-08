@@ -7,8 +7,6 @@ version: '3.3'
 services:
   app:
     build: "./server/"
-    volumes:
-      - "./tools:/tools"
     environment:
       FLASK_APP: dev
       DATASTORE_HOST: "http://datastore:8081"
