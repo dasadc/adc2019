@@ -1,12 +1,12 @@
-DA Symposium 2020 Algorithm Design Contest (DAS ADC 2020)
+DA Symposium 2021 Algorithm Design Contest (DAS ADC 2021)
 =========================================================
 
-このレポジトリには、[DAシンポジウム](http://www.sig-sldm.org/das/)2020にて開催される、[アルゴリズムデザインコンテスト](https://dasadc.github.io/)(ADC)で使用するソフトウェアが登録されてます。
+このレポジトリには、[DAシンポジウム](http://www.sig-sldm.org/das/)2021にて開催される、[アルゴリズムデザインコンテスト](https://dasadc.github.io/)(ADC)で使用するソフトウェアが登録されてます。
 
 #### 関連ページ
 
 - [Official Web Site](https://dasadc.github.io/)
-- [DAS ADC 2020 rules](https://dasadc.github.io/adc2020/rule.html)
+- [DAS ADC 2020 rules](https://dasadc.github.io/adc2021/rule.html)
 
 
 ****
