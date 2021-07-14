@@ -16,3 +16,5 @@ TEST_MODE = True     # テストモード
 
 VIEW_SCORE_MODE = True     # Trueのとき、ユーザーは全チームのスコアを表示できる
 # VIEW_SCORE_MODE = False  # 競技中にFalseに変更することで、他のチームのスコアを表示できなくなる
+
+URL_CLIENT_APP_README = 'https://github.com/dasadc/adc2019/blob/adc2021-yt/client-app/README.md'

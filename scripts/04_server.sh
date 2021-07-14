@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# Launch adc2019 API server
+# (ADC2021) Launch adc2019 API server
 #
 # environment variable
 # - CONDA_ENV
@@ -15,9 +15,9 @@ top_dir=$(cd $(dirname "$script")/../; pwd)
 datastore_dir="${top_dir}/work/datastore"
 server_dir="${top_dir}/server/"
 
-[ -z "${CONDA_ENV}" ] && CONDA_ENV="py38"
+[ -z "${CONDA_ENV}" ] && CONDA_ENV="adc2019dev"
 
-export PATH="/opt/miniconda3/bin:$PATH"  # for adc-apiserver.system (systemd)
+export PATH="/opt/miniforge3/bin:$PATH"  # for adc-apiserver.system (systemd)
 
 cd "${server_dir}"
 
@@ -25,7 +25,7 @@ source $(conda info --base)/etc/profile.d/conda.sh
 conda activate "${CONDA_ENV}"
 
 if [ ! -f "${server_dir}/adcconfig.py" ]; then
-    [ -n "${ADC_YEAR}" ]       || ADC_YEAR=2020
+    [ -n "${ADC_YEAR}" ]       || ADC_YEAR=2021
     [ -n "${ADC_SECRET_KEY}" ] || ADC_SECRET_KEY='Change_this_secret_key!!'
     [ -n "${ADC_SALT}" ]       || ADC_SALT='Change_this_salt!!!'
     sed -e "s/@CHANGE_YEAR@/${ADC_YEAR}/" \

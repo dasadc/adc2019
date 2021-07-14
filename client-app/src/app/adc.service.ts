@@ -315,6 +315,22 @@ export class AdcService {
       );
   }
 
+  /** API, GET /api/infoを実行する */
+  system_info(): Observable<Object> {
+    return this.http.get<Object>('/api/info', this.apiHttpOptions())
+      .pipe(
+      	map((res: Object) => {
+      	  console.log('AdcService: system_info', res);
+      	  let v = res;
+      	  return v;
+      	}),
+      	catchError(this.handleError<Object>('system_info', {
+          url: {'client-app': {
+            README: 'https://github.com/dasadc/adc2019/blob/adc2021-yt/client-app/README.md'
+        }}}))
+      );
+  }
+
   /** API, GET /api/versionを実行する */
   version(): Observable<number> {
     return this.http.get<Object>('/api/version', this.apiHttpOptions())

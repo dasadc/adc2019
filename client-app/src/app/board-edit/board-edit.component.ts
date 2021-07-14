@@ -265,6 +265,8 @@ export class BoardEditComponent implements OnInit, OnChanges, OnDestroy {
   do_readAFile = false;
   do_config = false;
 
+  url_help = 'TBD';
+
   /** 問題作成モードである */
   construction_mode(): boolean {
     return this.working_mode_selected == 'construction';
@@ -588,7 +590,7 @@ export class BoardEditComponent implements OnInit, OnChanges, OnDestroy {
         board[y][x] = (cell.value == '+') ? (-1) : (+ cell.value);
       }
     }
-    console.log(board);
+    console.log('board', board);
     return board;
   }
 
@@ -1231,7 +1233,7 @@ export class BoardEditComponent implements OnInit, OnChanges, OnDestroy {
           .attr("width",  e)
           .attr("height", f);
     this.svg_size = {a: a, b: b, c: c, d: d, e: e, f: f};
-    console.log(this.svg_size);
+    console.log('svg_size', this.svg_size);
     this.svg
       .selectAll('rect#my_base')
       .data([this])
@@ -1369,6 +1371,13 @@ export class BoardEditComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.adcService.system_info()
+      .subscribe((info: Object) => {
+        this.url_help = info['url']['client-app']['README'];
+        //console.log('board-edit.component: system_info', info['url']['client-app']['README'])
+      });
+
+
     this.draw_board();
 
     if (this.blocks_on_board.length == 0) {

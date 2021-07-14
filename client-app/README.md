@@ -1,12 +1,10 @@
-Client Application for DA Symposium 2020, Algorithm Design Contest (ADC2020)
+Client Application "client-app" for DA Symposium 2021, Algorithm Design Contest (ADC2021)
 ============================================================================
 
-ADC2020で使うウェブアプリについて説明する。
+ADC2021で使うウェブアプリ"client-app"について説明する。
 
 参加ユーザー向け情報
 --------------------
-
-あとで書き足す予定。
 
 ### ウェブアプリを使う
 

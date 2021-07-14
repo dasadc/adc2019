@@ -1,9 +1,9 @@
 # coding: utf-8
 #
-# Copyright (C) 2020 DA Symposium
+# Copyright (C) 2020,2021 DA Symposium
 
 """
-DAシンポジウム 2020
+DAシンポジウム 2021
 アルゴリズムデザインコンテスト
 
 RESTもどき API server
@@ -953,6 +953,14 @@ def get_score():
            'misc': misc}
     return adc_response_json(dat)
     
+
+@app.route('/info', methods=['GET'])
+def get_info():
+    return adc_response_json({'url':
+                              {'client-app':
+                               {'README': adcconfig.URL_CLIENT_APP_README}
+                              }})
+
 
 @app.route('/version', methods=['GET'])
 def get_version():

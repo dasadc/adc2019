@@ -1,4 +1,4 @@
-adc2019 API server version 20200827
+adc2019 API server version 20210714
 ===================================
 
 (注意) ドキュメントを更新していないため、古い情報が書かれているところがあります。
@@ -9,26 +9,18 @@ adc2019 API server version 20200827
 開発・実行のための環境構築
 --------------------------
 
-Anacondaの「Minicoda3」の利用を推奨する。[>> How?](../devel.md#miniconda)
+conda-forgeの「Miniforge」の利用を推奨する。[>> How?](../devel.md#miniforge)
 
-以下は、2019年時点での推奨であり、現在は非推奨。
-
-```
-sudo apt install virtualenv
-virtualenv --python=/usr/bin/python3 /work/venv36
-source /work/venv36/bin/activate
-pip install -r requirements.txt
-```
 
 サーバー設定ファイル`adcconfig.py`
 -------------------------------------
 
 `adcconfig.py`は、サーバー起動時に読み込まれる設定ファイルである。
 
-1. `YEAR`を、今年の西暦年(e.g. 2020)にする。この値は、[ウェブアプリ(client-app)](../client-app/README.md)での画面表示にも反映される
-2. `SECRET_KEY`を、設定する。これは秘密にすべき情報である
-3. `SALT`を、設定する。これは秘密にすべき情報である
-4. `TEST_MODE`と`VIEW_SCORE_MODE`は、サーバーのデフォルト値として使われるものであり、client-appのAdminメニューでいつでも変更可能である
+1. `YEAR`を、今年の西暦年(e.g. 2021)にする。この値は、[ウェブアプリ(client-app)](../client-app/README.md)での画面表示にも反映される
+2. `SECRET_KEY`を、設定する。これは他者には秘密にする情報である
+3. `SALT`を、設定する。これも秘密にする情報である
+4. `TEST_MODE`と`VIEW_SCORE_MODE`は、サーバーのデフォルト値として使われるものであり、[client-app](../client-app/README.md)のAdminメニューでいつでも変更可能である
 
 
 ユーザーアカウント登録
@@ -46,7 +38,7 @@ pip install -r requirements.txt
 
 (2020年変更) 以前は、Python形式のファイル`adcusers_in.py`を使っていたが、YAML形式に変更した。
 
-- ウェブアプリ(client-app)では、管理者がYAML形式のファイルをアップロードすることで、ユーザー登録が可能である
+- ウェブアプリ([client-app](../client-app/README.md))では、管理者がYAML形式のファイルをアップロードすることで、ユーザー登録が可能である
 - 以前の方式(コマンド`adccli create-users ${top_dir}/server/adcusers_in.py`)でも、ユーザー登録が可能である
 
 ウェブアプリを使ったユーザーアカウント登録手順については、[client-app/README.md](../client-app/README.md)を参照してほしい。
@@ -56,15 +48,16 @@ pip install -r requirements.txt
 実行する
 --------
 
-2019年、Google Cloud PlatformにてPython 3がサポートされるようになって以降、`dev_appserver.py`の利用は非推奨となったらしい。
+2019年、Google Cloud PlatformにてPython 3がサポートされるようになって以降、`dev_appserver.py`の利用は非推奨となった。
 
-- ADC2019では、まだ使っていた
+- ADC2021では、使っていない
 - ADC2020では、もう使うのをあきらめた（いろいろ、メンドクサすぎる…）
+- ADC2019では、まだ使っていた
 
 
-### 開発時
+### 開発時 (OBSOLETE)
 
-datastoreをdev_appserver.pyでのぞき見するためにダミーアプリを実行しているが、そのプロジェクトがtest813なので、それと同じにしておく。
+datastoreを`dev_appserver.py`でのぞき見するためにダミーアプリを実行しているが、そのプロジェクトがtest813なので、それと同じにしておく。
 
 ```
 gcloud config set project test813
@@ -152,6 +145,8 @@ Google Cloud Platform >> Datastore >> インデックス
 
 curlを使って、APIサーバの動作確認を行う
 ---------------------------------------
+
+以下ではport番号4280を指定しているが、実際にAPIサーバが使用しているポート番号に変更すること。
 
 ```
 $ curl -v http://127.0.0.1:4280/api/test_get
