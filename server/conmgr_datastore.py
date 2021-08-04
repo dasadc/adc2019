@@ -494,7 +494,8 @@ def log_get_or_delete(username=None, fetch_num=100, when=None, delete=False):
         before = datetime.utcnow() - when
         # print('before=', before)
         query.add_filter('timestamp', '>', before)
-    q = query.fetch(fetch_num)
+        fetch_num = None
+    q = query.fetch(limit=fetch_num)
     results = []
     for i in q:
         tmp = {'date': gae_datetime_JST(i['timestamp']),
@@ -840,6 +841,9 @@ def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
         return False, msg
     # 出題データを取り出す
     q_dat = get_Q_data(a_num)
+    if q_dat is None:
+        msg = 'Error: Q%d data not found' % a_num
+        return False, msg
     q_text = q_dat.get('text')
     if q_text is None:
         msg = 'Error: Q%d data not found' % a_num

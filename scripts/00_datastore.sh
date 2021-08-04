@@ -1,4 +1,6 @@
 #! /bin/sh
+#
+# Launch Datastore emulator (Google Cloud)
 
 script=$(readlink -f "$0")
 top_dir=$(cd $(dirname "$script")/../; pwd)
