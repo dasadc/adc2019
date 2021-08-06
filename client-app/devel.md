@@ -1,5 +1,7 @@
-ADC2019 Web application (client-app)
+ADC2021 Web application (client-app)
 ====================================
+
+**(注意)** このドキュメントは、まだ、アルゴリズムデザインコンテスト2021年向けの更新漏れがあり、古い情報が書かれている可能性がある。
 
 
 初期設定
@@ -41,6 +43,8 @@ npm install \
   d3@5 @types/d3@5.16.4 \
   zone.js@0.11.4
 ```
+
+- `yaml.safeLoad()`が無くなった。`yaml.load()`にすればよい。
 
 
 #### 2020年8月時点でのメモ
@@ -147,6 +151,8 @@ gunicorn -b :28000 --access-logfile '-' main:app
 
 ### GitHub Pagesへdeployする
 
+client-appの「Edit」機能（通称「テトリス・エディタ」）を、GitHub Pagesのhttps://dasadc.github.io/static/app/index.html#/edit から実行できるようにしている。
+
 client-appのファイルをコピーする。
 
 ``` bash
@@ -154,6 +160,14 @@ rsync -avpr --delete ../server/static/ /DIR/dasadc.github.io/static/
 ```
 
 そのあと、git commit、git pushする
+
+
+### Google App Engineへdeployする
+
+``` bash
+cd ../server/
+gcloud app deploy --project=das-adc
+```
 
 
 カスタマイズ

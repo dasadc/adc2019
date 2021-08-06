@@ -103,6 +103,13 @@ ADCサービスを利用するためのコマンドラインツール`adccli`を
 このツールについての、ご意見、改良案、パッチなど、[フィードバックを歓迎します](https://github.com/dasadc/adc2019/issues)。
 
 
+#### 実行のための環境設定
+
+実行ファイル`adccli`が存在するディレクトリを、環境変数`PATH`に追加してください。
+
+シェルスクリプト[env.sh](env.sh)を参考にしてください。
+`source $(dir)/adc2019/client/env.sh` のように設定できます。
+
 
 #### おもなオプション
 
@@ -191,7 +198,7 @@ admin command:
   log-to-datastore [True|False]
 ```
 
-#### 設定ファイル
+#### 設定保存ファイル
 
 adccli用設定ファイル`adcclient.json`が、ホームディレクトリに自動的に作成されます。
 

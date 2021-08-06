@@ -2,7 +2,8 @@
 # coding: utf-8
 #
 """
-read `adcusers_in.yaml`, if not exists `adcusers_in.py`, and write `adcusers.py`.
+1. read `adcusers_in.yaml`, if not exists `adcusers_in.py`, and
+2. write `adcusers.yaml` and `adcusers.py`.
 """
 
 try:

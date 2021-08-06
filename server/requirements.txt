@@ -2,6 +2,4 @@ Flask==1.1.2
 numpy
 google-cloud-datastore==1.7.3
 Werkzeug
-gunicorn
 pyyaml
-xlrd

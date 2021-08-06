@@ -315,7 +315,7 @@ export class AdminComponent implements OnInit {
     if (f['filename'] === void 0 || f['text'] === void 0) {
       return;
     }
-    let users = yaml.safeLoad(f['text']) as Object[];
+    let users = yaml.load(f['text']) as Object[];
     from(users)
       .pipe(
         flatMap((user: Object) => {
