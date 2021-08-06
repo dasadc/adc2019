@@ -2,9 +2,10 @@
 # coding: utf-8
 
 """
-DA Symbosium 2019 Algorithm Design Contest
-==========================================
+DA Symbosium 2021 Algorithm Design Contest (ADC2021)
+====================================================
 
+{'contest_rule': 'ADC2019'}
 
 Variables
 ----------
@@ -522,9 +523,9 @@ def read_A(s):
         raise RuntimeError('check-A9: size mismatch', size, ban_data.shape[::-1])
 
     if aid is None:
-        raise RuntimeError('check-A10: Answer ID should be specified')
+        raise RuntimeError('check-A13: Answer ID should be specified')
     if aid <= 0:
-        raise RuntimeError('check-A11: Answer ID should be >= 1')
+        raise RuntimeError('check-A14: Answer ID should be >= 1')
 
     return aid, size, ban_data, block_pos
 
@@ -698,8 +699,9 @@ def check_data(data_Q, data_A):
         # Replace -1 by 0
         tmp_block_Q = block_data_Q[b].copy()
         tmp_block_ban_masked = block_ban_masked.copy()
-        tmp_block_Q[tmp_block_Q == -1] = 0
-        tmp_block_ban_masked[tmp_block_ban_masked == -1] = 0
+        if 0:  # ADC2019
+            tmp_block_Q[tmp_block_Q == -1] = 0
+            tmp_block_ban_masked[tmp_block_ban_masked == -1] = 0
         # print(tmp_block_Q)
         # print(tmp_block_ban_masked)
         # print(tmp_block_Q == tmp_block_ban_masked)
@@ -717,6 +719,9 @@ def check_data(data_Q, data_A):
     ban_count, ban_corner, _, _, _, _ = count_neighbors(ban_data_A)
     line_length, line_corner = check_lines(ban_data_A, terminal, ban_count, ban_corner, n_lines_Q)
     x0, y0, x1, y1 = bounding_box(ban_data_F)
+    # Aの面積は、Qの面積以下であること issues#26
+    if (size_Q[0] * size_Q[1]) < (size_A[0] * size_A[1]):
+        raise RuntimeError('check-QA4: A-area oversized', size_Q, size_A)
     info = {'terminal': terminal,
             'count': ban_count,
             'corner': ban_corner,
@@ -997,7 +1002,7 @@ def main():
     global debug, verbose
     import argparse
     parser = argparse.ArgumentParser(
-        description="DA Symposium 2019 Algorithm Design Contest, Command Line Interface tool")
+        description="DA Symposium 2021 Algorithm Design Contest, Command Line Interface tool (rule=ADC2019)")
     parser.add_argument('--debug', action='store_true', help='enable debug mode')
     parser.add_argument('--verbose', action='store_true', help='verbose message')
     parser.add_argument('--report', action='store_true', help='output detailed report')
@@ -1015,7 +1020,7 @@ def main():
         if verbose or debug:
             raise e
         else:
-            print('ADC2020 rule violation')
+            print('ADC2021 rule violation')
             for i in e.args:
                 print(i)
             return False

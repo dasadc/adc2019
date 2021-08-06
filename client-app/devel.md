@@ -1,5 +1,7 @@
-ADC2019 Web application (client-app)
+ADC2021 Web application (client-app)
 ====================================
+
+**(注意)** このドキュメントは、まだ、アルゴリズムデザインコンテスト2021年向けの更新漏れがあり、古い情報が書かれている可能性がある。
 
 
 初期設定
@@ -10,18 +12,49 @@ ADC2019 Web application (client-app)
 
 Ubuntu 18.04では、aptでインストールされるnode.jsが古い。anacondaのnpmを使う。
 
-```
+``` bash
 conda install nodejs
 ```
 
-2020年8月時点でのメモ
+#### 2021年7月13日時点でのメモ
+
+- [../devel.md](../devel.md)の説明にあるように、Anaconda環境adc2019devを使用する。
+    - conda-forgeからは、node.js 14.17.1がインストールされていた。version番号が奇数はLTSではないそうなので、14を指定している。
+- なぜか`node_modules`が腐ったり、ソフトウェアのバージョンを上げたかったので、ファイル`package.json`の`dependencies`と`devDependencies`を削除して、ファイル`package-lock.json`を削除して、やり直した。
+    - 今の[ngx-file-drop ](https://www.npmjs.com/package/ngx-file-drop)は、Angular 11に対応している
+
+``` bash
+npm init
+npm install \
+  ngx-file-drop \
+  typescript \
+  http-server \
+  js-yaml \
+  @angular/cli \
+  @angular/core \
+  @angular/common \
+  @angular-devkit/build-angular \
+  @angular/platform-browser-dynamic \
+  @angular/platform-browser \
+  @angular/router \
+  @angular/forms \
+  @angular/compiler-cli \
+  @angular/compiler \
+  d3@5 @types/d3@5.16.4 \
+  zone.js@0.11.4
+```
+
+- `yaml.safeLoad()`が無くなった。`yaml.load()`にすればよい。
+
+
+#### 2020年8月時点でのメモ
 
 - node.js 10.13.0がインストールされた。
 - angularは、10.0.6がインストールされてしまうが、ngx-file-dropが、angular 10に対応していないらしいので、angular 9を明示指定してインストールする。
 
-一番最初のとき
+#### 一番最初のとき
 
-```
+``` bash
 npm init
 npm install @angular/cli@9
 npm install typescript
@@ -34,9 +67,9 @@ npm install --save-dev @angular/common@9
 ```
 
 
-2回目以降
+#### 2回目以降
 
-```
+``` bash
 npm install
 ```
 
@@ -116,6 +149,27 @@ gunicorn -b :28000 --access-logfile '-' main:app
 - http://127.0.0.1:4280/static/app/index.html
 
 
+### GitHub Pagesへdeployする
+
+client-appの「Edit」機能（通称「テトリス・エディタ」）を、GitHub Pagesのhttps://dasadc.github.io/static/app/index.html#/edit から実行できるようにしている。
+
+client-appのファイルをコピーする。
+
+``` bash
+rsync -avpr --delete ../server/static/ /DIR/dasadc.github.io/static/
+```
+
+そのあと、git commit、git pushする
+
+
+### Google App Engineへdeployする
+
+``` bash
+cd ../server/
+gcloud app deploy --project=das-adc
+```
+
+
 カスタマイズ
 ------------
 
@@ -140,3 +194,19 @@ npm install d3@5 --save
 
 > d3@5.16.0 がインストールされた
 
+Trouble shootings
+-----------------
+
+### google.auth.exceptions.DefaultCredentialsError
+
+`cd ../server/; gunicorn main:app"` したときに、エラー
+
+```
+  File "/opt/miniforge3/envs/adc2019dev/lib/python3.9/site-packages/google/auth/_default.py", line 483, in default
+    raise exceptions.DefaultCredentialsError(_HELP_MESSAGE)
+google.auth.exceptions.DefaultCredentialsError: Could not automatically determine credentials. Please set GOOGLE_APPLICATION_CREDENTIALS or explicitly create credentials and re-run the application. For more information, please see https://cloud.google.com/docs/authentication/getting-started
+```
+
+
+`$(gcloud beta emulators datastore --data-dir "${datastore_dir}" env-init)`  
+を実行して、環境変数`DATASTORE_*`を設定しておく必要がある。

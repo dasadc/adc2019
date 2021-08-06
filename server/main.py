@@ -1,9 +1,9 @@
 # coding: utf-8
 #
-# Copyright (C) 2020 DA Symposium
+# Copyright (C) 2020,2021 DA Symposium
 
 """
-DAシンポジウム 2020
+DAシンポジウム 2021
 アルゴリズムデザインコンテスト
 
 RESTもどき API server
@@ -104,7 +104,8 @@ def adc_response_Q_data(result):
 
 def log_request(usernm):
     #print(usernm, request.method + " " + request.path)
-    cds.log(usernm, request.method + " " + request.path)
+    if app.config['LOG_TO_DATASTORE']:
+        cds.log(usernm, request.method + " " + request.path)
 
 
 def priv_admin():
@@ -568,25 +569,55 @@ def admin_timekeeper():
         r = cds.timekeeper_set(dat)
         return adc_response_json(r)
 
-    
+
+def _admin_config_common(key, config_key):
+    """
+    '/admin/config/*' の共通サブルーチン。
+    configの値を取得する(GET)、または、設定する(PUT)。
+
+    Parameters
+    ----------
+    key : str
+        key of dict(object).
+        'test_mode'
+    config_key : str
+        Used as app.config[config_key].
+        'TEST_MODE', 
+    """
+    if request.method == 'GET':
+        dat = {key: app.config[config_key]}
+        return adc_response_json(dat)
+    else:  # PUTの場合
+        if not priv_admin():
+            return adc_response('access forbidden. admin only', 403)
+        i = request.json.get(key)
+        if i in (0, 1):
+            app.config[config_key] = bool(i)
+            dat = {key: app.config[config_key]}
+            return adc_response_json(dat)
+        else:
+            return adc_response('illeagal argument %s' % i, 400)
+
+
 @app.route('/admin/config/test_mode', methods=['GET', 'PUT'])
 def admin_config_test_mode():
     """
     TEST_MODEの値を取得する(GET)、または、設定する(PUT)。
     """
-    if request.method == 'GET':
-        dat = {'test_mode': app.config['TEST_MODE']}
-        return adc_response_json(dat)
-    else:  # PUTの場合
-        if not priv_admin():
-            return adc_response('access forbidden. admin only', 403)
-        i = request.json.get('test_mode')
-        if i in (0, 1):
-            app.config['TEST_MODE'] = bool(i)
-            dat = {'test_mode': app.config['TEST_MODE']}
-            return adc_response_json(dat)
-        else:
-            return adc_response('illeagal argument %s' % i, 400)
+    return _admin_config_common('test_mode', 'TEST_MODE')
+    # if request.method == 'GET':
+    #     dat = {'test_mode': app.config['TEST_MODE']}
+    #     return adc_response_json(dat)
+    # else:  # PUTの場合
+    #     if not priv_admin():
+    #         return adc_response('access forbidden. admin only', 403)
+    #     i = request.json.get('test_mode')
+    #     if i in (0, 1):
+    #         app.config['TEST_MODE'] = bool(i)
+    #         dat = {'test_mode': app.config['TEST_MODE']}
+    #         return adc_response_json(dat)
+    #     else:
+    #         return adc_response('illeagal argument %s' % i, 400)
 
     
 @app.route('/admin/config/view_score_mode', methods=['GET', 'PUT'])
@@ -594,19 +625,41 @@ def admin_config_view_score_mode():
     """
     VIEW_SCORE_MODEの値を取得する(GET)、または、設定する(PUT)。
     """
-    if request.method == 'GET':
-        dat = {'view_score_mode': app.config['VIEW_SCORE_MODE']}
-        return adc_response_json(dat)
-    else:  # PUTの場合
-        if not priv_admin():
-            return adc_response('access forbidden. admin only', 403)
-        i = request.json.get('view_score_mode')
-        if i in (0, 1):
-            app.config['VIEW_SCORE_MODE'] = bool(i)
-            dat = {'view_score_mode': app.config['VIEW_SCORE_MODE']}
-            return adc_response_json(dat)
-        else:
-            return adc_response('illeagal argument %s' % i, 400)
+    return _admin_config_common('view_score_mode', 'VIEW_SCORE_MODE')
+    # if request.method == 'GET':
+    #     dat = {'view_score_mode': app.config['VIEW_SCORE_MODE']}
+    #     return adc_response_json(dat)
+    # else:  # PUTの場合
+    #     if not priv_admin():
+    #         return adc_response('access forbidden. admin only', 403)
+    #     i = request.json.get('view_score_mode')
+    #     if i in (0, 1):
+    #         app.config['VIEW_SCORE_MODE'] = bool(i)
+    #         dat = {'view_score_mode': app.config['VIEW_SCORE_MODE']}
+    #         return adc_response_json(dat)
+    #     else:
+    #         return adc_response('illeagal argument %s' % i, 400)
+
+    
+@app.route('/admin/config/log_to_datastore', methods=['GET', 'PUT'])
+def admin_config_log_to_datastore():
+    """
+    LOG_TO_DATASTOREの値を取得する(GET)、または、設定する(PUT)。
+    """
+    return _admin_config_common('log_to_datastore', 'LOG_TO_DATASTORE')
+    # if request.method == 'GET':
+    #     dat = {'log_to_datastore': app.config['LOG_TO_DATASTORE']}
+    #     return adc_response_json(dat)
+    # else:  # PUTの場合
+    #     if not priv_admin():
+    #         return adc_response('access forbidden. admin only', 403)
+    #     i = request.json.get('log_to_datastore')
+    #     if i in (0, 1):
+    #         app.config['LOG_TO_DATASTORE'] = bool(i)
+    #         dat = {'log_to_datastore': app.config['LOG_TO_DATASTORE']}
+    #         return adc_response_json(dat)
+    #     else:
+    #         return adc_response('illeagal argument %s' % i, 400)
 
     
 @app.route('/A', methods=['GET', 'DELETE'])
@@ -953,6 +1006,14 @@ def get_score():
            'misc': misc}
     return adc_response_json(dat)
     
+
+@app.route('/info', methods=['GET'])
+def get_info():
+    return adc_response_json({'url':
+                              {'client-app':
+                               {'README': adcconfig.URL_CLIENT_APP_README}
+                              }})
+
 
 @app.route('/version', methods=['GET'])
 def get_version():

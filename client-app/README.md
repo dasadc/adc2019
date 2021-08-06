@@ -1,12 +1,10 @@
-Client Application for DA Symposium 2020, Algorithm Design Contest (ADC2020)
+Client Application "client-app" for DA Symposium 2021, Algorithm Design Contest (ADC2021)
 ============================================================================
 
-ADC2020で使うウェブアプリについて説明する。
+ADC2021で使うウェブアプリ"client-app"について説明する。
 
 参加ユーザー向け情報
 --------------------
-
-あとで書き足す予定。
 
 ### ウェブアプリを使う
 
@@ -126,15 +124,22 @@ Username、Passwordに、事前に通知されたユーザー名とパスワー�
 
 #### Construction, Solve 両モード共通
 
-- 問題データを読み込む
+- 問題データ(Q)を読み込む
     - "read Q"ボタンをクリックして、
 	- Qファイルを指定し、
 	- "OK, use this file"ボタンをclickします。
 	- ボードの欄外に、問題データのブロックが置かれます。
+- 問題データ(Q)と回答データ(A)を読み込む
+    - "read Q"ボタンと"read A"ボタンをそれぞれクリックして、
+	- Qファイルを指定し、
+	- Aファイルを指定し、
+	- Aファイルの下のほうの"OK, use this file"ボタンをclickします（Qファイル側の同じ名前のボタンは違う >> バグというか、仕様が未定）。
+	- Aファイル中に指定された位置で、ブロックが配置され、配線されます。
 - ブロックを選択する
     - Set numberチェックボックスをoffにしてから、
 	- ブロックをclickします。
 	- Shift + clickで、追加選択です。
+    - ドラッグで範囲選択してブロックを選択できます。"Select blocks"チェックボックスをonにしてから、ドラッグしてください。
 - ブロックを移動する
     - ブロックをdragしてください。
 - 数字のラインを引く
@@ -179,20 +184,40 @@ Username、Passwordに、事前に通知されたユーザー名とパスワー�
 管理者の業務はADC運営にとってクリティカルな処理を伴うので、フェイルセーフのために、ボタンをクリックする際には、Shift、Ctrl、Altキー(modifier key)などを押しながら、ボタンをクリックするようにしているところがある。どのキーを押すのかは、マウスポインタをボタン上へhoverさせたとき、tool tipsとして表示される。こうしたため、タブレットなどタッチデバイスでは、操作ができなくなってしまった。
 
 
+### ユーザー登録ファイルについて
+
+- `adcusers_in.yaml`
+    - 現在推奨されるファイル形式。
+	- パスワードは平文で記述する
+    - `adcusers_gen.py`の入力ファイルである
+- `adcusers_in.py`
+    - 2019年まで使われていた、旧方式のファイル形式。
+	- パスワードは平文で記述する
+    - `adcusers_gen.py`の入力ファイルである。`adcusers_in.yaml`が存在しないときに使われる
+- `adcusers.py`
+    - `adcusers_gen.py`を実行すると生成されるファイル。
+	- administratorユーザーのみが記述されている
+	- パスワードはハッシュである
+- `adcusers.yaml`
+    - `adcusers_gen.py`を実行すると生成されるファイル。
+	- `adcusers_in.yaml`(もしくは`adcusers_in.py`)で記述されていた、全ユーザーが記述されている
+	- パスワードは平文である。API serverがパスワードをハッシュ化して、Datastoreに登録する
+
+
 ### ユーザーを登録する
 
 従来、コマンドライン環境でコマンド`adccli create-users adcusers_in.py`を実行してユーザー登録をしていたが、2020年バージョンから、ウェブアプリでユーザー登録ができるようになっている。
 
-1. YAML形式のファイル`adcusers_in.yaml`にアカウント情報を書く。参考用のファイル`adc2019/server/adcusers_in.sample.yaml`がある
+1. YAML形式のファイル`adcusers_in.yaml`にアカウント情報を書く。参考用のファイル[`adc2019/server/adcusers_in.sample.yaml`](../server/adcusers_in.sample.yaml)がある
     - `password`は平文で記述する。
 2. ディレクトリ`adc2019/server/`にて、コマンド`python adcusers_gen.py`を実行すると、2つのファイル`adcusers.py`と`adcusers.yaml`が生成される
     - `adcusers.py`には、管理者ユーザーのみが記述されていて、データストア内に登録されたアカウント情報に関係なく、固定登録のアカウントとして利用できる。
 	- `adcusers.py`に記述されている`password`は、ハッシュ値である
 	- `adcusers.py`はサーバー(`adc2019/server`)が起動時に参照するファイルのため、現在実行中のサーバーには、反映されない。たとえばGoogle App Engineで実行中のサーバーの場合は、反映させるにはdeployしなおす必要がある
 3. ウェブブラウザでウェブアプリclient-appにアクセスする
-4. ウェブアプリの"Admin"メニューにある、"Create users (Upload adcusers\_in.yaml)"にて、2で作成したYAMLファイル`adcusers.yaml`を選択するか、ファイルをドラッグ&ドロップする。
+4. ウェブアプリの"Admin"メニューにある、"Create users (Upload adcusers.yaml)"にて、2で作成したYAMLファイル`adcusers.yaml`を選択するか、ファイルをドラッグ&ドロップする。
 5. "Start upload"ボタンをクリックする。問題なければ、これでユーザーアカウントが作成される
-6. この時点では、画面表示がまだ更新されていないので、"Get user list"の下にある"get"ボタンをクリックする。これで、現在登録されている全ユーザーが表示される
+6. この時点では、画面表示が更新されていない場合は、"Get user list"の下にある"get"ボタンをクリックする。これで、現在登録されている全ユーザーが表示される
 
 
 ### ユーザーを削除する

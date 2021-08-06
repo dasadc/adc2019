@@ -7,6 +7,7 @@ CURL_COOKIES
 *.pyc
 /docker/env.conf
 /docker/opt_miniconda3.tar.gz
+/docker/Miniforge3-Linux-x86_64.sh
 /samples/A/*_A.A*.txt
 /server/adcusers.yaml
 /server/adc*.log

@@ -1,45 +1,38 @@
 {
   "name": "client-app",
-  "version": "1.0.1",
-  "description": "DAS2020 ADC client app",
-  "repository": "none",
+  "version": "1.0.2",
+  "description": "DAS2021 ADC client app",
+  "repository": {
+    "type": "git",
+    "url": "none"
+  },
   "main": "karma.conf.js",
-  "dependencies": {
-    "@angular-devkit/build-angular": "^0.901.12",
-    "@angular/animations": "^9.1.12",
-    "@angular/cli": "^9.1.12",
-    "@angular/common": "^9.1.12",
-    "@angular/compiler": "^9.1.12",
-    "@angular/core": "^9.1.12",
-    "@angular/forms": "^9.1.12",
-    "@angular/platform-browser": "^9.1.12",
-    "@angular/platform-browser-dynamic": "^9.1.12",
-    "@angular/router": "^9.1.12",
-    "@types/js-yaml": "^3.12.5",
-    "d3": "^5.16.0",
-    "fibers": "^5.0.0",
-    "html-webpack-plugin": "^4.3.0",
-    "http-server": "^0.12.3",
-    "js-yaml": "^3.14.0",
-    "ngx-file-drop": "^9.0.1",
-    "node-sass": "^4.14.1",
-    "rxjs": "^6.6.2",
-    "semver": "^5.7.1",
-    "tslib": "^1.10.0",
-    "typescript": "^3.6.5",
-    "zone.js": "~0.10.2"
-  },
-  "devDependencies": {
-    "@angular/compiler-cli": "^9.1.12",
-    "@types/d3": "^5.7.2"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "$(npm bin)/ng build --prod --base-href=/static/app/index.html --output-path=../server/static/app/",
-    "run": "cd ../server/; echo 'http://127.0.0.1:8000/static/app/index.html'; gunicorn main:app",
+    "build": "$(npm bin)/ng build --configuration production --base-href=/static/app/index.html --output-path=../server/static/app/",
+    "run": "cd ../server/; echo 'http://127.0.0.1:8000/static/app/index.html'; $(gcloud beta emulators datastore --data-dir ../work/datastore env-init); gunicorn main:app",
     "test-run": "ng serve --proxy-config proxy.conf.json --live-reload --watch --poll=5000 --host 0.0.0.0",
     "test-run-x": "ng serve --proxy-config proxy.conf.json --live-reload --watch --poll=5000 --host 0.0.0.0 --disable-host-check"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@angular-devkit/build-angular": "^12.1.1",
+    "@angular/cli": "^12.1.1",
+    "@angular/common": "^12.1.1",
+    "@angular/compiler": "^12.1.1",
+    "@angular/compiler-cli": "^12.1.1",
+    "@angular/core": "^12.1.1",
+    "@angular/forms": "^12.1.1",
+    "@angular/platform-browser": "^12.1.1",
+    "@angular/platform-browser-dynamic": "^12.1.1",
+    "@angular/router": "^12.1.1",
+    "@types/d3": "^5.16.4",
+    "d3": "^5.16.0",
+    "http-server": "^0.12.3",
+    "js-yaml": "^4.1.0",
+    "ngx-file-drop": "^11.1.0",
+    "typescript": "^4.3.5",
+    "zone.js": "^0.11.4"
+  }
 }

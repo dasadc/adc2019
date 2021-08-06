@@ -13,6 +13,7 @@ import sys
 import urllib.error
 import urllib.request
 import yaml
+import re
 
 
 class ADCClient:
@@ -28,8 +29,8 @@ class ADCClient:
         self.cookie = None
         self.output_file = None
         self.token = None
-        self.version = '2019.08.21'
-        self.year = 2019
+        self.version = '2021.08.04'
+        self.year = 2021
 
     def effective_username(self):
         """
@@ -456,9 +457,21 @@ class ADCClient:
         "PUT /A/<username>/Q/<Q-number>"
         a_num = int(args[0])
         a_file = args[1]
+        a_replace = False
+        if 2 < len(args):
+            if args[2] == 'replace-A-number':
+                a_replace = True  # Aファイル中のA番号('A1'など)を、"A${a_num}"で置換
         path = '/A/%s/Q/%d' % (self.effective_username(), a_num)
         with open(a_file, 'r') as f:
             a_text = f.read()
+        if a_replace:
+            tmp = []
+            p = re.compile(r'A([0-9]+)', re.IGNORECASE)
+            for line in a_text.splitlines():
+                if p.match(line):
+                    line = 'A%d' % a_num
+                tmp.append(line)
+            a_text = '\n'.join(tmp)
         info = {'A': a_text, 'A_filename': a_file}
         params = json.dumps(info)
         res = self.http_request('PUT', path, params=params)
@@ -659,28 +672,11 @@ class ADCClient:
         TEST_MODEの値を取得する(GET)、変更する(PUT)。
         
         Parameters
-        ==========
+        ----------
         args : None or str
             'True', 'False'
         """
-        path = '/admin/config/test_mode'
-        if args is None or len(args)==0:
-            res = self.http_request('GET', path)
-            # print(res)
-            return self.fin(res)
-        else:
-            assert len(args) == 1
-            a = args[0]
-            if a.lower() == 'true':
-                param = True
-            elif a.lower() == 'false':
-                param = False
-            else:
-                raise RuntimeError('bad argument: %s' % a)
-
-            dat = {'test_mode': param}
-            res = self.http_request('PUT', path, params=json.dumps(dat))
-            return self.fin(res)
+        return self._admin_config_common(path='test_mode', args=args)
 
 
     def view_score_mode(self, args=None):
@@ -688,25 +684,52 @@ class ADCClient:
         VIEW_SCORE_MODEの値を取得する(GET)、変更する(PUT)。
         
         Parameters
-        ==========
+        ----------
         args : None or str
             'True', 'False'
         """
-        path = '/admin/config/view_score_mode'
+        return self._admin_config_common(path='view_score_mode', args=args)
+
+
+    def log_to_datastore(self, args=None):
+        """
+        LOG_TO_DATASTOREの値を取得する(GET)、変更する(PUT)。
+        
+        Parameters
+        ----------
+        args : None or str
+            'True', 'False'
+        """
+        return self._admin_config_common(path='log_to_datastore', args=args)
+
+
+    def _admin_config_common(self, path, args=None):
+        """
+        common subroutine of 'test-mode', 'view-score-mode', 'log-to-datastore'
+        
+        Parameters
+        ----------
+        path : str
+             Used as '/admin/config/{path}'
+             ['test_mode', 'view_score_mode', 'log_to_datastore']
+        args : None or str
+            'True', 'False'
+        """
+        api_path = f'/admin/config/{path}'
         if args is None or len(args)==0:
-            res = self.http_request('GET', path)
+            res = self.http_request('GET', api_path)
             # print(res)
             return self.fin(res)
         else:
             assert len(args) == 1
             a = args[0]
-            if a.lower() == 'true':
-                param = True
-            elif a.lower() == 'false':
-                param = False
+            if a.lower() == 'true' or a == '1':
+                param = 1
+            elif a.lower() == 'false' or a == '0':
+                param = 0
             else:
                 raise RuntimeError('bad argument: %s' % a)
 
-            dat = {'view_score_mode': param}
-            res = self.http_request('PUT', path, params=json.dumps(dat))
+            dat = {path: param}
+            res = self.http_request('PUT', api_path, params=json.dumps(dat))
             return self.fin(res)

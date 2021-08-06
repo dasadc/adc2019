@@ -6,7 +6,7 @@ top_dir=$(cd $(dirname "$script")/../; pwd)
 datastore_dir="${top_dir}/work/datastore"
 server_dir="${top_dir}/server/"
 
-[ -z "${CONDA_ENV}" ] && CONDA_ENV="py38"
+[ -z "${CONDA_ENV}" ] && CONDA_ENV="adc2019dev"
 
 cd "${server_dir}"
 

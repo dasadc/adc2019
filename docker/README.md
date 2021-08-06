@@ -3,24 +3,33 @@ Docker image
 
 ADC serverをかんたんに起動できるようにするDocker iamgeについて説明する。
 
-開発者以外の、serverを実行するだけの人は、[docker run](#docker-run)から読めばよい。
+- 2021-07-14現在、ADC2021にむけての作業中
+- 開発者以外の、ADC運営担当者、serverを実行するだけの人は、docker imageを作成する必要は無いので、[docker run](#docker-run)から読めばよい。
+- ADC参加者(`adccli`を実行するだけの人)も、このDocker imageを使って、`adccli`を実行できるが、Docker imageのサイズが大きすぎるため、メリットは無い。
 
-ADC参加者(`adccli`を実行するだけの人)も、このDocker imageを使って、`adccli`を実行できるが、Docker imageのサイズが大きすぎるため、あまりメリットは無いかもしれない。
 
+Docker image作成の事前の準備作業
+-------------------------------
 
-事前の準備作業
---------------
-
-### opt_miniconda3.tar.gzを作成する
-
-`/opt/miniconda3/`に、Miniconda3がインストールされているとする。
+Miniforgeをダウンロードする。
 
 ``` bash
+curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+```
+
+
+``` bash
+curl -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+
 conda clean --all
 tar -zcf opt_miniconda3.tar.gz --owner=1000 --group=1000 -C / opt/miniconda3
 ```
 
+
 ### ユーザーadcの初期パスワードについて
+
+- username: `adc`
+- password: `adc-User`
 
 Dockerfileで指定している初期パスワードのハッシュ値は、以下のようにして求めた。
 
@@ -38,10 +47,10 @@ docker build
 - `Dockerfile-dev` ... 実行に加えて、ソフトウェア開発もできる
 
 ``` bash
-sudo docker build --tag ipsjdasadc/adc:20200827 .
-sudo docker tag         ipsjdasadc/adc:20200827 ipsjdasadc/adc:latest
+sudo docker build --tag ipsjdasadc/adc:20210713 .
+sudo docker tag         ipsjdasadc/adc:20210713 ipsjdasadc/adc:latest
 
-sudo docker build --tag ipsjdasadc/adc:20200827dev --file Dockerfile-dev .
+sudo docker build --tag ipsjdasadc/adc:20210713dev --file Dockerfile-dev .
 ```
 
 ### docker push to Docker Hub
@@ -72,6 +81,25 @@ sudo docker push        ipsjdasadc/adc:latest
 sudo docker build --tag ipsjdasadc/adc:20200902 --file Dockerfile-patch20200902 --no-cache .
 sudo docker tag         ipsjdasadc/adc:20200902 ipsjdasadc/adc:latest
 sudo docker push        ipsjdasadc/adc:20200902
+sudo docker push        ipsjdasadc/adc:latest
+```
+
+### patch20200907
+
+``` bash
+sudo docker build --tag ipsjdasadc/adc:20200907 --file Dockerfile-patch20200907 --no-cache .
+sudo docker tag         ipsjdasadc/adc:20200907 ipsjdasadc/adc:latest
+sudo docker push        ipsjdasadc/adc:20200907
+sudo docker push        ipsjdasadc/adc:latest
+```
+
+
+### patch20200908
+
+``` bash
+sudo docker build --tag ipsjdasadc/adc:20200908 --file Dockerfile-patch20200908 --no-cache .
+sudo docker tag         ipsjdasadc/adc:20200908 ipsjdasadc/adc:latest
+sudo docker push        ipsjdasadc/adc:20200908
 sudo docker push        ipsjdasadc/adc:latest
 ```
 
@@ -120,18 +148,18 @@ Environment="ADC_PASS_USER=__change_here__"
 
 ``` bash
 docker run \
-       --name adc2020 \
+       --name adc2021 \
        -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-       -v /tmp/adc2020:/run \
+       -v /tmp/adc2021:/run \
        -v "${docker_dir}/env.conf":/etc/systemd/system/adc-server.service.d/env.conf \
-       -p 20022:22 \
-       -p 20080:8888 \
+       -p 30022:22 \
+       -p 30080:8888 \
        ipsjdasadc/adc:latest
 ```
 
-- コンテナのTCP/IP port 22 (SSH)が、ホスト側の20022に出てくる。必要に応じて変更すること
-- コンテナのTCP/IP port 8888 (ADC server。`adc2019/scripts/04_server.sh`にて指定)が、ホスト側の20080に出てくる。必要に応じて変更すること
-- ホストがUbuntuの場合、`/run`のvolume mountが必要だと[書かれていた](https://hub.docker.com/_/centos)。snapでインストールしたdockerのせいか、実際には`/tmp/snap.docker/tmp/adc2020/`が使われていた。
+- コンテナのTCP/IP port 22 (SSH)が、ホスト側の30022に出てくる。必要に応じて変更すること
+- コンテナのTCP/IP port 8888 (ADC server。`adc2019/scripts/04_server.sh`にて指定)が、ホスト側の30080に出てくる。必要に応じて変更すること
+- ホストがUbuntuの場合、`/run`のvolume mountが必要だと[書かれていた](https://hub.docker.com/_/centos)。snapでインストールしたdockerの場合、実際には`/tmp/snap.docker/tmp/adc2021/`が使われるらしい。
 
 
 ### serverの動作確認
@@ -239,3 +267,55 @@ dockerホスト以外で実行しているウェブブラザなら、localhost�
 (備考) おそらくファイアウォールの許可ルールを追加しなくても、dockerのせいでアクセスできてしまうはず。
 
 
+
+memo-20210713
+-------------
+
+```
+docker run --name centos8 --rm -it centos:8 /bin/bash
+```
+
+```
+docker cp google-cloud-sdk.repo centos8:/etc/yum.repos.d/
+```
+
+
+```
+export CLOUDSDK_PYTHON=python3
+export CLOUDSDK_GSUTIL_PYTHON=python3
+export CLOUDSDK_BQ_PYTHON=python3
+
+
+(cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == \
+systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+rm -f /lib/systemd/system/multi-user.target.wants/*;\
+rm -f /etc/systemd/system/*.wants/*;\
+rm -f /lib/systemd/system/local-fs.target.wants/*; \
+rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+rm -f /lib/systemd/system/basic.target.wants/*;\
+rm -f /lib/systemd/system/anaconda.target.wants/*;
+
+yum clean all
+yum update -y
+yum install -y \
+	    bash-completion \
+	    git \
+	    less \
+	    openssh-server \
+	    rsync \
+	    sudo \
+	    which \
+		python39
+
+yum -y install \
+	    google-cloud-sdk \
+	    google-cloud-sdk-datastore-emulator \
+	    google-cloud-sdk-app-engine-python 
+
+yum clean all
+
+systemctl enable sshd && \
+	systemctl enable systemd-user-sessions && \
+	ln -s ../systemd-user-sessions.service /usr/lib/systemd/system/multi-user.target.wants/systemd-user-sessions.service
+```

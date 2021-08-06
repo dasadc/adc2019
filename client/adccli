@@ -22,7 +22,7 @@ def cmd_help():
   get-user-list
   get-user [USERNAME ...]
   get-q [NUMBER ...]
-  put-a NUMBER FILENAME
+  put-a NUMBER FILENAME [replace-A-number]
   put-a-info NUMBER CPU_SEC MEM_BYTE [MISC_TEXT]
   get-a-info [NUMBER]
   delete-a-info NUMBER
@@ -58,6 +58,7 @@ admin command:
   timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2]]
   test-mode [True|False]
   view-score-mode [True|False]
+  log-to-datastore [True|False]
 """)
 
 
@@ -331,6 +332,9 @@ def main():
         print(res[6])
     elif a == 'view-score-mode':
         res = cli.view_score_mode(args.arg)
+        print(res[6])
+    elif a == 'log-to-datastore':
+        res = cli.log_to_datastore(args.arg)
         print(res[6])
     else:
         print('Error: Unknown command:', a)

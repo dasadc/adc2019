@@ -9,12 +9,25 @@ import { AdcService } from './adc.service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
+  info: Object ;
   title: string ;
+  url_help: string;
 
   constructor(private adcService: AdcService,
-              private titleService: Title) { }
+              private titleService: Title) {
+    this.url_help = 'https://github.com/dasadc/';
+  }
 
   ngOnInit() {
+    this.adcService.system_info()
+      .subscribe((info: Object) => {
+        this.info = info;
+        this.url_help = info['url']['client-app']['README'];
+        //console.log('system_info', info['url']['client-app']['README'])
+      },
+      (err) => {
+        console.log('ERROR: app.component: system_info:', err);
+      });
     this.adcService.version()
       .subscribe((ver: number) => {
         this.title = `DAS${ver} Algorithm Design Contest (ADC${ver})`;
