@@ -6,6 +6,7 @@ import { catchError, map, tap, filter, flatMap } from 'rxjs/operators';
 import { readFile } from './rx-file-reader';
 import { CheckResults } from './checkresults';
 import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList, QNumberList, QData, ANumberList, AdminQList, ResUserInfo } from './apiresponse';
+import { StatusBarComponent } from './status-bar/status-bar.component';
 
 const httpOptions = {
   headers: new HttpHeaders({ 'Content-Type': 'application/json' })
@@ -23,12 +24,16 @@ export class AdcService {
   filename3: string;
 
   // for ADC API
+  api_server_origin: string = '';
   username: string;
   access_token: string; // given from ADC server after login
   dummy_login_failed: boolean = false;
   not_login: number = 0;
   whoami_error_count: number = 0;
   view_score_mode: boolean = true;
+  log_to_datastore: boolean = false;
+
+  status_bar: StatusBarComponent;
 
   // BoardEditComponentのデータを保持する
   bec_keep = {
@@ -45,6 +50,24 @@ export class AdcService {
 
   //constructor(private messageService: MessageService) { }
   constructor(private http: HttpClient) { }
+
+  get_API_server_origin(): string {
+    return this.api_server_origin;
+  }
+
+  set_API_server_origin(origin: string) {
+    this.api_server_origin = origin;
+  }
+
+  set_status_bar_component(s: StatusBarComponent) {
+    this.status_bar = s;
+  }
+
+  update_status_bar() {
+    if (this.status_bar !== void 0) {
+      this.status_bar.updateStatus();
+    }
+  }
 
   readFile1(file: File): Observable<string> {
     this.filename1 = file.name;
@@ -142,7 +165,7 @@ export class AdcService {
 		A: this.text2};
     //console.log('data', data);
     //return this.http.post<Object>('http://127.0.0.1:4280/api/test_post', data, httpOptions).pipe( // !!CORS!!
-    return this.http.post<Object>('/api/check_file', data, httpOptions)
+    return this.http.post<Object>(`${this.api_server_origin}/api/check_file`, data, httpOptions)
       .pipe(
       	map((res: Object) => {
       	  //this.log(`checkFiles: res=${res}`);
@@ -240,7 +263,7 @@ export class AdcService {
       // ダミーのloginを行い、もしもsessionによって認証されたら、tokenがもらえる
       let data = {'username': 'dummy',
 		  'password': 'dummy'};
-      this.http.post<Object>('/api/login', data, this.apiHttpOptions())
+      this.http.post<Object>(`${this.api_server_origin}/api/login`, data, this.apiHttpOptions())
       	.subscribe((res: Object) => {
       	  this.access_token = res['token'];
       	}, (err) => {
@@ -269,7 +292,7 @@ export class AdcService {
     this.access_token = token;
     let data = {'username': username,
 		'password': password};
-    return this.http.post<Object>('/api/login', data, this.apiHttpOptions())
+    return this.http.post<Object>(`${this.api_server_origin}/api/login`, data, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: loginADCservice', res);
@@ -285,7 +308,7 @@ export class AdcService {
   getAccessTokenFromServer(): Observable<ResLogin> {
     let data = {'username': 'dummy',
 		'password': 'dummy'};
-    return this.http.post<Object>('/api/login', data, this.apiHttpOptions())
+    return this.http.post<Object>(`${this.api_server_origin}/api/login`, data, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: loginADCservice', res);
@@ -303,7 +326,7 @@ export class AdcService {
     this.access_token = undefined;
     this.dummy_login_failed = false;
     let data = {}; // dummy
-    return this.http.post<Object>('/api/logout', data, this.apiHttpOptions())
+    return this.http.post<Object>(`${this.api_server_origin}/api/logout`, data, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: logoutADCservice', res);
@@ -317,10 +340,10 @@ export class AdcService {
 
   /** API, GET /api/infoを実行する */
   system_info(): Observable<Object> {
-    return this.http.get<Object>('/api/info', this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/info`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
-      	  console.log('AdcService: system_info', res);
+      	  //console.log('AdcService: system_info', res);
       	  let v = res;
       	  return v;
       	}),
@@ -333,7 +356,7 @@ export class AdcService {
 
   /** API, GET /api/versionを実行する */
   version(): Observable<number> {
-    return this.http.get<Object>('/api/version', this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/version`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: version', res);
@@ -347,7 +370,7 @@ export class AdcService {
   /** API, GET /api/whoamiを実行する */
   whoami(): Observable<ResMsgOnly> {
     //console.log('AdcService: whoami', this.whoami_error_count);
-    return this.http.get<Object>('/api/whoami', this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/whoami`, this.apiHttpOptions())
       .pipe(
         map((res: Object) => {
           //console.log('AdcService: whoami', res);
@@ -364,13 +387,26 @@ export class AdcService {
       );
   }
 
+  /** API, GET /api/whoamiを実行する */
+  iamadmin(): Observable<boolean> {
+    //console.log('AdcService: iamadmin');
+    return this.http.get<Object>(`${this.api_server_origin}/api/admin/iam`, this.apiHttpOptions())
+      .pipe(
+        map((res: Object) => {
+          //console.log('AdcService: iamadmin', res);
+          return res['admin'];
+        })
+      );
+  }
+
+
   /** API, GET /admin/user/<usernm> を実行する。ユーザー情報を取得する。 */
   getUserInfo(username?: string): Observable<ResMsgOnly> {
     let user = this.username;
     if (username !== void 0) {
       user = username;
     }
-    return this.http.get<Object>(`/api/admin/user/${user}`, this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/admin/user/${user}`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: getUserInfo', res);
@@ -391,7 +427,7 @@ export class AdcService {
 
   /** API, DELETE /admin/user/<usernm> を実行する。ユーザーを削除する。 */
   deleteUserInfo(user: string): Observable<ResMsgOnly> {
-    return this.http.delete<Object>(`/api/admin/user/${user}`, this.apiHttpOptions())
+    return this.http.delete<Object>(`${this.api_server_origin}/api/admin/user/${user}`, this.apiHttpOptions())
       .pipe(
         map((res: Object) => {
           //console.log('delete user', res['msg']);
@@ -440,7 +476,7 @@ export class AdcService {
   changePassword(usernm: string, passwd0: string, passwd1: string): Observable<ResMsgOnly> {
     let data = {'password_old': passwd0,
                 'password_new': passwd1}
-    return this.http.post<Object>(`/api/user/${usernm}/password`, data, this.apiHttpOptions())
+    return this.http.post<Object>(`${this.api_server_origin}/api/user/${usernm}/password`, data, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: changePassword', res);
@@ -452,11 +488,11 @@ export class AdcService {
 
   /** timekeeperの値を取得する。 */
   getTimekeeper(): Observable<ResTimekeeper> {
-    return this.http.get<Object>('/api/admin/timekeeper', this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/admin/timekeeper`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: getTimekeeper', res);
-      	  return new ResTimekeeper(res['enabled'], res['state'], new Date(res['lastUpdate']));
+      	  return new ResTimekeeper(res['enabled'], res['state'], res['round'], new Date(res['lastUpdate']));
       	})/*,
       	catchError(this.handleError<ResTimekeeper>('getTimekeeper'))*/
       );
@@ -465,12 +501,13 @@ export class AdcService {
   /** timekeeperの値を変更する。lastUpdateは無視される。 */
   setTimekeeper(obj: ResTimekeeper): Observable<ResTimekeeper> {
     let dat: Object = {'enabled': obj.enabled,
-		       'state': obj.state};
-    return this.http.put<Object>('/api/admin/timekeeper', dat, this.apiHttpOptions())
+            		       'state': obj.state,
+                       'round': obj.round};
+    return this.http.put<Object>(`${this.api_server_origin}/api/admin/timekeeper`, dat, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: setTimekeeper', res);
-      	  return new ResTimekeeper(res['enabled'], res['state'], res['lastUpdate']);
+      	  return new ResTimekeeper(res['enabled'], res['state'], res['round'], res['lastUpdate']);
       	})/*,
       	catchError(this.handleError<ResTimekeeper>('setTimekeeper'))*/
       );
@@ -478,7 +515,7 @@ export class AdcService {
 
   /** TEST_MODEの値を取得する。 */
   getTestMode(): Observable<boolean> {
-    return this.http.get<Object>('/api/admin/config/test_mode', this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/admin/config/test_mode`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: getTestMode', res);
@@ -490,7 +527,7 @@ export class AdcService {
   /** TEST_MODEの値を変更する。 */
   setTestMode(mode: boolean): Observable<boolean> {
     let dat: Object = {'test_mode': mode};
-    return this.http.put<Object>('/api/admin/config/test_mode', dat, this.apiHttpOptions())
+    return this.http.put<Object>(`${this.api_server_origin}/api/admin/config/test_mode`, dat, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: setTestMode', res);
@@ -500,34 +537,59 @@ export class AdcService {
   }
 
 
-    /** VIEW_SCORE_MODEの値を取得する。 */
-    getViewScoreMode(): Observable<boolean> {
-      return this.http.get<Object>('/api/admin/config/view_score_mode', this.apiHttpOptions())
-        .pipe(
-          	map((res: Object) => {
-          	  //console.log('AdcService: getViewScoreMode', res);
-              this.view_score_mode = res['view_score_mode']
-          	  return res['view_score_mode'];
-          	})
-        );
-    }
+  /** VIEW_SCORE_MODEの値を取得する。 */
+  getViewScoreMode(): Observable<boolean> {
+    return this.http.get<Object>(`${this.api_server_origin}/api/admin/config/view_score_mode`, this.apiHttpOptions())
+      .pipe(
+          map((res: Object) => {
+            //console.log('AdcService: getViewScoreMode', res);
+            this.view_score_mode = res['view_score_mode']
+            return res['view_score_mode'];
+          })
+      );
+  }
 
-    /** VIEW_SCORE_MODEの値を変更する。 */
-    setViewScoreMode(mode: boolean): Observable<boolean> {
-      let dat: Object = {'view_score_mode': mode};
-      return this.http.put<Object>('/api/admin/config/view_score_mode', dat, this.apiHttpOptions())
-        .pipe(
-        	map((res: Object) => {
-        	  //console.log('AdcService: setViewScoreMode', res);
-        	  return res['view_score_mode'];
-        	})
-        );
-    }
+  /** VIEW_SCORE_MODEの値を変更する。 */
+  setViewScoreMode(mode: boolean): Observable<boolean> {
+    let dat: Object = {'view_score_mode': mode};
+    return this.http.put<Object>(`${this.api_server_origin}/api/admin/config/view_score_mode`, dat, this.apiHttpOptions())
+      .pipe(
+        map((res: Object) => {
+          //console.log('AdcService: setViewScoreMode', res);
+          return res['view_score_mode'];
+        })
+      );
+  }
+
+
+  /** LOG_TO_DATASTOREの値を取得する。 */
+  getLogToDatastore(): Observable<boolean> {
+    return this.http.get<Object>(`${this.api_server_origin}/api/admin/config/log_to_datastore`, this.apiHttpOptions())
+      .pipe(
+          map((res: Object) => {
+            //console.log('AdcService: getLogToDatastore', res);
+            this.log_to_datastore = res['log_to_datastore']
+            return res['log_to_datastore'];
+          })
+      );
+  }
+
+  /** LOG_TO_DATASTOREの値を変更する。 */
+  setLogToDatastore(mode: boolean): Observable<boolean> {
+    let dat: Object = {'log_to_datastore': mode};
+    return this.http.put<Object>(`${this.api_server_origin}/api/admin/config/log_to_datastore`, dat, this.apiHttpOptions())
+      .pipe(
+        map((res: Object) => {
+          //console.log('AdcService: setLogToDatastre', res);
+          return res['log_to_datastore'];
+        })
+      );
+  }
 
 
 
   getUserQList(usernm: string): Observable<ResUserQList> {
-    return this.http.get<Object[]>(`/api/user/${usernm}/Q`, this.apiHttpOptions())
+    return this.http.get<Object[]>(`${this.api_server_origin}/api/user/${usernm}/Q`, this.apiHttpOptions())
       .pipe(
       	map((res: Object[]) => {
       	  //console.log('AdcService: getUserQList', usernm, res);
@@ -553,7 +615,7 @@ export class AdcService {
 
   /** ユーザがアップロード済みの問題データを取得する。 */
   getUserQ(usernm: string, qnum: number): Observable<string> {
-    return this.http.get<Object>(`/api/user/${usernm}/Q/${qnum}`, this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/user/${usernm}/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: getUserQ', res);
@@ -569,7 +631,7 @@ export class AdcService {
 
   /** ユーザがアップロード済みの問題データを削除する。 */
   deleteUserQ(usernm: string, qnum: number): Observable<string> {
-    return this.http.delete<Object>(`/api/user/${usernm}/Q/${qnum}`, this.apiHttpOptions())
+    return this.http.delete<Object>(`${this.api_server_origin}/api/user/${usernm}/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  console.log('AdcService: deleteUserQ', res);
@@ -587,7 +649,7 @@ export class AdcService {
   postUserQ(usernm: string, qnum: number, qtext: string, qfilename: string): Observable<string> {
     let data = {'Q': qtext,
 		'Q_filename': qfilename};
-    return this.http.post<Object>(`/api/user/${usernm}/Q/${qnum}`, data, this.apiHttpOptions())
+    return this.http.post<Object>(`${this.api_server_origin}/api/user/${usernm}/Q/${qnum}`, data, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: postUserQ', res);
@@ -603,7 +665,7 @@ export class AdcService {
 
   /** 出題された問題データのリストを取得する。 */
   getQNumberList(): Observable<QNumberList> {
-    return this.http.get<Object>('/api/Q', this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/Q`, this.apiHttpOptions())
       .pipe(
       	map((res: Object[]) => {
       	  // console.log('AdcService: getQList', res);
@@ -620,7 +682,7 @@ export class AdcService {
 
   /** 出題された問題データを取得する。 */
   getQ(qnum: number): Observable<QData> {
-    return this.http.get<Object>(`/api/Q/${qnum}`, this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
       	map((res: Object[]) => {
       	  //console.log('AdcService: getQ', res);
@@ -643,7 +705,7 @@ export class AdcService {
   putA(usernm: string, anum: number, atext: string, afilename: string): Observable<string> {
     let data = {'A': atext,
 		'A_filename': afilename};
-    return this.http.put<Object>(`/api/A/${usernm}/Q/${anum}`, data, this.apiHttpOptions())
+    return this.http.put<Object>(`${this.api_server_origin}/api/A/${usernm}/Q/${anum}`, data, this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
 	  //console.log('AdcService: putA', res);
@@ -659,7 +721,7 @@ export class AdcService {
 
   /** 出題された問題データのリストを取得する。 */
   getANumberList(usernm: string): Observable<ANumberList> {
-    return this.http.get<Object>(`/api/A/${usernm}`, this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/A/${usernm}`, this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
 	  //console.log('AdcService: getANumberList', res);
@@ -672,7 +734,7 @@ export class AdcService {
 
 
   getAdminQList(): Observable<AdminQList> {
-    return this.http.get<Object[]>(`/api/admin/Q/list`, this.apiHttpOptions())
+    return this.http.get<Object[]>(`${this.api_server_origin}/api/admin/Q/list`, this.apiHttpOptions())
       .pipe(
 	map((res: Object[]) => {
 	  //console.log('AdcService: getAdminQList', res);
@@ -692,7 +754,7 @@ export class AdcService {
   }
 
   deleteAdminQList(): Observable<Object> {
-    return this.http.delete<Object[]>(`/api/admin/Q/list`, this.apiHttpOptions())
+    return this.http.delete<Object[]>(`${this.api_server_origin}/api/admin/Q/list`, this.apiHttpOptions())
       .pipe(
 	map((res: Object[]) => {
 	  //console.log('AdcService: deleteAdminQList', res);
@@ -705,7 +767,7 @@ export class AdcService {
   putAdminQList(): Observable<Object> {
     //console.log('adc.service putAdminQList');
     let params = {'dummy': 0};
-    return this.http.put<Object>(`/api/admin/Q/list`, params, this.apiHttpOptions())
+    return this.http.put<Object>(`${this.api_server_origin}/api/admin/Q/list`, params, this.apiHttpOptions())
       .pipe(
 	map((res: Object) => {
 	  //console.log('AdcService: putAdminQList', res);
@@ -718,33 +780,33 @@ export class AdcService {
 
   /** すべての問題データを取得する。 */
   getAdminQAll(): Observable<Object> {
-    return this.http.get<Object>(`/api/admin/Q/all`, this.apiHttpOptions());
+    return this.http.get<Object>(`${this.api_server_origin}/api/admin/Q/all`, this.apiHttpOptions());
   }
 
   /** すべての回答データを消去する。 */
   deleteAdminQAll(): Observable<Object> {
-    return this.http.delete<Object>(`/api/admin/Q/all`, this.apiHttpOptions());
+    return this.http.delete<Object>(`${this.api_server_origin}/api/admin/Q/all`, this.apiHttpOptions());
   }
 
 
   /** すべての回答データを取得する。 */
   getAdminAAll(): Observable<Object> {
-    return this.http.get<Object>(`/api/A`, this.apiHttpOptions());
+    return this.http.get<Object>(`${this.api_server_origin}/api/A`, this.apiHttpOptions());
   }
 
   /** すべての回答データを消去する。 */
   deleteAdminAAll(): Observable<Object> {
-    return this.http.delete<Object>(`/api/A`, this.apiHttpOptions());
+    return this.http.delete<Object>(`${this.api_server_origin}/api/A`, this.apiHttpOptions());
   }
 
 
   getScore(): Observable<Object> {
-    return this.http.get<Object>(`/api/score`, this.apiHttpOptions());
+    return this.http.get<Object>(`${this.api_server_origin}/api/score`, this.apiHttpOptions());
   }
 
   /** 回答データを取得する。 see also getQ */
   getA(username: string, qnum: number): Observable<Object> {
-    return this.http.get<Object>(`/api/A/${username}/Q/${qnum}`, this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/A/${username}/Q/${qnum}`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: getA', res);
@@ -755,7 +817,7 @@ export class AdcService {
 
   /** ユーザーの一覧リストを取得する。 */
   getUserList(): Observable<string[]> {
-    return this.http.get<Object>(`/api/admin/user`, this.apiHttpOptions())
+    return this.http.get<Object>(`${this.api_server_origin}/api/admin/user`, this.apiHttpOptions())
       .pipe(
       	map((res: Object) => {
       	  //console.log('AdcService: getUserList', res);
@@ -767,7 +829,7 @@ export class AdcService {
   /** ユーザー登録 */
   createUser(data: Object): Observable<ResMsgOnly> {
     let username :string = data['username'];
-    return this.http.post<Object>(`/api/admin/user/${username}`, data, this.apiHttpOptions())
+    return this.http.post<Object>(`${this.api_server_origin}/api/admin/user/${username}`, data, this.apiHttpOptions())
       .pipe(
         map((res: Object) => {
           //console.log('createUser', res);
@@ -791,4 +853,16 @@ export class AdcService {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   }
+
+  /** ユーザーの一覧リストを取得する。 */
+  devel_test_01(): Observable<string> {
+    return this.http.get<Object>(`${this.api_server_origin}/api/version`, this.apiHttpOptions())
+      .pipe(
+      	map((res: Object) => {
+      	  //console.log('AdcService: devel_test_01', res);
+      	  return res as string;
+      	})
+      );
+  }
+ 
 }

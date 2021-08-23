@@ -2,6 +2,10 @@
   <h1>{{title}}</h1>
 </div>
 
+<div *ngIf="iamAdmin">
+
+<h1>Status and mode management</h1>
+
 <h2>Timekeeper</h2>
 
 <div *ngIf="tk">{{tk.lastUpdate | date: 'yyyy-MM-dd HH:mm:ss ZZZZ'}}<div>
@@ -23,6 +27,16 @@
     <input type="radio" name="state" id="tk_state" [value]="i"
      [checked]="i == tk.state" (change)="timekeeper_state(i)">{{i}}
     <span class="tooltiptext">{{stateDescrTbl[i]}}</span>
+  </span>
+</div>
+
+<h4>Round</h4>
+
+<div *ngIf="tk">
+  <span *ngFor="let i of tk_round_values" class="tooltip">
+    <input type="radio" name="round" id="tk_round" [value]="i"
+     [checked]="i == tk.round" (change)="timekeeper_round(i)">{{i}}
+     <span class="tooltiptext">{{roundDescrTbl[i]}}</span>
   </span>
 </div>
 
@@ -59,7 +73,26 @@
 </div>
 
 
-<h2>Admin Q List</h2>
+<h2>Log to Datastore</h2>
+
+<div *ngIf="logToDatastoreIsDefined()">
+  <span class="tooltip">
+    <input type="radio" name="log_to_datastore" id="ltd_state" #ltd0 [value]="0"
+      [checked]="false == logToDatastore" (change)="setLogToDatastore(false)">False
+    <span class="tooltiptext">Datastoreにログを保存しない(費用削減になるので推奨)</span>
+  </span>
+  <span class="tooltip">
+    <input type="radio" name="log_to_datastore" id="ltd_state" #ltd1 [value]="1"
+      [checked]="true == logToDatastore" (change)="setLogToDatastore(true)">True
+      <span class="tooltiptext">Datastoreにログを保存する</span>
+  </span>
+</div>
+
+<hr />
+
+<h1>Q-data, A-data management</h1>
+
+<h2>Admin Q List (get-admin-q-list, delete-admin-q-list, put-admin-q-list)</h2>
 
 <span>CAUTION !!</span>
 
@@ -83,7 +116,7 @@
 </div>
 
 
-<h2>Admin Q data</h2>
+<h2>Admin Q data (get-admin-q-all, delete-admin-q-all)</h2>
 
 <span>CAUTION !!</span>
 
@@ -120,6 +153,7 @@
 {{adminAAll['msg']}}
 </div>
 
+<hr />
 
 <h1>User account management</h1>
 
@@ -159,3 +193,5 @@
 <button title="Start upload YAML file" (click)="postUsersYamlFile(uploadFile)">Start upload</button>
 
 <div *ngIf="uploadResults" class="msg-view">{{uploadResults}}</div>
+
+</div>  <!-- iamAdmin-->

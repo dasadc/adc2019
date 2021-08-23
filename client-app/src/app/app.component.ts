@@ -12,6 +12,7 @@ export class AppComponent {
   info: Object ;
   title: string ;
   url_help: string;
+  iamAdmin: boolean;
 
   constructor(private adcService: AdcService,
               private titleService: Title) {
@@ -33,9 +34,19 @@ export class AppComponent {
         this.title = `DAS${ver} Algorithm Design Contest (ADC${ver})`;
       });
     this.titleService.setTitle(this.title);  // Webブラウザに表示されるタイトルを設定する
+
+    this.adcService.iamadmin()
+      .subscribe(res => {
+        this.iamAdmin = res;
+        //this.check();
+      },
+      (err) => {
+        this.iamAdmin = false;
+        //console.log('app.component: err=', err);
+      });
   }
 
   check() {
-    console.log('Check now');
+    console.log('Check now', this.iamAdmin);
   }
 }

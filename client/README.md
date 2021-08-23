@@ -132,7 +132,7 @@ optional arguments:
   --debug               enable debug mode
   --verbose             verbose message
   -c FILE, --config FILE
-                        config file (default: /home/yoshin-t/adcclient.json)
+                        config file (default: /home/USER/adcclient.json)
   -u USERNAME, --username USERNAME
                         set username (default: administrator)
   --alt-username ALT_USERNAME
@@ -190,17 +190,20 @@ admin command:
   delete-admin-a-all
   get-log [NUMBER (seconds|days)]
   delete-log [NUMBER (seconds|days)]
-  timekeeper-enabled [0|1]
-  timekeeper-state [init|im0|Qup|im1|Aup|im2]
-  timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2]]
+  timekeeper-enabled [0|1]                            # Get/Set enabled flag
+  timekeeper-state [init|im0|Qup|im1|Aup|im2]         # Get/Set state
+  timekeeper-round [1|2]                              # Get/Set round counter
+  timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2] [1|2]] # Get/Set all at once
   test-mode [True|False]
   view-score-mode [True|False]
   log-to-datastore [True|False]
 ```
 
-#### 設定保存ファイル
+#### 設定保存ファイル adcclient.json
 
-adccli用設定ファイル`adcclient.json`が、ホームディレクトリに自動的に作成されます。
+adccliの設定を保存するファイル`adcclient.json`が、ホームディレクトリに自動的に作成されます。
+
+- 設定保存ファイルのパス名は、環境変数`ADCCLIENT_JSON`や、コマンドライン引数`adccli --config FILE`で指定することも可能です（引数`--config`が優先）。
 
 オプション`--username`や`--URL`で指定した値は、設定ファイルに保存され、以後、デフォルト値として利用されるようになります。
 
@@ -208,7 +211,7 @@ Webのクッキーもこの設定ファイルに保存されます。loginに成
 
 
 <a name="adcclient"></a>
-#### クライアントライブラリ adcclient.py
+#### クライアント・ライブラリ adcclient.py
 
 ADCサービスのAPIを呼び出すためのライブラリです。
 
@@ -973,9 +976,28 @@ adccli timekeeper-state Aup
 adccli timekeeper-state im2
 ```
 
+### timekeeperのroundカウンタ
+
+現在のroundカウンタの値を確認する（Webアプリでは、ステータス行のRoundに表示されている）。
+
+``` bash
+adccli timekeeper-round
+```
+
+roundカウンタの値を設定する。今の所、有効な値は、1, 2, 999
+
+``` bash
+adccli timekeeper-round 999  # コンテスト開始前の、動作テスト期間中
+
+adccli timekeeper-round 1    # コンテスト当日より前の、事前競技
+
+adccli timekeeper-round 2    # コンテスト当日の、本番競技
+```
+
+
 ### timekeeperのモードと状態を確認する、設定する
 
-enbaledとstateを2つをまとめて扱える。
+enbaled、state、roundの3つをまとめて扱える。
 
 確認する
 
@@ -986,7 +1008,7 @@ adccli timekeeper
 設定する
 
 ```
-adccli timekeeper モード 状態
+adccli timekeeper モード 状態 Roundカウンタ値
 ```
 
 ### その他のサーバconfig設定の取得or変更

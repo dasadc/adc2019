@@ -17,11 +17,13 @@ export class StatusBarComponent implements OnInit {
   usernameDescription: string;
   enabledDescription: string;
   stateDescription: string;
+  roundDescription: string;
   updateUsername_error_count: number = 0;
 
   constructor(private adcService: AdcService) { }
 
   ngOnInit() {
+    this.adcService.set_status_bar_component(this);
     this.updateUsername();
     this.getTimekeeper();
     const secondsCounter = interval(1000)
@@ -40,6 +42,11 @@ export class StatusBarComponent implements OnInit {
       });
   }
 
+  updateStatus() { // update statusボタンをクリック。status-barを再描画させたい
+    this.updateUsername();
+    this.getTimekeeper();
+  }
+  
   updateUsername(): void { // なんか変な処理
     /*
     // Do not call API here !!!
@@ -102,6 +109,7 @@ export class StatusBarComponent implements OnInit {
       .subscribe(tk => {
         //console.log('status-bar: tk=', tk);
         this.clk = tk;
+        this.roundDescription = ResTimekeeper.roundDescrTbl[tk['round']]
         this.stateDescription = ResTimekeeper.stateDescrTbl[tk['state']]
         this.enabledDescription = ResTimekeeper.enabledDescrTbl[tk['enabled']]
       });

@@ -18,6 +18,7 @@ def cmd_help():
   logout
   version
   whoami
+  iamadmin
   password [NEWPASSWORD]
   get-user-list
   get-user [USERNAME ...]
@@ -53,9 +54,10 @@ admin command:
   delete-admin-a-all
   get-log [NUMBER (seconds|days)]
   delete-log [NUMBER (seconds|days)]
-  timekeeper-enabled [0|1]
-  timekeeper-state [init|im0|Qup|im1|Aup|im2]
-  timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2]]
+  timekeeper-enabled [0|1]                            # Get/Set enabled flag
+  timekeeper-state [init|im0|Qup|im1|Aup|im2]         # Get/Set state
+  timekeeper-round [1|2|999]                          # Get/Set round counter
+  timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2] [1|2|999]] # Get/Set all at once
   test-mode [True|False]
   view-score-mode [True|False]
   log-to-datastore [True|False]
@@ -82,12 +84,14 @@ def main():
     url_default = cli.url
 
     parser = argparse.ArgumentParser(
-        description='DA Symposium 2020 Algorithm Design Contest, Command Line Interface tool')
+        description=f'DA Symposium {cli.year} Algorithm Design Contest, Command Line Interface tool')
     parser.add_argument('--debug', action='store_true', help='enable debug mode')
     parser.add_argument('--verbose', action='store_true', help='verbose message')
+    parser.add_argument('--client-version', action='store_true', help='show version')
     parser.add_argument('-c', '--config', metavar='FILE', default=cli.config, help='config file (default: %(default)s)')
     parser.add_argument('-u', '--username', default=cli.username, help='set username (default: %(default)s)')
     parser.add_argument('--alt-username', help='set alternative username. admin only')
+    parser.add_argument('--round', metavar='NUM', type=int, help='specify round number. admin only')
     parser.add_argument('-p', '--password', help='set password')
     parser.add_argument('-U', '--URL', default=url_default, help='set server URL (default: %(default)s)')
     parser.add_argument('-o', '--output', metavar='FILE', default=cli.output_file,
@@ -97,6 +101,8 @@ def main():
 
     args = parser.parse_args()
     # print(args); #sys.exit(1)
+    if args.client_version:
+        print(f'client-version: {cli.version}')
     cli.debug = args.debug
     cli.verbose = args.verbose
     cli.config = args.config
@@ -125,10 +131,13 @@ def main():
         print(res[6]['msg'])
     elif a == 'version':
         res = cli.get_api_version()
-        print(res[6])
+        print('server-API:', res[6].get('version'))
     elif a == 'whoami':
         res = cli.whoami()
         print(res[6]['msg'])
+    elif a == 'iamadmin':
+        res = cli.iamadmin()
+        print(res[6])
     elif a == 'password':
         newpassword = None
         if cli.password is None:
@@ -220,7 +229,7 @@ def main():
         print(res[6].get('results'))
     elif a == 'get-user-q':
         if len(args.arg) == 0:
-            res = cli.get_user_q_list()
+            res = cli.get_user_q_list(round_count=args.round)
             # print(res)
             for i in res:
                 size = 'SIZE %dX%d' % (i['cols'], i['rows'])
@@ -233,7 +242,7 @@ def main():
         else:
             for i in args.arg:
                 q_num = int(i)
-                res = cli.get_user_q(q_num)
+                res = cli.get_user_q(round_count=args.round, q_num=q_num)
                 # print('res=', res)
                 # print(res[6]['text'], end='')
                 filename = 'Q%d.%s.txt' % (q_num, cli.effective_username())
@@ -243,12 +252,14 @@ def main():
     elif a == 'post-user-q':
         q_num = int(args.arg[0])
         q_file = args.arg[1]
-        res = cli.post_user_q(q_num, q_file)
+        round_count = args.round
+        res = cli.post_user_q(q_num, q_file, round_count=round_count)
         print(res[6]['msg'])
     elif a == 'put-user-q':
         q_num = int(args.arg[0])
         q_file = args.arg[1]
-        res = cli.put_user_q(q_num, q_file)
+        round_count = args.round
+        res = cli.put_user_q(q_num, q_file, round_count=round_count)
         print(res[6]['msg'])
     elif a == 'delete-user-q':
         for i in args.arg:
@@ -260,16 +271,16 @@ def main():
             res = cli.check_q(file)
             print(res[6]['check_file'])
     elif a == 'get-admin-q-all':
-        res = cli.get_admin_q_all()
+        res = cli.get_admin_q_all(round_count=args.round)
         print(res[6]['msg'])
     elif a == 'get-admin-a-all':
-        res = cli.get_admin_a_all()
+        res = cli.get_admin_a_all(round_count=args.round)
         print(res[6]['msg'])
     elif a == 'delete-admin-a-all':
-        res = cli.delete_admin_a_all()
+        res = cli.delete_admin_a_all(round_count=args.round)
         print(res[6]['msg'])
     elif a == 'get-admin-q-list':
-        res = cli.get_admin_q_list()
+        res = cli.get_admin_q_list(round_count=args.round)
         # print(res[6]['msg'])
         # print(res[6])
         info = res[6]
@@ -286,13 +297,13 @@ def main():
                          info['blocknum_list'][i],
                          info['linenum_list'][i]))
     elif a == 'put-admin-q-list':
-        res = cli.put_admin_q_list()
+        res = cli.put_admin_q_list(round_count=args.round)
         print(res[6]['msg'])
     elif a == 'delete-admin-q-list':
-        res = cli.delete_admin_q_list()
+        res = cli.delete_admin_q_list(round_count=args.round)
         print(res[6]['msg'])
     elif a == 'delete-admin-q-all':
-        res = cli.delete_admin_q_all()
+        res = cli.delete_admin_q_all(round_count=args.round)
         print(res[6]['msg'])
     elif a == 'put-user-alive':
         res = cli.put_user_alive(args.arg)
@@ -313,10 +324,10 @@ def main():
                 else:
                     print('%s %s: %s' % (i['date'], i['username'], i['what']))
     elif a == 'score':
-        res = cli.score(args.arg)
+        res = cli.score(round_count=args.round)
         print(res[6])
     elif a == 'score-dump':
-        res = cli.score_dump(args.arg)
+        res = cli.score_dump(round_count=args.round)
         print(res[6])
     elif a == 'timekeeper-enabled':
         res = cli.timekeeper_enabled(args.arg)
@@ -324,9 +335,18 @@ def main():
     elif a == 'timekeeper-state':
         res = cli.timekeeper_state(args.arg)
         print(res[6])
+    elif a == 'timekeeper-round':
+        res = cli.timekeeper_round(args.arg)
+        print(res[6])
     elif a == 'timekeeper':
         res = cli.timekeeper(args.arg)
-        print(res[6])
+        #print(res[6])
+        v = res[6]
+        enabled = v.get('enabled')
+        state = v.get('state')
+        round_count = v.get('round')
+        last_update = v.get('lastUpdate')
+        print(f'lastUpdate: "{last_update}",\nenabled: {enabled}, state: "{state}", round: {round_count}')
     elif a == 'test-mode':
         res = cli.test_mode(args.arg)
         print(res[6])

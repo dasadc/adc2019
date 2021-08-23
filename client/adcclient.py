@@ -17,19 +17,26 @@ import re
 
 
 class ADCClient:
+    """
+    client of ADC service
+    """
+    
+    states = ('init', 'im0', 'Qup', 'im1', 'Aup', 'im2')  # class attribute
+    
     def __init__(self):
-        self.config = os.path.join(os.path.expanduser('~'), 'adcclient.json')
+        self.config = os.environ.get('ADCCLIENT_JSON',
+                                     os.path.join(os.path.expanduser('~'), 'adcclient.json'))
         self.debug = False
         self.verbose = False
         self.username = None
         self.alt_username = None
         self.password = None
-        self.url = 'http://127.0.0.1:8080/'  # API server address
+        self.url = 'http://127.0.0.1:8888/'  # API server address
         self.api_root = '/api'  # API server root path
         self.cookie = None
         self.output_file = None
         self.token = None
-        self.version = '2021.08.04'
+        self.version = '2021.08.19'
         self.year = 2021
 
     def effective_username(self):
@@ -113,12 +120,35 @@ class ADCClient:
                 value = 'session=' + C['session'].coded_value
                 headers['Cookie'] = value
 
-    def http_request(self, method='GET', path='/', params=None, headers={}):
+    def http_request(self, method: str = 'GET', path: str = '/', params: str = None, headers: dict = {}) -> list:
         """
         サーバのAPIを呼び出す。
 
         urllib.requestを使って、http_request()を書き直してみる。
         urllib.requestを使わなかった理由が何かあった気がするが、思い出せない。
+
+        Parameters
+        ----------
+        method : str
+            'GET', 'POST', 'PUT', 'DELETE'など
+        path : str
+            URLのpath部分。'/admin/timekeeper/round'など。
+            `api_root = '/api'`なので、pathに`/api`はつけない
+        params : str
+            POST、PUTのとき、`json.dumps({...})`のようにして、パラメータ値を渡す
+        headers : dict
+            http headerを追加したいとき。
+
+        Returns
+        -------
+        res : list
+            [0] version。HTTP/1.0なら10、HTTP/1.1なら11
+            [1] status code。200とか
+            [2] reason。'OK'とか
+            [3] Content-Typeヘッダの値。'application/json'とか
+            [4] Set-Cookieヘッダの値。
+            [5] bodyデータ。bytes型、b'{"round": 999}'とか
+            [6] 
         """
         # 基本的には url = self.url + api_root + path だが、'//'を避けるため
         if self.api_root[-1] == '/' and path[0] == '/':
@@ -183,8 +213,27 @@ class ADCClient:
         # print('res=', res)
         return res
 
-    def fin(self, res):
+    def fin(self, res: list) -> list:
         """
+        Parameters
+        ----------
+        res : list
+            http_header()の返り値
+
+        Returns
+        -------
+        list
+            [0] version。HTTP/1.0なら10、HTTP/1.1なら11
+            [1] status code。200とか
+            [2] reason。'OK'とか
+            [3] Content-Typeヘッダの値。'application/json'とか
+            [4] Set-Cookieヘッダの値。
+            [5] bodyデータ。bytes型、b'{"round": 999}'とか
+            [6] dict。'application/json'のときは、[5]のbodyデータから作る。
+
+        Examples
+        --------
+
         resの例
         [10, 200, 'OK', 'application/json', None, b'{"msg": "administrator"}']
         [10, 401, 'UNAUTHORIZED', 'application/json', None, b'{"msg": "not login yet"}']
@@ -246,6 +295,13 @@ class ADCClient:
         (動作確認用) サーバーからユーザー名を取得する
         """
         res = self.http_request('GET', '/whoami')
+        return self.fin(res)
+
+    def iamadmin(self):
+        """
+        このユーザーは管理者権限を持っているか、サーバーに教えてもらう
+        """
+        res = self.http_request('GET', '/admin/iam')
         return self.fin(res)
 
     def change_password(self, newpassword):
@@ -391,35 +447,54 @@ class ADCClient:
         return True
 
 
-    def get_admin_q_all(self):
-        res = self.http_request('GET',    '/admin/Q/all')
+    def get_admin_q_all(self, round_count: int = None):
+        if round_count is None:
+            round_count = self.get_round()
+        path = '/admin/Q/all?' + urllib.parse.urlencode({'round': round_count})
+        res = self.http_request('GET', path)
         return self.fin(res)
 
-    def delete_admin_q_all(self):
-        res = self.http_request('DELETE', '/admin/Q/all')
+    def delete_admin_q_all(self, round_count: int = None):
+        if round_count is None:
+            round_count = self.get_round()
+        path = '/admin/Q/all?' + urllib.parse.urlencode({'round': round_count})
+        res = self.http_request('DELETE', path)
         return self.fin(res)
 
-    def get_admin_a_all(self):
-        res = self.http_request('GET', '/A')
+    def get_admin_a_all(self, round_count: int = None):
+        if round_count is None:
+            round_count = self.get_round()
+        path = '/A?' + urllib.parse.urlencode({'round': round_count})
+        res = self.http_request('GET', path)
         # print('res=', res)
         return self.fin(res)
 
-    def delete_admin_a_all(self):
-        res = self.http_request('DELETE', '/A')
+    def delete_admin_a_all(self, round_count: int = None):
+        if round_count is None:
+            round_count = self.get_round()
+        path = '/A?' + urllib.parse.urlencode({'round': round_count})
+        res = self.http_request('DELETE', path)
         return self.fin(res)
 
-    def get_admin_q_list(self):
-        res = self.http_request('GET', '/admin/Q/list')
+    def get_admin_q_list(self, round_count: int = None):
+        if round_count is None:
+            round_count = self.get_round()
+        path = '/admin/Q/list?' + urllib.parse.urlencode({'round': round_count})
+        res = self.http_request('GET', path)
         # print('res=', res)
         return self.fin(res)
 
-    def put_admin_q_list(self):
-        params = json.dumps({'dummy': 0})
-        res = self.http_request('PUT', '/admin/Q/list', params=params)
+    def put_admin_q_list(self, round_count: int = None):
+        if round_count is None:
+            round_count = self.get_round()
+        res = self.http_request('PUT', '/admin/Q/list', params=json.dumps({'round': round_count}))
         return self.fin(res)
 
-    def delete_admin_q_list(self):
-        res = self.http_request('DELETE', '/admin/Q/list')
+    def delete_admin_q_list(self, round_count: int = None):
+        if round_count is None:
+            round_count = self.get_round()
+        path = '/admin/Q/list?' + urllib.parse.urlencode({'round': round_count})
+        res = self.http_request('DELETE', path)
         return self.fin(res)
 
     def get_q(self, args):
@@ -517,15 +592,17 @@ class ADCClient:
         # for i in range(0, len(res[6]['results'])): print i, " ", res[6]['results'][i]
         # print type(res[6]['results'][0])  # <type 'dict'>
 
-    def get_user_q(self, q_num):
+    def get_user_q(self, round_count: int = None, q_num: int = None):
         """
         GET /user/<username>/Q/<Q-number>
         """
         path = '/user/%s/Q/%d' % (self.effective_username(), q_num)
+        if round_count is not None:
+            path += '?' + urllib.parse.urlencode({'round': round_count})
         res = self.http_request('GET', path)
         return self.fin(res)
 
-    def get_user_q_list(self):
+    def get_user_q_list(self, round_count: int = None):
         """
         GET /user/<username>/Q
 
@@ -536,6 +613,8 @@ class ADCClient:
           'linenum': 11, 'qnum': 1, 'rows': 10}]
         """
         path = '/user/%s/Q' % self.effective_username()
+        if round_count is not None:
+            path += '?' + urllib.parse.urlencode({'round': round_count})
         res = self.http_request('GET', path)
         # print('res=', res)
         if res[1] == 200:
@@ -544,35 +623,53 @@ class ADCClient:
         else:
             return None
 
-    def post_user_q(self, q_num, q_file):
+    def post_user_q(self, q_num: int, q_file: str, round_count: int = None):
         """
         POST /user/<username>/Q/<Q-number>
 
         ユーザーが自作問題をアップロードする（新規に作成する）。
+
+        Parameters
+        ----------
+        q_num : int
+            問題番号
+        q_file : str
+            問題データのファイル名
+        round_count : int, default None
+            round数
         """
         path = '/user/%s/Q/%d' % (self.effective_username(), q_num)
         with open(q_file, 'r') as f:
             q_text = f.read()
         filename = os.path.basename(q_file)
         info = {'Q': q_text,
-                'Q_filename': filename}
-        params = json.dumps(info)
-        res = self.http_request('POST', path, params=params)
+                'Q_filename': filename,
+                'round': round_count}
+        res = self.http_request('POST', path, params=json.dumps(info))
         return self.fin(res)
 
-    def put_user_q(self, q_num, q_file):
+    def put_user_q(self, q_num, q_file, round_count: int = None):
         """
         PUT /user/<username>/Q/<Q-number>
         すでにPOSTしたデータを書き換える。
+
+        Parameters
+        ----------
+        q_num : int
+            問題番号
+        q_file : str
+            問題データのファイル名
+        round_count : int, default None
+            round数
         """
         path = "/user/%s/Q/%d" % (self.effective_username(), q_num)
         with open(q_file, "r") as f:
             q_text = f.read()
         filename = os.path.basename(q_file)
         info = {'Q': q_text,
-                'Q_filename': filename}
-        params = json.dumps(info)
-        res = self.http_request('PUT', path, params=params)
+                'Q_filename': filename,
+                'round': round_count}
+        res = self.http_request('PUT', path, params=json.dumps(info))
         return self.fin(res)
 
     def delete_user_q(self, q_num):
@@ -604,13 +701,17 @@ class ADCClient:
         res = self.http_request('DELETE', path)
         return self.fin(res)
 
-    def score(self, args):
+    def score(self, round_count: int = None):
         path = '/score'
+        if round_count is not None:
+            path += '?' + urllib.parse.urlencode({'round': round_count})
         res = self.http_request('GET', path)
         return self.fin(res)
 
-    def score_dump(self, args):
+    def score_dump(self, round_count: int = None):
         path = '/score/dump'
+        if round_count is not None:
+            path += '?' + urllib.parse.urlencode({'round': round_count})
         res = self.http_request('GET', path)
         return self.fin(res)
 
@@ -637,33 +738,71 @@ class ADCClient:
             res = self.http_request('GET', path)
         else:
             state = args[0]
-            assert state in ('init', 'im0', 'Qup', 'im1', 'Aup', 'im2')
+            assert state in self.states
             dat = {'state': state}
             res = self.http_request('PUT', path, params=json.dumps(dat))
         return self.fin(res)
+
+    def timekeeper_round(self, args=None) -> list:
+        """
+        timekeeperのroundカウンタ値を取得する(GET)、roundカウンタ値を変更する(PUT)。
+        Parameters
+        ----------
+        args : list of str, default None
+            Noneのときは値を取得する。
+            listのときは、値int(args[0])を設定する。
+
+        Returns
+        -------
+        list
+            fin()の返り値。[6]がdictデータ。
+        """
+        path = '/admin/timekeeper/round'
+        if args is None or len(args) == 0:
+            res = self.http_request('GET', path)
+        else:
+            round_count = int(args[0])
+            dat = {'round': round_count}
+            res = self.http_request('PUT', path, params=json.dumps(dat))
+        return self.fin(res)
+
+    def get_round(self) -> int:
+        """
+        roundカウンタ値の値をAPIサーバから取得して返す。
+
+        Returns
+        -------
+        round_count : int
+        """
+        tmp = self.timekeeper_round()  # res()の結果なので
+        return tmp[6]['round']
 
     def timekeeper(self, args=None):
         """
         timekeeperの値を取得する(GET)、変更する(PUT)。
         
         Parameters
-        ==========
-        args : list of str
-            enabled = args[0]
-            state   = args[1]
+        ----------
+        args : list of str, default None
+            enabled     = args[0]
+            state       = args[1]
+            round_count = args[2]
         """
         path = '/admin/timekeeper'
         if args is None or len(args)==0:
             res = self.http_request('GET', path)
             return self.fin(res)
         else:
-            assert len(args) == 2
+            assert len(args) == 3
             enabled = int(args[0])
             assert enabled in (0, 1)
             state = args[1]
-            assert state in ('init', 'im0', 'Qup', 'im1', 'Aup', 'im2')
+            assert state in self.states
+            round_count = int(args[2])
+            assert round_count in (1, 2)
             dat = {'enabled': enabled,
-                   'state': state}
+                   'state': state,
+                   'round': round_count}
             res = self.http_request('PUT', path, params=json.dumps(dat))
             return self.fin(res)
 

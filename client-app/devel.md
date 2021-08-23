@@ -78,21 +78,21 @@ npm install
 
 ### google datastore emulatorを実行しておく
 
-```
+``` bash
 ../scripts/00_datastore.sh
 ```
 
 ### ADCのAPI serverを実行しておく
 
-port番号は8888を使う(以下の`proxy.conf.json`で指定されているため)。
+port番号は8888を使う(以下で説明する[proxy.conf.json](proxy.conf.json)で指定されているため)。
 
-```
+``` bash
 ../scripts/04_server.sh
 ```
 
 ### (frontend) Angular, development serverを実行する
 
-```
+``` bash
 $(npm bin)/ng serve --proxy-config proxy.conf.json --live-reload --watch --poll 9999 --host 0.0.0.0
 または
 npm run test-run
@@ -132,7 +132,13 @@ $(npm bin)/ng build --prod --base-href=/static/app/index.html --output-path=../s
 npm run build
 ```
 
-実行する。 ---> スクリプト[99_server.sh](../scripts/99_server.sh)が使える。
+datastore emulartorを実行する。
+スクリプト[00_datastore.sh](../scripts/00_datastore.sh)が使える。
+
+serverを実行する。 
+スクリプト[99_server.sh](../scripts/99_server.sh)が使える。`./99_server.sh -h`で簡単なヘルプを表示する。
+
+手動でserverを実行する場合
 
 ```
 cd ../server/
@@ -141,7 +147,7 @@ gunicorn main:app
 gunicorn -b :28000 --access-logfile '-' main:app
 ```
 
-- http://127.0.0.1:8000/static/app/index.html
+- http://127.0.0.1:8000/static/app/index.html   # `99_server.sh`
 - http://127.0.0.1:28000/static/app/index.html
 
 もしも、開発中のAPI serverのdevelopment serverが動き続けているなら、それも使える。

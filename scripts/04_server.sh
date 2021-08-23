@@ -9,6 +9,8 @@
 # - ADC_SALT
 # - ADC_PASS_ADMIN
 # - ADC_PASS_USER
+#
+# see also: 99_server.sh
 
 script=$(readlink -f "$0")
 top_dir=$(cd $(dirname "$script")/../; pwd)

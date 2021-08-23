@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 
 import { AdcService } from '../adc.service';
 import { ResMsgOnly, ResLogout } from '../apiresponse';
+import { AppComponent } from '../app.component';
 
 @Component({
   selector: 'app-my-account',
@@ -14,11 +15,16 @@ export class MyAccountComponent implements OnInit {
   changePassword: string;
   username: string;
   logout: string;
+  my_api_server: string = '';
+  default_api_server: string = '';
 
-  constructor(private adcService: AdcService) { }
+  constructor(private adcService: AdcService,
+              private appComponent: AppComponent) { }
 
   ngOnInit() {
     this.username = this.adcService.getUsername();
+    this.my_api_server = this.adcService.get_API_server_origin();
+    this.default_api_server = location.origin;
   }
 
   doWhoami(): void {
@@ -28,6 +34,12 @@ export class MyAccountComponent implements OnInit {
       //console.log('doWhoami: res', res);
       this.whoami = res.msg;
       this.username = res.msg;
+    });
+    // 開発時のテスト
+    this.adcService.devel_test_01()
+    .subscribe((res: string) => {
+      console.log('doWhoami: devel_test_01: res', res);
+      console.log('origin:', location.origin);
     });
   }
 
@@ -68,7 +80,10 @@ export class MyAccountComponent implements OnInit {
     );
   }
 
-
+  set_API_server(): void {
+    console.log('set_API_server:', this.my_api_server);
+    this.adcService.set_API_server_origin(this.my_api_server);
+  }
 
   doLogout(): void {
     //console.log('doLogout:');
@@ -76,6 +91,8 @@ export class MyAccountComponent implements OnInit {
     .subscribe((res: ResLogout) => {
       //console.log('doLogout: res', res);
       this.logout = res.msg;
+      this.appComponent.ngOnInit();  // Adminメニューを表示するかしないか、反映
+      this.adcService.update_status_bar();
     });
   }
 }

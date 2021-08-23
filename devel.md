@@ -74,7 +74,7 @@ sh Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3 -u
 ##### 環境を作成する（server開発・実行ユーザー用, client-app開発用）
 
 ``` bash
-/opt/miniforge3/bin/conda create -n adc2019dev python=3.9 flask=1.1.2 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs=14
+/opt/miniforge3/bin/conda create -n adc2019dev python=3.9 flask=1.1.2 flask-cors=3.0.10 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs=14
 ```
 
 ##### 環境を作成する（ADC参加者、[adccli](client/README.md)を実行するだけのユーザー用）

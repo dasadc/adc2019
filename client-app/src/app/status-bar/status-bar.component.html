@@ -3,6 +3,9 @@
     <span class="tooltiptext">Current time</span>
   </span>
   <span *ngIf="clk">
+    <span class="status-value tooltip">Round: {{clk.round}}
+      <span class="tooltiptext">{{roundDescription}}</span>
+    </span>
     <span class="status-value tooltip">State: {{clk.state}}
       <span class="tooltiptext">{{stateDescription}}</span>
     </span>
@@ -15,5 +18,9 @@
     <span class="status-value tooltip">User: {{username}}
       <span class="tooltiptext">{{usernameDescription}}</span>
     </span>
+  </span>
+  <span class="tooltip">
+    <button title="Update" (click)="updateStatus()">update status</button>
+    <span class="tooltiptext">Force-update status bar now!</span>
   </span>
 </p>
