@@ -120,6 +120,7 @@ export class UploadQComponent implements OnInit, AfterViewInit {
             //console.log('getUserQList: res=', res);
             if (res !== void 0) {
               this.myQList = res.entries;
+              //console.log('upload-q: myQList', this.myQList);
             }
           });
       });

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 
 import { AdcService } from '../adc.service';
 import { ResLogin, ResLogout } from '../apiresponse';
+import { AppComponent } from '../app.component';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +15,8 @@ export class LoginComponent implements OnInit {
   loginMessage: string;
   access_token: string;
 
-  constructor(private adcService: AdcService) { }
+  constructor(private adcService: AdcService,
+              private appComponent: AppComponent ) { }
 
   ngOnInit() {
     this.username = this.adcService.getUsername();
@@ -28,6 +30,10 @@ export class LoginComponent implements OnInit {
       //console.log('doLogin: res', res);
       this.loginMessage = res.msg;
       this.access_token = res.token;
+      //this.appComponent.check();
+      //this.appComponent.redraw();
+      this.appComponent.ngOnInit();  // Adminメニューを表示するかしないか、反映
+      this.adcService.update_status_bar();
     });
   }
 
@@ -38,6 +44,8 @@ export class LoginComponent implements OnInit {
       //console.log('doLogout: res', res);
       this.loginMessage = res.msg;
       this.access_token = undefined;
+      this.appComponent.ngOnInit();  // Adminメニューを表示するかしないか、反映
+      this.adcService.update_status_bar();
     });
   }
 }

@@ -12,7 +12,9 @@
   <a routerLink="/upload-q">My Q</a>
   <a routerLink="/arena">Arena</a>
   <a routerLink="/score">Score</a>
-  <a routerLink="/admin">Admin</a>
+  <span *ngIf="iamAdmin">
+    <a routerLink="/admin">Admin</a>
+  </span>
   <a routerLink="/edit">Edit</a>
   <a href="{{ url_help }}" target="{{'_blank'}}">Help</a>
 </nav>

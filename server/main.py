@@ -1,6 +1,6 @@
 # coding: utf-8
 #
-# Copyright (C) 2020,2021 DA Symposium
+# Copyright (C) 2020,2021 IPSJ DA Symposium
 
 """
 DAシンポジウム 2021
@@ -10,6 +10,7 @@ RESTもどき API server
 """
 
 from flask import Flask, request, jsonify, session, json, render_template, make_response, escape, url_for, g, redirect
+from flask_cors import CORS
 #    Markup
 #from werkzeug.wsgi import DispatcherMiddleware # deprecated
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
@@ -23,13 +24,14 @@ import adcusers
 import adcutil
 import conmgr_datastore as cds
 
-#from convert_excel2QA import genA_from_b64
 
 #werkzeug_logger = logging.getLogger("werkzeug")
 #werkzeug_logger.setLevel(logging.ERROR)
 #logging.basicConfig(filename='adc-server.log', level=logging.WARNING)
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
+CORS(app)
 #app.logger.setLevel(logging.INFO)
 app.config['JSON_AS_ASCII'] = False
 app.config['APPLICATION_ROOT'] = '/api'
@@ -44,6 +46,17 @@ state_str = {'init': 'initial',
              'Aup': 'A_upload',
              'im2': 'intermediate_2'}
 
+def valid_state(state: str) -> bool:
+    """
+    文字列stateが、状態の値として適切であれば、Trueを返す
+    """
+    return state in state_str.keys()
+
+def valid_round(round_count: int) -> bool:
+    """
+    round数が適切であれば、Trueを返す
+    """
+    return round_count in (1, 2, 999)  # hard-coded !!!
 
 def adc_response(msg, code=200, json_encoded=False):
     """
@@ -55,6 +68,8 @@ def adc_response(msg, code=200, json_encoded=False):
         template = 'response.json'
         body = render_template(template, msg=msg)
     resp = make_response(body)
+    if code != 200:
+        logging.info('adc_response: %d %s', code, msg)
     if code == 200:
         resp.status = 'OK'
     elif code == 400:
@@ -74,6 +89,7 @@ def adc_response_json(obj, code=200):
         dict to send client
     """
     body = json.dumps(obj)
+    #print('adc_response_json:', body)
     resp = make_response(body)
     resp.status_code = code
     resp.headers['Content-Type'] = 'application/json'
@@ -104,8 +120,10 @@ def adc_response_Q_data(result):
 
 def log_request(usernm):
     #print(usernm, request.method + " " + request.path)
-    if app.config['LOG_TO_DATASTORE']:
+    if app.config.get('LOG_TO_DATASTORE') == True:
         cds.log(usernm, request.method + " " + request.path)
+    else:
+        logging.info('log_request: %s %s %s', usernm, request.method, request.path)
 
 
 def priv_admin():
@@ -183,20 +201,45 @@ def username_matched(usernm):
     return ('login' in session and session['login']==1 and session['username']==usernm)
 
 
+def get_round() -> int:
+    """
+    round数を返す。
+
+    候補(1) request.args['round']  # (GET) URL encode
+    候補(2) request.json['round']  # (POST, PUT)
+    候補(3) datastoreのtimekeeperで保持しているround
+    """
+    if request.method in ('GET', 'DELETE'):
+        round_count = request.args.get('round')  # type: str
+        #print('1: round_count=', round_count)
+        if round_count is not None:
+            round_count = int(round_count)
+            #print('2: round_count=', round_count)
+    else:
+        round_count = request.json.get('round')
+
+    if round_count is None:
+        round_count = cds.timekeeper_clk()['round']
+        #print('4: round_count=', round_count)
+    #print('round_count=', round_count)
+    return round_count
+    
+
 @app.before_request
 def before_request():
     new_state, old_state = cds.timekeeper_check()
     if new_state != old_state:  # 状態遷移したとき
+        round_count = get_round()
         if new_state == 'Qup':
             # 出題リストを削除する
-            msg = cds.admin_Q_list_delete()
+            msg = cds.admin_Q_list_delete(round_count)
             cds.log('auto', 'delete Q list')
             # 回答データを削除する
-            cds.get_or_delete_A_data(delete=True)
+            cds.get_or_delete_A_data(round_count=round_count, delete=True)
             cds.log('auto', 'delete A all')
         if new_state in ('im1', 'Aup'):  # im1を通らずにいきなりAupに遷移することがある
             # 出題リストを決める
-            flag, msg, _ = cds.admin_Q_list_create()
+            flag, msg, _ = cds.admin_Q_list_create(round_count)
             cds.log('auto', 'admin_Q_list_create %s' % flag)
         
     g.state = new_state  # グローバル変数。なにこれ？
@@ -356,6 +399,19 @@ def whoami():
         return adc_response('not login yet', 401)
 
 
+@app.route('/admin/iam', methods=['GET'])
+def admin_iam_get():
+    """
+    Am I an administrator?
+    このユーザーは、管理者権限を持っているか？
+    """
+    if not authenticated():
+        return adc_response("access forbidden", 403)
+    res = {'admin': priv_admin(),
+           'user': username()}
+    return adc_response_json(res)
+
+
 @app.route('/admin/user', methods=['GET'])
 def admin_user_list_get():
     """
@@ -441,8 +497,9 @@ def admin_Q_list():
     if not priv_admin():
         return adc_response('access forbidden', 403)
     log_request(username())
+    round_count = get_round()
     if request.method == 'GET':
-        qla = cds.admin_Q_list_get()  # Q list all
+        qla = cds.admin_Q_list_get(round_count)  # Q list all
         # print('qla=', qla)
         if qla is None:
             msg = 'Not found. Admin must run "adccli put-admin-q-list"'
@@ -478,10 +535,10 @@ def admin_Q_list():
                 'text_user': text_user}
         return adc_response_json(info)
     elif request.method == 'PUT':
-        flag, msg, qla = cds.admin_Q_list_create()
+        flag, msg, qla = cds.admin_Q_list_create(round_count)
         return adc_response_json({'msg': msg})
     elif request.method == 'DELETE':
-        msg = cds.admin_Q_list_delete()
+        msg = cds.admin_Q_list_delete(round_count)
         return adc_response(msg)
     else: # ありえない
         return adc_response('unknown')
@@ -541,8 +598,29 @@ def admin_timekeeper_state():
     if not priv_admin():
         return adc_response('access forbidden. admin only', 403)
     state = request.json.get('state')
+    if not valid_state(state):
+        return adc_response(f'ERROR: invalid state: {state}', 404)
     state2 = cds.timekeeper_state(state)
     dat = {'state': state2}
+    return adc_response_json(dat)
+
+    
+@app.route('/admin/timekeeper/round', methods=['GET', 'PUT'])
+def admin_timekeeper_round():
+    """
+    timekeeperのroundカウンタ値を取得する(GET)、roundカウンタ値を変更する(PUT)。
+    """
+    if request.method == 'GET':
+        dat = {'round': cds.timekeeper_round()}
+        return adc_response_json(dat)
+    # PUTの場合
+    if not priv_admin():
+        return adc_response('access forbidden. admin only', 403)
+    round_count = request.json.get('round')
+    round_count = int(round_count)
+    if not valid_round(round_count):
+        return adc_response(f'ERROR: out of range value: {round_count}', 404)
+    dat = {'round': cds.timekeeper_round(round_count)}
     return adc_response_json(dat)
 
     
@@ -559,14 +637,27 @@ def admin_timekeeper():
     else:  # PUTの場合
         if not priv_admin():
             return adc_response('access forbidden. admin only', 403)
-        e = request.json.get('enabled')
-        s = request.json.get('state')
+        enabled     = request.json.get('enabled')
+        state       = request.json.get('state')
+        round_count = request.json.get('round')
         dat = {}
-        if e is not None:
-            dat['enabled'] = e
-        if s is not None:
-            dat['state'] = s
+        if enabled is not None:
+            if enabled in (0, 1):
+                dat['enabled'] = enabled
+            else:
+                return adc_response(f'ERROR: enabled is out of range: {enabled}', 404)
+        if state is not None:
+            if valid_state(state):
+                dat['state'] = state
+            else:
+                return adc_response(f'ERROR: invalid state: {state}', 404)
+        if round_count is not None:
+            if valid_round(round_count):
+                dat['round'] = round_count
+            else:
+                return adc_response(f'ERROR: round is out of range: {round_count}', 404)
         r = cds.timekeeper_set(dat)
+        r['lastUpdate'] = r['lastUpdate'].isoformat()  # datetime型をstring型へ変換
         return adc_response_json(r)
 
 
@@ -670,13 +761,14 @@ def admin_A_all():
     if not priv_admin():
         return adc_response('access forbidden', 403)
     log_request(username())
+    round_count = get_round()
     if request.method == 'GET':
-        msg, data = cds.get_admin_A_all()
+        msg, data = cds.get_admin_A_all(round_count)
         dat = {'msg': msg, 'data': data}
         return adc_response_json(dat)
     else:
         # DELETE
-        result = cds.get_or_delete_A_data(delete=True)
+        result = cds.get_or_delete_A_data(round_count=round_count, delete=True)
         print('result=', result)
         dat = {'msg': 'DELETE', 'result': result}
         return adc_response_json(dat)
@@ -691,19 +783,21 @@ def admin_A_username(usernm):
         if not username_matched(usernm):    # ユーザ名が一致しない
             return adc_response('permission denied', 403)
     log_request(usernm)
-    msg, anum_list = cds.get_user_A_all(usernm)
+    round_count = get_round()
+    msg, anum_list = cds.get_user_A_all(round_count=round_count, username=usernm)
     return adc_response_json({'msg': msg,
                               'anum_list': anum_list})
 
 
-@app.route('/A/<usernm>/Q', methods=['POST'])
-def a_q_menu(usernm):
-    if not authenticated():
-        return adc_response('not login yet', 401)
-    a_text   = request.json.get('A')
-    ret, msg = post_A(usernm, a_text, request.form)
-    code = 200 if ret else 403
-    return adc_response_json({'msg': msg}, code)
+#@app.route('/A/<usernm>/Q', methods=['POST'])
+#def a_q_menu(usernm):
+#    if not authenticated():
+#        return adc_response('not login yet', 401)
+#    a_text   = request.json.get('A')
+#    print('a_q_menu: type(request.form) =', type(request.form))
+#    ret, msg = post_A(round_count, usernm, a_text, request.form)
+#    code = 200 if ret else 403
+#    return adc_response_json({'msg': msg}, code)
 
 @app.route('/A/<usernm>/Q/<int:a_num>', methods=['PUT', 'GET', 'DELETE'])
 def a_put(usernm, a_num):
@@ -718,10 +812,11 @@ def a_put(usernm, a_num):
         if g.state != 'Aup':
             return adc_response('deadline passed', 503)
     log_request(usernm)
+    round_count = get_round()
     if request.method=='PUT':
         # print('request.json=', request.json)
-        atext = request.json.get('A')
-        flag, msg = cds.put_A_data(a_num, usernm, atext)
+        a_text = request.json.get('A')
+        flag, msg = cds.put_A_data(round_count=round_count, a_num=a_num, username=usernm, a_text=a_text)
         if flag:
             code = 200
         else:
@@ -732,7 +827,7 @@ def a_put(usernm, a_num):
         if app.config['TEST_MODE']==False:  # 本番モード
             return adc_response('permission denied. GET, DELETE are allowed in test mode only', 403)
     delete = True if request.method=='DELETE' else False
-    result = cds.get_or_delete_A_data(a_num=a_num, username=usernm, delete=delete)
+    result = cds.get_or_delete_A_data(round_count=round_count, a_num=a_num, username=usernm, delete=delete)
     if len(result) == 0:
         return adc_response("answer data A%d not found" % a_num, 404)
     text = '\n'.join(result)
@@ -753,8 +848,9 @@ def a_info_put(usernm, a_num):
         if request.methods != 'GET' and g.state != 'Aup':
             return adc_response('deadline passed', 503)
     log_request(usernm)
+    round_count = get_round()
     if request.method == 'PUT':
-        flag, msg = cds.put_A_info(a_num, usernm, request.json)
+        flag, msg = cds.put_A_info(round_count=round_count, a_num=a_num, username=usernm, info=request.json)
         if flag:
             code = 200
         else:
@@ -766,7 +862,7 @@ def a_info_put(usernm, a_num):
         if usernm == '*':
             usernm = None
         delete = True if request.method == 'DELETE' else False
-        results = cds.get_or_delete_A_info(a_num=a_num, username=usernm, delete=delete)
+        results = cds.get_or_delete_A_info(round_count=round_count, a_num=a_num, username=usernm, delete=delete)
         tmp = {'msg': request.method,  'results': results}
         return adc_response_json(tmp)
 
@@ -782,12 +878,14 @@ def get_user_q_list(usernm):
         if not username_matched(usernm):  # ユーザ名チェック
             return adc_response('permission denied. admin or self-access only', 403)
     log_request(usernm)
-    result = cds.get_user_Q_list(usernm)
+    round_count = get_round()
+    result = cds.get_user_Q_list(author=usernm, round_count=round_count)
+    #print('result=', result)
     return adc_response_json(result)
 
 
 @app.route('/user/<usernm>/Q/<int:q_num>', methods=['GET', 'PUT', 'POST', 'DELETE'])
-def user_q(usernm, q_num):
+def user_q(usernm: str, q_num: int):
     """
     ユーザを指定して、問題データを、ダウンロード、アップロード、削除
     """
@@ -799,43 +897,38 @@ def user_q(usernm, q_num):
         if g.state != 'Qup':
             return adc_response('deadline passed', 503)
     log_request(usernm)
+    round_count = get_round()
     if request.method == 'GET':
-        result = cds.get_user_Q_data(q_num, usernm)  # list
+        result = cds.get_user_Q_data(round_count, q_num, usernm)  # list
         return adc_response_Q_data(result)
 
-    elif request.method == 'PUT':
-        # print('PUT: request.json=', request.json)
+    elif request.method in ('PUT', 'POST'):
         q_text   = request.json.get('Q')
         filename = request.json.get('Q_filename')
-        flag, *args = cds.update_Q_data(q_num, q_text, author=usernm, filename=filename)
+        flag, message, size, block_num, line_num = cds.set_Q_data(round_count, q_num, q_text, author=usernm, filename=filename, update=(request.method=='PUT'))
         if flag:
-            msg, size, block_num, line_num = args
-            msg2 = 'PUT %s: %s Q%d size %dx%d block_num %d line_num %d' % (msg, usernm, q_num, size[0], size[1], block_num, line_num)
+            msg = f'{request.method}: {message}: {usernm} R{round_count} Q{q_num} size {size[0]}x{size[1]} block_num {block_num} line_num {line_num}'
             code = 200
         else:
-            msg = args[0]
-            msg2 = 'PUT ' + msg
+            msg = f'{request.method} {message}: {usernm} Q{q_num}'
             code = 403
-        return adc_response(msg2, code)
+        return adc_response(msg, code)
 
-    elif request.method == 'POST':
-        # print('POST: request.json=', request.json)
-        q_text   = request.json.get('Q')
-        filename = request.json.get('Q_filename')
-        flag, *args = cds.insert_Q_data(q_num, q_text, author=usernm, filename=filename)
-
-        if flag:
-            msg, size, block_num, line_num = args
-            msg2 = 'POST %s: insert %s Q%d size %dx%d block_num %d line_num %d' % (msg, usernm, q_num, size[0], size[1], block_num, line_num)
-            code = 200
-        else:
-            msg = args[0]
-            msg2 = 'POST ' + msg
-            code = 403
-        return adc_response(msg2, code)
+    # elif request.method == 'POST':
+    #     # print('POST: request.json=', request.json)
+    #     q_text   = request.json.get('Q')
+    #     filename = request.json.get('Q_filename')
+    #     flag, message, size, block_num, line_num = cds.insert_Q_data(round_count, q_num, q_text, author=usernm, filename=filename)
+    #     if flag:
+    #         msg = 'POST %s: insert %s Q%d size %dx%d block_num %d line_num %d' % (message, usernm, q_num, size[0], size[1], block_num, line_num)
+    #         code = 200
+    #     else:
+    #         msg = 'POST ' + message
+    #         code = 403
+    #     return adc_response(msg, code)
 
     elif request.method == 'DELETE':
-        msg = cds.delete_user_Q_data(q_num, author=usernm)
+        msg = cds.delete_user_Q_data(round_count, q_num, usernm)
         return adc_response(msg)
 
 
@@ -912,7 +1005,8 @@ def q_get(q_num):
         if g.state != 'Aup':
             return adc_response('deadline passed', 503)
     log_request(username())
-    qdat = cds.get_Q_data(q_num)  # qdatはdict
+    round_count = get_round()
+    qdat = cds.get_Q_data(round_count, q_num)  # type: dict
     return adc_response_Q_data([qdat])
 
 
@@ -924,9 +1018,8 @@ def q_get_list():
         if g.state != 'Aup':
             return adc_response('deadline passed', 503)
     log_request(username())
-    # msg = cds.get_Q_all()
-    # qnum_list = [int(q[1:]) for q in msg.splitlines()]  # q='Q1'
-    qla = cds.admin_Q_list_get()
+    round_count = get_round()
+    qla = cds.admin_Q_list_get(round_count)
     if qla is None:
         info = {'msg': 'Not found. Admin must run "adccli put-admin-q-list"',
                 'qnum_list': [],
@@ -980,9 +1073,10 @@ def score_dump():
     if not priv_admin():                    # 管理者ではない
         return adc_response('access forbidden', 403)
     log_request(username())
+    round_count = get_round()
     import pickle
     import base64
-    res = cds.calc_score_all()
+    res = cds.calc_score_all(round_count)
     bin = pickle.dumps(res)
     txt = base64.b64encode(bin).decode('utf-8')
     return adc_response_json({'score': txt})
@@ -994,8 +1088,9 @@ def get_score():
     if not authenticated():
         return adc_response('not login yet', 401)
     log_request(username())
+    round_count = get_round()
     if app.config['VIEW_SCORE_MODE']:
-        score_board, ok_point, q_point, bonus_point, q_factors, misc = cds.calc_score_all()
+        score_board, ok_point, q_point, bonus_point, q_factors, misc = cds.calc_score_all(round_count)
     else:
         score_board, ok_point, q_point, bonus_point, q_factors, misc = {}, {}, {}, {}, {}, {}
     dat = {'score_board': score_board,
@@ -1003,7 +1098,8 @@ def get_score():
            'q_point': q_point,
            'bonus_point': bonus_point,
            'q_factors': q_factors,
-           'misc': misc}
+           'misc': misc,
+           'round': round_count}
     return adc_response_json(dat)
     
 

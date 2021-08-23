@@ -1,30 +1,28 @@
 #  coding: utf-8
 #
-# Copyright (C) 2019 IPSJ DA Symposium
+# Copyright (C) 2019, 2021 IPSJ DA Symposium
 
 """
-Google Datastore
-================
+Using Google Datastore
+======================
+
+See also:
+https://github.com/googleapis/python-datastore
+
 
 kind
 ----
 
-'userinfo'
-
-'access_token'
-
-'q_data'
-
-'log'
-
-'clock'
-
-'q_list'
-
-'a_data'
-
+- 'userinfo'        id = ユーザ名: str
+- 'access_token'    id = ユーザ名: str
+- 'q_data'
+- 'log'
+- 'clock'           id = 1(とくに意味はない)
+- 'q_list_all'      id = round数 (1,2, 999)
+- 'a_data'
 """
 
+import logging
 from google.cloud import datastore
 from datetime import datetime
 import random
@@ -33,6 +31,7 @@ import numpy as np
 import adc2019
 import adcutil
 from adcconfig import YEAR
+import main
 from tz import gae_datetime_JST
 
 #import argparse
@@ -60,7 +59,7 @@ if 0:
     )
 else:
     # 2020-08-21 バグ修正後
-    client = datastore.Client()
+    client = datastore.Client()  # type: datastore.client.Client
 
 def qdata_key(year=YEAR):
     "問題データのparent"
@@ -196,13 +195,24 @@ def delete_access_token(username, token):
 問題データに関する処理
 """
 
-def get_user_Q_list(author):
+def get_user_Q_list(author: str = None, round_count: int = None):
     """
     authorを指定して、問題データの一覧リストを返す。
-    なぜか、射影クエリでdateを取得すると、datetime型ではなくて数値に変換されてしまう。Unix epochからの秒数を1000*1000倍した値らしい。
+    なぜか、射影クエリ(projection)でdateを取得すると、datetime型ではなくて数値に変換されてしまう。Unix epochからの秒数を1000*1000倍した値らしい。
+
+    Parameters
+    ----------
+    author : str
+        問題作成者の名前
+    round_count : int, default None
+        round数
+
+    Returns
+    -------
+    list of dict
 
     Examples
-    ========
+    --------
     [{'linenum': 11,
       'cols': 10,
       'qnum': 2,
@@ -218,45 +228,78 @@ def get_user_Q_list(author):
       'linenum': 11,
       'cols': 10}]
     """
-    query = query_q_data(author=author, projection=['qnum', 'blocknum', 'cols', 'rows', 'linenum', 'date', 'filename'])
+    query = query_q_data(round_count=round_count, author=author, projection=['round', 'qnum', 'blocknum', 'cols', 'rows', 'linenum', 'date', 'filename'])
+    #query = query_q_data(round_count=round_count, author=author)
     query.order = ['qnum']
     return [dict(i) for i in query.fetch()]
 
 
-def query_q_data(q_num=None, author=None, projection=None):
+def query_q_data(round_count: int = None, q_num: int = None, author: str = None, projection: list = None) -> datastore.query.Query:
     """
-    q_dataエンティティを取得するためのクエリ
+    q_dataエンティティを取得するためのクエリを作る。
 
     Parameters
-    ==========
+    ----------
+    round_count : int
+        round数
     q_num : int
         指定したQ番号だけを取得したいとき
     author : str
         指定したauthorだけを取得したいとき
     projection : list of str
         射影クエリ。['qnum', 'author']など、取得したいプロパティを指定する。
+
+    Returns
+    -------
+        クエリ : datastore.query.Query
     """
     query = client.query(kind='q_data')
-    if q_num:
+    # InvalidArgument: 400 cannot use projection on a property with an equality filter を防止するために
+    if projection is not None:
+        projection_tmp = list(projection)  # copy
+        try:  # for remove()
+            if round_count is not None:
+                projection_tmp.remove('round')
+            if q_num is not None:
+                projection_tmp.remove('qnum')
+            if author is not None:
+                projection_tmp.remove('author')
+        except ValueError:
+            pass
+        #print('projection_tmp', projection_tmp)
+        query.projection = projection_tmp
+    #
+    if round_count is not None:
+        query.add_filter('round', '=', round_count)
+    if q_num is not None:
         query.add_filter('qnum', '=', q_num)
-    if author:
+    if author is not None:
         query.add_filter('author', '=', author)
-    if projection:
-        query.projection = projection
     return query
 
 
-def get_user_Q_data(q_num, author, fetch_num=99):
+def get_user_Q_data(round_count: int, q_num: int, author: str, fetch_num: int = 99) -> list[dict]:
     """
-    qnumとauthorを指定して問題データをデータベースから取り出す
+    round数, 問題番号, 作者名を指定して問題データをデータベースから取り出す
+
+    Parameters
+    ----------
+    round_count : int
+        round数
+    q_num : int
+        問題番号
+    author : str
+        問題作成者
+    fetch_num : int, default 99
+        取得する個数を制限する
 
     Returns
-    =======
-    d : list of dict
+    -------
+    list of dict
         dictに、問題データが入ってる。
 
     Examples
-    ========
+    --------
 
     {'date': datetime.datetime(2019, 8, 22, 10, 24, 18, 985829, tzinfo=<UTC>),
      'rows': 10,
@@ -268,21 +311,38 @@ def get_user_Q_data(q_num, author, fetch_num=99):
      'author': 'administrator',
      'filename': 'sampleQ0.txt'}
     """
-    query = query_q_data(q_num=q_num, author=author)
+    logging.debug('get_user_Q_data: round=%d, Q=%d, author=%s, fetch=%d', round_count, q_num, author, fetch_num)
+    query = query_q_data(round_count=round_count, q_num=q_num, author=author)
     q = query.fetch(fetch_num)  # 存在するなら、高々、1個
     return [dict(i) for i in list(q)]
 
 
-def insert_Q_data(q_num, q_text, author='DASymposium', filename='', uniq=True):
+def set_Q_data(round_count: int, q_num: int, q_text: str, author: str = 'DASymposium', filename: str = '', uniq: bool = True, update: bool = False) -> (bool, str, (int, int), int, int):
     """
     問題データをデータベースに登録する。
-    uniq==Trueのとき、q_numとauthorが重複する場合、登録は失敗する。
+
+    Parameters
+    ----------
+    round_count : int
+        round数
+    q_num : int
+        問題番号
+    q_text : str
+        問題データ
+    author : str, default 'DASymposium'
+        問題作成者の名前
+    filename : str, default ''
+        問題データのファイル名
+    uniq : bool, default True
+        update=Falseかつuniq=Trueのとき、q_numとauthorが重複する場合、登録は失敗する。
+    update : bool, default False
+        Trueのとき、問題データを変更する。すでに登録済みのデータを置き換える。
 
     Returns
-    =======
+    -------
     flag : bool
         True=OK、False=Error
-    msg : string
+    msg : str
         エラーメッセージなど
     size : tuple
         盤の大きさ (x,y) ……flag=Trueのとき
@@ -292,59 +352,180 @@ def insert_Q_data(q_num, q_text, author='DASymposium', filename='', uniq=True):
         線の本数 ……flag=Trueのとき
     """
     # 重複チェック
-    if uniq:
-        q = get_user_Q_data(q_num, author)
+    if uniq and (not update):
+        q = get_user_Q_data(round_count=round_count, q_num=q_num, author=author)
+        print('q=', q)
         if 0 < len(q):
-            return False, 'Error: User %s Q%d data already exists' % (author, q_num)
+            return False, f'Error: User {author} R{round_count} Q{q_num} data already exists', None, None, None
     # 問題データの内容チェック
     try:
         Q = adc2019.read_Q(q_text)
     except RuntimeError as e:
-        return False, 'Syntax Error: ' + str(e)
+        return False, 'Syntax Error: ' + str(e), None, None, None
 
-    dat = datastore.Entity(client.key('q_data'), exclude_from_indexes=['text'])
-    dat.update(p_qdata_from_Q(q_num, author, Q, filename))
-    client.put(dat) # 登録する
-
+    prop_q = p_qdata_from_Q(round_count, q_num, author, Q, filename)
     size, block_num, _, _, _, num_lines = Q
-    return True, 'OK', size, block_num, num_lines
-
-
-def update_Q_data(q_num, q_text, author='DASymposium', filename=''):
-    """
-    問題データを変更する。すでに登録済みのデータを置き換える。
-    """
-    # 問題データの内容チェック
-    try:
-        Q = adc2019.read_Q(q_text)
-    except RuntimeError as e:
-        return False, 'Syntax Error: ' + str(e)
-
-    prop = p_qdata_from_Q(q_num, author, Q, filename)
-    size, block_num, _, _, _, num_lines = Q
-
-    # 既存のエンティティを取り出す
-    query = query_q_data(q_num=q_num, author=author)
-    num = 0
-    for ent in query.fetch():  # 存在するなら、高々、1個
-        ent.update(prop)
-        client.put(ent)
-        num += 1
-    if num == 0:
-        msg = 'Not updated. You should have used POST instead of PUT?'
-    elif num == 1:
-        msg = 'Update OK'
+    flag = False
+    if update:
+        # updateのときは、既存のエンティティを取り出す
+        query = query_q_data(round_count=round_count, q_num=q_num, author=author)
+        entities = list(query.fetch())  # 存在するなら、高々、1個
+        if len(entities) == 0:
+            msg = 'Not updated. You should have used POST instead of PUT?'
+        elif len(entities) == 1:
+            entities[0].update(prop_q)
+            client.put(entities[0])
+            msg = 'Update OK'
+            flag = True
+        else:
+            msg = f'Not updated: found {len(entities)} entities. May be internal system error'
     else:
-        msg = 'Updated %d entities. May be internal system error' % num
-    return True, msg, size, block_num, num_lines
+        # 新規登録の場合
+        #dat = datastore.Entity(client.key('q_data'), exclude_from_indexes=['text', 'blocknum', 'cols', 'rows', 'linenum', 'filename', 'date'])  # 
+        dat = datastore.Entity(client.key('q_data'), exclude_from_indexes=['text'])  # projectionで指定するモノは、indexが必要らしい???
+        dat.update(prop_q)
+        client.put(dat)  # 登録する
+        msg = 'Insert OK'
+        flag = True
+    #
+    return flag, msg, size, block_num, num_lines
 
 
-def delete_user_Q_data(q_num, author):
+# def insert_Q_data(round_count: int, q_num: int, q_text: str, author: str = 'DASymposium', filename: str = '', uniq: bool = True) -> (bool, str, (int, int), int, int):
+#     """
+#     問題データをデータベースに登録する。
+
+#     Parameters
+#     ----------
+#     round_count : int
+#         round数
+
+#     q_num : int
+#         問題番号
+
+#     q_text : str
+#         問題データ
+
+#     author : str, default 'DASymposium'
+#         問題作成者の名前
+
+#     filename : str, default ''
+#         問題データのファイル名
+
+#     uniq : bool, default True
+#         uniq=Trueのとき、q_numとauthorが重複する場合、登録は失敗する。
+
+#     Returns
+#     -------
+#     flag : bool
+#         True=OK、False=Error
+#     msg : str
+#         エラーメッセージなど
+#     size : tuple
+#         盤の大きさ (x,y) ……flag=Trueのとき
+#     block_num : int
+#         ブロック数 ……flag=Trueのとき
+#     num_lines : int
+#         線の本数 ……flag=Trueのとき
+#     """
+#     # 重複チェック
+#     if uniq:
+#         q = get_user_Q_data(round_count, q_num, author)
+#         if 0 < len(q):
+#             return False, 'Error: User %s Q%d data already exists' % (author, q_num)
+#     # 問題データの内容チェック
+#     try:
+#         Q = adc2019.read_Q(q_text)
+#     except RuntimeError as e:
+#         return False, 'Syntax Error: ' + str(e), None, None, None
+
+#     prop_q = p_qdata_from_Q(round_count, q_num, author, Q, filename)
+#     dat = datastore.Entity(client.key('q_data'), exclude_from_indexes=['text', 'blocknum', 'cols', 'rows', 'linenum', 'filename', 'date'])
+#     dat.update(prop_q)
+#     client.put(dat)  # 登録する
+
+#     size, block_num, _, _, _, num_lines = Q
+#     return True, 'OK', size, block_num, num_lines
+
+
+# def update_Q_data(round_count: int, q_num: int, q_text: str, author: str = 'DASymposium', filename: str = '') -> (bool, str, (int, int), int, int):
+#     """
+#     問題データを変更する。すでに登録済みのデータを置き換える。
+
+#     Parameters
+#     ----------
+#     round_count : int
+#         round数
+
+#     q_num : int
+#         問題番号
+
+#     q_text : str
+#         問題データ
+
+#     author : str, default 'DASymposium'
+#         問題作成者の名前
+
+#     filename : str, default ''
+#         問題データのファイル名
+
+#     Returns
+#     -------
+#     flag : bool
+#         True=OK、False=Error
+#     msg : str
+#         エラーメッセージなど
+#     size : tuple
+#         盤の大きさ (x,y) ……flag=Trueのとき
+#     block_num : int
+#         ブロック数 ……flag=Trueのとき
+#     num_lines : int
+#         線の本数 ……flag=Trueのとき
+#     """
+#     # 問題データの内容チェック
+#     try:
+#         Q = adc2019.read_Q(q_text)
+#     except RuntimeError as e:
+#         return False, 'Syntax Error: ' + str(e)
+
+#     prop = p_qdata_from_Q(round_count, q_num, author, Q, filename)
+#     size, block_num, _, _, _, num_lines = Q
+
+#     # 既存のエンティティを取り出す
+#     query = query_q_data(round_count=round_count, q_num=q_num, author=author)
+#     num = 0
+#     for ent in query.fetch():  # 存在するなら、高々、1個
+#         ent.update(prop)
+#         client.put(ent)
+#         num += 1
+#     if num == 0:
+#         msg = 'Not updated. You should have used POST instead of PUT?'
+#     elif num == 1:
+#         msg = 'Update OK'
+#     else:
+#         msg = 'Updated %d entities. May be internal system error' % num
+#     return True, msg, size, block_num, num_lines
+
+
+def delete_user_Q_data(round_count: int, q_num: int, author: str) -> str:
     """
-    qnumとauthorを指定して、問題データをデータベースから削除する
+    round数、qnum、authorを指定して、問題データをデータベースから削除する
+
+    Parameters
+    ----------
+    round_count : int
+        round数
+    q_num : int
+        問題番号
+    author : str
+        問題作成者
+
+    Returns
+    -------
+    処理結果のメッセージ : str
     """
     # 既存のエンティティを取り出す
-    query = query_q_data(q_num=q_num, author=author)
+    query = query_q_data(round_count=round_count, q_num=q_num, author=author)
     num = 0
     for ent in query.fetch():  # 存在するなら、高々、1個
         client.delete(ent.key)
@@ -358,11 +539,18 @@ def delete_user_Q_data(q_num, author):
     return msg
 
 
-def get_Q_data(q_num):
+def get_Q_data(round_count: int, q_num: int) -> dict:
     """
-    出題の番号を指定して、Question問題データをデータベースから取り出す
+    出題の番号を指定して、Question問題データをデータベースから取り出す。
+
+    Parameters
+    ----------
+    round_count : int
+        round数
+    q_num : int
+        問題番号
     """
-    qla = admin_Q_list_get()
+    qla = admin_Q_list_get(round_count)
     if qla is None:
         return None
 
@@ -375,14 +563,26 @@ def get_Q_data(q_num):
     return dict(client.get(key))
 
 
-def p_qdata_from_Q(q_num, author, Q, filename=''):
+def p_qdata_from_Q(round_count: int, q_num: int , author: str, Q: tuple, filename: str = '') -> dict:
     """
-    問題データのプロパティを返す。
+    問題データのプロパティを作る。
 
     Parameters
-    ==========
+    ----------
+    round_count : int
+        round数
+    q_num : int
+        問題番号
+    author : str
+        問題データ作成者の名前
     Q : tuple
         return value of adc2019.read_Q()
+    filename : str, default ''
+        問題データのファイル名
+
+    Returns
+    -------
+        プロパティ : dict
     """
     #size, block_num, block_size, block_data, block_type, num_lines = Q
     size, block_num, _, _, _, num_lines = Q
@@ -390,35 +590,44 @@ def p_qdata_from_Q(q_num, author, Q, filename=''):
     # 正規化した問題テキストデータ（改行コードなど）
     q_text2 = adc2019.generate_Q_data(Q)
 
-    return {'qnum':     q_num,     # int
-            'text':     q_text2,   # string
-            'blocknum': block_num, # int
-            'cols':     size[0],   # int
-            'rows':     size[1],   # int
-            'linenum':  num_lines, # int
-            'author':   author,    # string
-            'filename': filename,  # string
+    return {'round':    round_count, # int
+            'qnum':     q_num,       # int
+            'text':     q_text2,     # string
+            'blocknum': block_num,   # int
+            'cols':     size[0],     # int
+            'rows':     size[1],     # int
+            'linenum':  num_lines,   # int
+            'author':   author,      # string
+            'filename': filename,    # string
             'date':     datetime.utcnow()}
 
 
-def p_adata_from_A(a_num, owner, A, a_text, check_result, quality, ainfo):
+def p_adata_from_A(round_count: int, a_num: int, owner: str, A: tuple, a_text: str, check_result: bool, quality: float, ainfo: dict):
     """
-    回答データのプロパティを返す。
+    回答データのプロパティを作る。
 
     Parameters
-    ==========
+    ----------
+    round_count : int
+        round数
     a_num : int
         問題番号
     owner : str
         ユーザー名
     A : tuple
         return value of adc2019.read_A()
+    a_text: str
+        A text
     check_result : bool
         true = 正解
     quality : float
         階の品質
     ainfo : dict
         key = 'cpu_sec', 'mem_byte', 'misc_text'
+
+    Returns
+    -------
+        プロパティ : dict
     """
     if A is None:
         size, ban_data, block_pos = [], [[]], []
@@ -429,15 +638,16 @@ def p_adata_from_A(a_num, owner, A, a_text, check_result, quality, ainfo):
     ban_data2 = ban_data.ravel().tolist()  # list (flatten)
     block_pos2 = np.array(block_pos[1:]).ravel().tolist() # list (flatten)
     
-    return {'anum':      a_num,     # int
-            'text':      a_text,    # string
-            'owner':     owner,     # string
-            'size':      size2,     # [int, int]
+    return {'round':     round_count, # int
+            'anum':      a_num,       # int
+            'text':      a_text,      # string
+            'owner':     owner,       # string
+            'size':      size2,       # [int, int]
             'ban_data':  ban_data2,   # [[int, ...], [...], ... ]
             'block_pos': block_pos2,  # [[int, int], [...], ...]
-            'judge':     check_result,
-            'quality':   quality,
-            'ainfo':     ainfo,
+            'judge':     check_result, # bool
+            'quality':   quality,      # float
+            'ainfo':     ainfo,        # dict
             'date':      datetime.utcnow()}
 
 
@@ -469,15 +679,22 @@ class Answer():
     """
 
 
-def log(username, what):
+def log(username: str, what: str):
     """
     logを記録する。
+
+    Parameters
+    ----------
+    username : str
+        ユーザ名
+
+    what : str
+        ログメッセージ
     """
     d = {'username': username,
          'what': what,
          'timestamp': datetime.utcnow()}
-    key = client.key('log')
-    entity = datastore.Entity(key=key)
+    entity = datastore.Entity(key=client.key('log'), exclude_from_indexes=['what'])
     entity.update(d)
     client.put(entity)
          
@@ -514,20 +731,51 @@ Time keeper
 時計の時刻に基づいて、状態遷移させる。
 """
 
-def timekeeper_key():
+def timekeeper_key() -> datastore.key.Key:
+    """
+    Time keeperのCloud Datastore key
+
+    - kind: 'clock'
+    - name: 1 (とくに意味はない)
+    """
     return client.key('clock', 1)
 
 
-def timekeeper_prop(dt, s, e):
-    return {'lastUpdate': dt, # datetime
-            'state':      s,  # str
-            'enabled':    e   # int  0=disabled, 1=enabled
-    }
+def timekeeper_prop(dt: datetime = None, state: str = 'init', enabled: int = 1, round_counter: int = 1) -> dict:
+    """
+    property of timekeeper (kind: 'clock')
+    
+    Parameters
+    ----------
+    dt : datetime
+       last update time
+    state : str
+       state. ['init', 'im0', 'Qup', 'im1', 'Aup', 'im2']
+    enabled : int, default 1
+       enabled flag. 0=disabled, 1=enabled
+    round_counter : int, default 1
+       round counter. 1, 2, ...
+
+    Returns
+    -------
+    dict
+    """
+    assert main.valid_state(state)
+    if dt is None:
+        dt = datetime.utcnow()
+    return {'lastUpdate': dt,
+            'state':      state,
+            'enabled':    enabled,
+            'round':      round_counter}
 
 
-def timekeeper_clk():
+def timekeeper_clk() -> datastore.entity.Entity:
     """
     clkの値を返す。もし存在しない場合は、新規作成する。
+    
+    Returns
+    -------
+    datastore.entity.Entity
     """
     clk = None
     key = timekeeper_key()
@@ -541,7 +789,16 @@ def timekeeper_clk():
     return clk
 
 
-def timekeeper_check():
+def timekeeper_check() -> (str, str):
+    """
+    timekeeperがenabledのとき、
+    前回時刻と今回時刻から、状態遷移させるかどうか、の判定を行う。
+
+    Returns
+    -------
+    new_state : str
+    old_state : str
+    """
     new_state = None
     old_state = None
     clk = timekeeper_clk()
@@ -557,13 +814,23 @@ def timekeeper_check():
             clk['lastUpdate'] = now
             clk['state'] = new_state
             client.put(clk)
-            # print('TimeKeeper: state change', clk)
+            logging.debug('TimeKeeper: state change: %s', str(clk))
     return new_state, old_state
 
 
-def timekeeper_enabled(new_value=None):
+def timekeeper_enabled(new_value: int = None) -> int:
     """
-    timekeepedのenabledの値を、取得する、または、設定する。
+    timekeeperのenabledの値を、取得する、または、設定する。
+
+    Parameters
+    ----------
+    new_value : int, default None
+        Noneのときは、値を取得する。
+        Noneでないときは、値を設定する。
+
+    Returns
+    -------
+        enabledの値 : int
     """
     clk = timekeeper_clk()
     if new_value is None:
@@ -580,15 +847,25 @@ def timekeeper_enabled(new_value=None):
         return enabled
 
 
-def timekeeper_state(new_value=None):
+def timekeeper_state(new_value :str = None) -> str:
     """
-    timekeepedのstateの値を、取得する、または、設定する。
+    timekeeperのstateの値を、取得する、または、設定する。
+
+    Parameters
+    ----------
+    new_value : str, default None
+        Noneのときは、値を取得する。
+        Noneでないときは、値を設定する。
+
+    Returns
+    -------
+        stateの値 : str
     """
     clk = timekeeper_clk()
     if new_value is None:
         return clk['state']
     else:
-        if new_value in ('init', 'im0', 'Qup', 'im1', 'Aup', 'im2'):
+        if main.valid_state(new_value):
             if new_value != clk['state']:
                 clk['state'] = new_value
                 clk['lastUpdate'] = datetime.utcnow()
@@ -596,30 +873,59 @@ def timekeeper_state(new_value=None):
         return clk['state']
 
 
-def timekeeper_set(value):
+def timekeeper_round(new_value :int = None) -> int:
     """
-    timekeepedのstate, enabledの値を、設定する。
+    timekeeperのroundカウンタの値を、取得する、または、設定する。
+
+    Parameters
+    ----------
+    new_value : int, default None
+        Noneのときは、値を取得する。
+        Noneでないときは、値を設定する。
+
+    Returns
+    -------
+        roundカウンタの値 : int
+    """
+    clk = timekeeper_clk()
+    if new_value is None:
+        return clk['round']
+    else:
+        if new_value != clk['round']:
+                clk['round'] = new_value
+                clk['lastUpdate'] = datetime.utcnow()
+                client.put(clk)
+        return clk['round']
+
+
+def timekeeper_set(value: dict = {}) -> dict:
+    """
+    timekeeperのstate, enabled, roundの値を、一度に設定する。
     """
     clk = timekeeper_clk()
     state = value.get('state')
-    if state in ('init', 'im0', 'Qup', 'im1', 'Aup', 'im2'):
+    if main.valid_state(state):
         clk['state'] = state
     enabled = value.get('enabled')
     if enabled != 0:
         enabled = 1
+    round_counter = value.get('round')
+    if round_counter is None:
+        round_counter = 999  # default値
     clk['enabled'] = enabled
     clk['lastUpdate'] = datetime.utcnow()
+    clk['round'] = round_counter
     client.put(clk)
-    # print('timekeeper_set', clk)
+    logging.info('timekeeper_set: %s', str(clk))
     return dict(clk)
 
 
-def timekeeper_transition(prev, now, prev_state):
+def timekeeper_transition(prev, now, prev_state) -> (bool, str):
     """
-    時刻に基づいて、状態遷移する。
+    時刻に基づいて、次の状態を返す。
 
     Parameters
-    ==========
+    ----------
     prev       : datetime
 
     now        : datetime
@@ -628,8 +934,11 @@ def timekeeper_transition(prev, now, prev_state):
         前回の状態変数の値
 
     Returns
-    =======
+    -------
     same_slot : bool
+        前回時刻と今回時刻は、同じスロットである。
+        同じスロットとは、時刻 HH:MM:SS のHHが同じ場合のこと。
+        つまり、1時間ごとに繰り返す状態遷移の系列で、同じ１時間内にとどまっている。
 
     new_state : str
         次の状態
@@ -657,31 +966,39 @@ def timekeeper_transition(prev, now, prev_state):
     elif mim2 <= m <= 59:
         new_state = 'im2'
     else:  # ありえない
-        print('transition: BUG')
+        logging.warning('timekeeper_transition: BUG')
         new_state = 'BUG'
-    #print('same_slot=%s, prev_state=%s, new_state=%s' % (same_slot, prev_state, new_state))
+    logging.debug('same_slot=%s, prev_state=%s, new_state=%s', same_slot, prev_state, new_state)
     return same_slot, new_state
 
 
+"""
+出題リスト
+"""
 
-def admin_Q_list_get():
+def admin_Q_list_get(round_count: int):
     """
     コンテストの出題リストを取り出す
     """
-    key = client.key('q_list_all', 1)
+    key = client.key('q_list_all', round_count)
     qla = client.get(key)
     return qla
 
 
-def admin_Q_list_create():
+def admin_Q_list_create(round_count: int) -> (bool, str, datastore.entity.Entity):
     """
     コンテスト用の出題リストを作成する。
+
+    Parameters
+    ----------
+    round: int, default  None
+        roundカウンタの値
     """
-    qla = admin_Q_list_get()
+    qla = admin_Q_list_get(round_count)
     if qla is not None:
         return False, 'Cannot create Q list, because it already exists', qla
 
-    qlist = list(query_q_data(projection=['qnum', 'author', 'cols', 'rows', 'blocknum', 'linenum']).fetch())
+    qlist = list(query_q_data(round_count=round_count, projection=['qnum', 'author', 'cols', 'rows', 'blocknum', 'linenum']).fetch())
     random.shuffle(qlist)
     out = '%d\n' % len(qlist)
     out_admin = ''
@@ -721,51 +1038,54 @@ def admin_Q_list_create():
             'blocknum_list': q_blocknum,
             'linenum_list': q_linenum,
             'date': datetime.utcnow()}
-    key = client.key('q_list_all', 1)
+    key = client.key('q_list_all', round_count)
     qla = datastore.Entity(key=key)  # qla means 'Q list all'
     qla.update(prop)
     client.put(qla)
     return True, out_admin, qla
 
 
-def admin_Q_list_delete():
+def admin_Q_list_delete(round_count: int):
     """
     コンテストの出題リストを削除する。
     """
-    key = client.key('q_list_all', 1)
+    key = client.key('q_list_all', round_count)
     client.delete(key)
     return 'DELETE Q-list'
 
 
 
-def get_Q_all(html=False):
+# def get_Q_all(html=False):
+#     """
+#     問題データの一覧リストを返す。
+
+#     Returns
+#     =======
+#     text : string
+#         ただのテキストデータ。
+
+#     Examples
+#     ========
+#     Q1
+#     Q2
+#     Q3
+#     Q4
+#     Q5
+#     Q6
+#     Q7
+#     Q8
+#     """
+#     qla = admin_Q_list_get(round_count)
+#     if qla is None:
+#         return ''
+#     return qla['text_user']
+
+
+
+def post_A(round_count: int, username: str, atext: str, form) -> (bool, str):
     """
-    問題データの一覧リストを返す。
-
-    Returns
-    =======
-    text : string
-        ただのテキストデータ。
-
-    Examples
-    ========
-    Q1
-    Q2
-    Q3
-    Q4
-    Q5
-    Q6
-    Q7
-    Q8
+    post A
     """
-    qla = admin_Q_list_get()
-    if qla is None:
-        return ''
-    return qla['text_user']
-
-
-
-def post_A(username, atext, form):
     anum = (int)(form['anum'])
     cpu_sec = 0
     mem_byte = 0
@@ -777,15 +1097,15 @@ def post_A(username, atext, form):
         pass
     misc_text = form['misc_text']
     print('A%d\n%f\n%d\n%s' % (anum, cpu_sec, mem_byte, misc_text.encode('utf-8')))
-    return put_A_data(anum, username, atext, cpu_sec, mem_byte, misc_text)
+    return put_A_data(round_count, anum, username, atext, cpu_sec, mem_byte, misc_text)
 
 
 
-def get_admin_A_all():
+def get_admin_A_all(round_count: int) -> (str, list):
     """
     データベースに登録されたすべての回答データの一覧リスト
     """
-    query = query_a_data()
+    query = query_a_data(round_count=round_count)
     query.order = ['owner', 'anum']
     alist = list(query.fetch())
     out = '%d\n' % len(alist)
@@ -801,17 +1121,17 @@ def get_admin_A_all():
     return out, dat
 
 
-def get_A_data(a_num=None, username=None):
+def get_A_data(round_count: int, a_num: int = None, username: str = None):
     """
     データベースから回答データを取り出す。
     a_numがNoneのとき、複数のデータを返す。
     a_numが数値のとき、その数値のデータを1つだけ返す。
     """
-    query = query_a_data(a_num=a_num, owner=username)
+    query = query_a_data(round_count=round_count, a_num=a_num, owner=username)
     return query.fetch()
 
 
-def query_a_data(a_num=None, owner=None, projection=None):
+def query_a_data(round_count: int, a_num: int = None, owner: str = None, projection: list = None) -> datastore.query.Query:
     """
     a_dataエンティティを取得するためのクエリ
 
@@ -819,28 +1139,40 @@ def query_a_data(a_num=None, owner=None, projection=None):
     a_numが数値のとき、その数値のデータを1つだけ返す。
     """
     query = client.query(kind='a_data')
-    if a_num:
+    if round_count is not None:
+        query.add_filter('round', '=', round_count)
+    if a_num is not None:
         query.add_filter('anum', '=', a_num)
-    if owner:
+    if owner is not None:
         query.add_filter('owner', '=', owner)
-    if projection:
-        query.projection = projection
+    if projection is not None:
+        projection_tmp = list(projection)  # copy
+        try:  # for remove()
+            if round_count is not None:
+                projection_tmp.remove('round')
+            if a_num is not None:
+                projection_tmp.remove('anum')
+            if owner is not None:
+                projection_tmp.remove('owner')
+        except ValueError:
+            pass
+        query.projection = projection_tmp
     return query
 
     
-def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
+def put_A_data(round_count: int, a_num: int, username: str, a_text: str, cpu_sec: float = 0, mem_byte: int = 0, misc_text: str = '') -> (bool, str):
     """
-    回答データをデータベースに格納する
+    put A, 回答データをデータベースに格納する
     """
     msg = ''
     # 重複回答していないかチェック
-    adata = list(get_A_data(a_num=a_num, username=username))
+    adata = list(get_A_data(round_count=round_count, a_num=a_num, username=username))
     # print('adata', adata)
     if len(adata) != 0:
         msg += 'ERROR: duplicated answer\n';
         return False, msg
     # 出題データを取り出す
-    q_dat = get_Q_data(a_num)
+    q_dat = get_Q_data(round_count=round_count, q_num=a_num)
     if q_dat is None:
         msg = 'Error: Q%d data not found' % a_num
         return False, msg
@@ -875,7 +1207,7 @@ def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
         try:
             info = adc2019.check_data(Q, A)
         except RuntimeError as e:
-            print('e=', e)
+            #print('put_A_data: e=', e)
             msg = 'Error A%d\n' % a_num + str(e)
         else:
             check_A = True # 正解
@@ -886,42 +1218,41 @@ def put_A_data(a_num, username, a_text, cpu_sec=0, mem_byte=0, misc_text=''):
     ainfo = {'cpu_sec': cpu_sec,
              'mem_byte': mem_byte,
              'misc_text': misc_text}
-    prop_a = p_adata_from_A(a_num, username, A, a_text, check_A, quality, ainfo)
+    prop_a = p_adata_from_A(round_count=round_count, a_num=a_num, owner=username, A=A, a_text=a_text, check_result=check_A, quality=quality, ainfo=ainfo)
     # print('prop_a', prop_a)
-    key = client.key('a_data')
-    entity = datastore.Entity(key=key, exclude_from_indexes=['text'])
+    #entity = datastore.Entity(key=client.key('a_data'), exclude_from_indexes=['text', 'size', 'ban_data', 'block_pos', 'judge', 'ainfo', 'date'])
+    entity = datastore.Entity(key=client.key('a_data'), exclude_from_indexes=['text'])
     entity.update(prop_a)
     client.put(entity)
     return True, msg
 
 
-def put_A_info(a_num, username, info):
+def put_A_info(round_count: int, a_num: int , username: str, info: dict):
     """
     回答データの補足情報をデータベースに格納する。
     """
     msg = ''
     # 回答データを取り出す
-    adata = list(get_A_data(a_num, username))
+    adata = list(get_A_data(round_count=round_count, a_num=a_num, username=username))
     if 0 == len(adata):
         return False, 'ERROR: put_A_info: record not found. A%d, %s' % (a_num, username)
     if 1 <  len(adata):
         # 複数が、条件にマッチした。>>> バグってる
         return False, 'BUG: put_A_info: %d record matched. A%d, %s' % (len(adata), a_num, username)
 
-    a = adata[0]
     adata[0]['ainfo'] = {'cpu_sec': info.get('cpu_sec'),
                          'mem_byte': info.get('mem_byte'),
                          'misc_text': info.get('misc_text')}
-    client.put(a)
+    client.put(adata[0])
     return True, 'UPDATE A%d info' % a_num
 
 
 
-def get_or_delete_A_data(a_num=None, username=None, delete=False):
+def get_or_delete_A_data(round_count: int = None, a_num: int = None, username: str = None, delete: bool = False):
     """
     回答データをデータベースから、取得する、または、削除する。
     """
-    data = get_A_data(a_num=a_num, username=username)
+    data = get_A_data(round_count=round_count, a_num=a_num, username=username)
     result = []
     for i in data:
         # print('get_or_delete_A_data: i=', i)
@@ -934,11 +1265,11 @@ def get_or_delete_A_data(a_num=None, username=None, delete=False):
     return result
 
 
-def get_user_A_all(username):
+def get_user_A_all(round_count: int, username: str):
     """
     ユーザーを指定して、回答データの一覧リストを返す
     """
-    q = get_A_data(username=username)
+    q = get_A_data(round_count=round_count, username=username)
     text = ''
     anum_list = []
     for i in q:
@@ -960,11 +1291,11 @@ def get_user_A_all(username):
     return text, anum_list
 
 
-def get_or_delete_A_info(a_num=None, username=None, delete=False):
+def get_or_delete_A_info(round_count: int, a_num: int = None, username: str = None, delete: bool =False):
     """
     回答データの補足情報をデータベースから、取得する or 削除する。
     """
-    data  = get_A_data(a_num, username)
+    data  = get_A_data(round_count=round_count, a_num=a_num, username=username)
     result = {}
     for i in data:
         # print('get_or_delete_A_info: i=', i)  # i = Entity
@@ -992,22 +1323,27 @@ def get_Q_author_all():
     return authors
 
 
-def get_admin_Q_all():
+def get_admin_Q_all(round_count: int = None) -> str:
     """
     データベースに登録されたすべての問題の一覧リストを返す。
+
+    Parameters
+    ----------
+    round_count : int
+        round数
     """
-    query = query_q_data(projection=['qnum', 'author', 'cols', 'rows', 'blocknum', 'linenum', 'date'])
-    query.order = ['author', 'qnum']
+    query = query_q_data(round_count=round_count, projection=['round', 'qnum', 'author', 'cols', 'rows', 'blocknum', 'linenum', 'date'])
+    query.order = ['author', 'round', 'qnum']
     qlist = list(query.fetch())
     out = '%d\n' % len(qlist)
     for i in qlist:
         # print('i=', i)
         dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
-        out += 'Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], dt)
+        out += 'R%d Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['round'], i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], dt)
     return out
     
 
-def delete_admin_Q_all():
+def delete_admin_Q_all() -> str:
     """
     データベースに登録されたすべての問題データを削除する。
     """
@@ -1016,18 +1352,18 @@ def delete_admin_Q_all():
     out = ''
     for i in qlist:
         # print('i=', i)
-        out += 'Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], i['date'])
+        out += 'R%d Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['round'], i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], i['date'])
         client.delete(i.key)
     return out
     
 
 
-def calc_score_all():
+def calc_score_all(round_count: int):
     """
     スコア計算
     """
-    qla = admin_Q_list_get()
-    adata = query_a_data().fetch()
+    qla = admin_Q_list_get(round_count)
+    adata = query_a_data(round_count=round_count).fetch()
 
     authors = [None]
     if qla:

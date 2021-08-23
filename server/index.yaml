@@ -1,5 +1,12 @@
 indexes:
 
+- kind: log
+  properties:
+  - name: timestamp
+  - name: username
+
+########
+    
 - kind: q_data
   properties:
   - name: author
@@ -35,7 +42,7 @@ indexes:
   - name: qnum
   - name: rows
 
-- kind: log
+- kind: a_data
   properties:
-  - name: timestamp
-  - name: username
+    - name: owner
+    - name: anum

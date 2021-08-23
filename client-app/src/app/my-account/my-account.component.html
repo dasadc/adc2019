@@ -38,6 +38,12 @@
 
 <div *ngIf="changePassword" class="msg-view">{{changePassword}}</div>
 
+<h3> (BETA test) API server </h3>
+
+<input type="text" [(ngModel)]="my_api_server" #myapiserver>
+<span>(default: {{ default_api_server }})</span>
+<button title="set-API-server" (click)="set_API_server()">set API server</button>
+
 
 <h3>Logout</h3>
 <div>

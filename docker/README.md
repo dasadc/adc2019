@@ -1,32 +1,34 @@
-Docker image
-=================
+Docker image "ipsjdasadc/adc"
+=============================
 
 ADC serverをかんたんに起動できるようにするDocker iamgeについて説明する。
 
-- 2021-07-14現在、ADC2021にむけての作業中
-- 開発者以外の、ADC運営担当者、serverを実行するだけの人は、docker imageを作成する必要は無いので、[docker run](#docker-run)から読めばよい。
-- ADC参加者(`adccli`を実行するだけの人)も、このDocker imageを使って、`adccli`を実行できるが、Docker imageのサイズが大きすぎるため、メリットは無い。
+- 2021-08-17現在、ADC2021にむけての作業中
+- このDocker imageは、(1)ソフトウェア配布、(2)ADC serverの実行、の2点を容易にするために作成することが目的である。Dockerの利用は、必須ではない。
+    - Dockerを使うことのメリットは、具体的には、git cloneの実行、Pythonの実行環境のセットアップ、Google Cloud SDKなど依存するソフトウェアのセットアップ、といった一連の作業を省略できることである。
+    - Dockerを使える人は、使用を検討してもよい。
+    - Dockerをよく知らない人、Dockerを学ぶ予定が無い人は、Dockerをわざわざ使う必要はない。
+    - ADC自動運営システムの開発者以外の、ADC運営担当者、serverを実行するだけの人は、docker imageを作成する必要は無いので、[docker run](#docker-run)から読めばよい。
+    - ADC参加者(`adccli`を実行するだけの人)も、このDocker imageを使って、`adccli`を実行できるが、(1)ADC serverを実行する必要はない、(2)Docker imageのサイズが大きすぎる、といった理由から、Dockerを使うメリットはあまり無い。
+    - ADC2021の本番のADC serverは、Google App Engineへデプロイして実行するため、Docker imageは使っていない。
 
 
-Docker image作成の事前の準備作業
--------------------------------
+Docker imageを作成する
+----------------------
 
-Miniforgeをダウンロードする。
+ADC自動運営システムの開発者にて、Docker imageを作成して、Docker Hubで公開するので、ほとんどの人は、Docker imageを作成する必要はない。
+
+### Docker image作成の事前の準備作業
+
+Miniforgeのインストーラをダウンロードしておく。
 
 ``` bash
 curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
 ```
 
 
-``` bash
-curl -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-
-conda clean --all
-tar -zcf opt_miniconda3.tar.gz --owner=1000 --group=1000 -C / opt/miniconda3
-```
-
-
-### ユーザーadcの初期パスワードについて
+<a name="account-adc"></a>
+### ユーザーadcのLinuxの初期パスワードについて
 
 - username: `adc`
 - password: `adc-User`
@@ -47,11 +49,13 @@ docker build
 - `Dockerfile-dev` ... 実行に加えて、ソフトウェア開発もできる
 
 ``` bash
-sudo docker build --tag ipsjdasadc/adc:20210713 .
-sudo docker tag         ipsjdasadc/adc:20210713 ipsjdasadc/adc:latest
+sudo docker build --tag ipsjdasadc/adc:20210817 --no-cache .
+sudo docker tag         ipsjdasadc/adc:20210817 ipsjdasadc/adc:latest
 
-sudo docker build --tag ipsjdasadc/adc:20210713dev --file Dockerfile-dev .
+sudo docker build --tag ipsjdasadc/adc:20210817dev --file Dockerfile-dev .
 ```
+
+(備考) `--no-cache`は、確実にgit cloneを実行して、最新のコードをGitHubから取得させるための指定している。
 
 ### docker push to Docker Hub
 
@@ -66,35 +70,8 @@ Docker Hub
 https://hub.docker.com/repository/docker/ipsjdasadc/adc
 
 
-### patch20200828
 
-``` bash
-sudo docker build --tag ipsjdasadc/adc:20200828 --file Dockerfile-patch20200828 .
-sudo docker tag         ipsjdasadc/adc:20200828 ipsjdasadc/adc:latest
-sudo docker push        ipsjdasadc/adc:20200828
-sudo docker push        ipsjdasadc/adc:latest
-```
-
-### patch20200902
-
-``` bash
-sudo docker build --tag ipsjdasadc/adc:20200902 --file Dockerfile-patch20200902 --no-cache .
-sudo docker tag         ipsjdasadc/adc:20200902 ipsjdasadc/adc:latest
-sudo docker push        ipsjdasadc/adc:20200902
-sudo docker push        ipsjdasadc/adc:latest
-```
-
-### patch20200907
-
-``` bash
-sudo docker build --tag ipsjdasadc/adc:20200907 --file Dockerfile-patch20200907 --no-cache .
-sudo docker tag         ipsjdasadc/adc:20200907 ipsjdasadc/adc:latest
-sudo docker push        ipsjdasadc/adc:20200907
-sudo docker push        ipsjdasadc/adc:latest
-```
-
-
-### patch20200908
+### patch20200908 (ADC2020, obsoleted)
 
 ``` bash
 sudo docker build --tag ipsjdasadc/adc:20200908 --file Dockerfile-patch20200908 --no-cache .
@@ -105,8 +82,15 @@ sudo docker push        ipsjdasadc/adc:latest
 
 
 <a name="docker-run"></a>
-docker run
-----------
+Dockerコンテナを実行する(docker run)
+-----------------------------------
+
+TL;DR;
+
+1. `cp env.sample.conf env.conf`
+2. Edit `env.conf`
+3. `./docker-run.sh`
+4. From web browser, access URL http://localhost:30080/
 
 
 ### カスタマイズ（必須）
@@ -115,11 +99,11 @@ docker run
 
 dockerに関係なく一般に、serverを起動する前には、ファイル`adc2019/server/adcconfig.py`、`adc2019/server/adcusers.py`を生成しておく必要がある。
 
-スクリプト`adc2019/scripts/04_server.sh`の初回実行時に、環境変数の値に基づいて、ファイル`adc2019/server/adcconfig.py`、`adc2019/server/adcusers.py`が生成される。
+スクリプト`adc2019/scripts/04_server.sh`の初回実行時に、ファイル`adc2019/server/adcusers_in.sample.yaml`から、環境変数の値に基づいて、ファイル`adc2019/server/adcconfig.py`、`adc2019/server/adcusers.py`を生成する。
 
-設定すべき環境変数は以下の通り。
+このときに設定すべき環境変数は以下の通り。
 
-- `ADC_YEAR`の値が、`adcconfig.py`の`YEAR`に設定される(default: `2020`)
+- `ADC_YEAR`の値が、`adcconfig.py`の`YEAR`に設定される(default: `2021`)
 - `ADC_SECRET_KEY`の値が、`adcconfig.py`の`SECRET_KEY`に設定される(default: `Change_this_secret_key!!`)
 - `ADC_SALT`の値が、`adcconfig.py`の`SALT`に設定される(default: `Change_this_salt!!!`)
 - `ADC_PASS_ADMIN`の値が、ユーザーadministratorのパスワードになる（ファイル`adcusers.py`に反映される。default: `Change_admin_password!!`）
@@ -143,8 +127,9 @@ Environment="ADC_PASS_USER=__change_here__"
 ### dockerコンテナを実行する
 
 シェルスクリプト`docker-run.sh`を用意してある。
+というわけで、`env.conf`を作成して、`docker-run.sh`を実行すれば、dockerコンテナが起動する。
 
-`docker-run.sh`より抜粋
+以下は、`docker-run.sh`より抜粋。
 
 ``` bash
 docker run \
@@ -167,18 +152,24 @@ docker run \
 dockerホストから
 
 ``` bash
-curl http://localhost:20080/api/version
+curl http://localhost:30080/api/version
+
+curl http://localhost:30080/api/test_get
 ```
 実行例
 
 ```
-$ curl http://localhost:20080/api/version
-{"version": 2020}
+$ curl http://localhost:30080/api/version
+{"version": 2021}
+
+$ curl http://localhost:30080/api/test_get
+{"msg":"こんにちは世界","my_url":"/api/test_get","test":"ok","value":9876}
 ```
+
 
 ### コンテナ内のユーザーアカウント
 
-- ユーザーadcのパスワードは、上の方のperl〜の行に、わかりにくく書いてある8文字である
+- ユーザーadcのパスワードは、[こちら](#account-adc)
 - ユーザーrootのパスワードは無効化されているが、SSH公開鍵認証を使ってrootでSSHログイン可能である
 - ユーザーadcは、wheelグループに属しているため、sudoコマンドを実行可能である
 
@@ -187,13 +178,13 @@ $ curl http://localhost:20080/api/version
 ユーザーadcとして
 
 ``` bash
-sudo docker exec -it -u adc adc2020 bash
+sudo docker exec -it -u adc adc2021 bash
 ```
 
 ユーザーrootとして
 
 ``` bash
-sudo docker exec -it -u root adc2020 bash
+sudo docker exec -it -u root adc2021 bash
 ```
 
 ### コンテナにSSHログインする
@@ -201,18 +192,18 @@ sudo docker exec -it -u root adc2020 bash
 SSHは必須ではないが、Emacsのtrampのように、SSH経由でファイルを編集できるエディタがあるので、SSHは、あればあったで便利である。
 
 ``` bash
-ssh -v -p 20022 adc@localhost
+ssh -v -p 30022 adc@localhost
 ```
 
 `$HOME/.ssh/config`に以下のようなエントリを追加すると便利である。
 
 ```
-host adc2020
+host adc2021
      HostName localhost
-     port 20022
+     port 30022
      User adc
 ```
-こうしておくと、Emacs trampでは、`/ssh:adc@adc2020:`でアクセスできる。
+こうしておくと、Emacs trampでは、`/ssh:adc@adc2021:`でアクセスできる。
 
 
 コンテナ起動後、`/home/adc/.ssh/authorized_keys`、`/root/.ssh/authorized_keys`に、公開鍵を登録しておくと便利である。
@@ -220,13 +211,13 @@ host adc2020
 ### コンテナを止める
 
 ``` bash
-sudo docker stop adc2020
+sudo docker stop adc2021
 ```
 
-### コンテナを削除する(コンテストのデータがすべて消える!!)
+### コンテナを削除する(警告: アルゴリズムデザインコンテストのデータなどもすべて消える!!)
 
 ``` bash
-sudo docker rm adc2020
+sudo docker rm adc2021
 ```
 
 
@@ -236,17 +227,17 @@ sudo docker rm adc2020
 API server + httpd (gunicorn)のログ
 
 ``` bash
-sudo docker exec -it -u root adc2020 systemctl status adc-server
+sudo docker exec -it -u root adc2021 systemctl status adc-server
 
-sudo docker exec -it -u root adc2020 journalctl -xu adc-server
+sudo docker exec -it -u root adc2021 journalctl -xu adc-server
 ```
 
 Google datastore emulatorのログ
 
 ``` bash
-sudo docker exec -it -u root adc2020 systemctl status adc-datastore
+sudo docker exec -it -u root adc2021 systemctl status adc-datastore
 
-sudo docker exec -it -u root adc2020 journalctl -xu adc-datastore
+sudo docker exec -it -u root adc2021 journalctl -xu adc-datastore
 ```
 
 
@@ -257,7 +248,7 @@ sudo docker exec -it -u root adc2020 journalctl -xu adc-datastore
 
 dockerホスト上で実行しているウェブブラザなら以下のURLにアクセスする。
 
-http://localhost:20080/
+http://localhost:30080/
 
 
 dockerホスト以外で実行しているウェブブラザなら、localhostではなく、dockerホストのアドレスを指定してアクセスする。

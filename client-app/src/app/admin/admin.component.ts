@@ -31,12 +31,16 @@ export class AdminComponent implements OnInit {
   tk: ResTimekeeper;
   tk_enabled_values = [0, 1];
   tk_state_values = ['init', 'im0', 'Qup', 'im1', 'Aup', 'im2'];
+  tk_round_values = [1, 2, 999];
   enabledDescrTbl = ResTimekeeper.enabledDescrTbl;
   stateDescrTbl = ResTimekeeper.stateDescrTbl;
+  roundDescrTbl = ResTimekeeper.roundDescrTbl;
   adminQList: AdminQList;
   adminQListText: string;
   testMode: boolean;
   viewScoreMode: boolean;
+  logToDatastore: boolean;
+  iamAdmin: boolean;
   adminQAll: Object;
   adminAAll: Object;
   //userList: string[];
@@ -44,29 +48,47 @@ export class AdminComponent implements OnInit {
   uploadResults: string;
   title: string = 'ADC Administration';
 
-  constructor(private adcService: AdcService) { }
+  constructor(private adcService: AdcService ) { }
 
   ngOnInit() {
     this.adcService.version()
       .subscribe((ver: number) => {
         this.title = `ADC${ver} Administration`;
       });
-    this.getTimekeeper();
-    this.getTestMode();
-    this.getViewScoreMode();
-    this.getUserList();
+
+    this.adcService.iamadmin()
+      .subscribe(res => {
+        this.iamAdmin = res;
+        if (this.iamAdmin) {
+          this.getTimekeeper();
+          this.getTestMode();
+          this.getViewScoreMode();
+          this.getLogToDatastore();
+          this.getUserList();
+        }
+      });   
   }
 
   timekeeper_enabled(i: number) {
     //console.log('enabled', i);
     this.tk.enabled = i;
     this.setTimekeeper();
+    this.adcService.update_status_bar();
   }
 
   timekeeper_state(state: string) {
     //console.log('state', state);
     this.tk.state = state;
     this.setTimekeeper();
+    this.adcService.update_status_bar();
+  }
+
+  timekeeper_round(i: number) {
+    //console.log('round', i);
+    this.tk.round = i;
+    this.setTimekeeper();
+    // ここで、status-barを再描画させたいのだが、どうすればいいのだろう？
+    this.adcService.update_status_bar();
   }
 
   getTimekeeper() {
@@ -119,14 +141,32 @@ export class AdminComponent implements OnInit {
         });
     }
 
-    setViewScoreMode(value: boolean) {
-      //console.log('setViewScoreMode', value);
-      this.adcService.setViewScoreMode(value)
+  setViewScoreMode(value: boolean) {
+    //console.log('setViewScoreMode', value);
+    this.adcService.setViewScoreMode(value)
+      .subscribe(res => {
+        //console.log('admin setViewScoreMode', res);
+        this.viewScoreMode = res;
+      });
+  }
+
+  logToDatastoreIsDefined(): boolean {
+    return this.logToDatastore !== void 0;
+  }
+
+  getLogToDatastore() {
+      this.adcService.getLogToDatastore()
         .subscribe(res => {
-          //console.log('admin setViewScoreMode', res);
-          this.viewScoreMode = res;
+          this.logToDatastore = res;
         });
     }
+
+  setLogToDatastore(value: boolean) {
+        this.adcService.setLogToDatastore(value)
+      .subscribe(res => {
+        this.logToDatastore = res;
+      });
+  }
 
   getAdminQList(event: Object) {
     //console.log('get', event);

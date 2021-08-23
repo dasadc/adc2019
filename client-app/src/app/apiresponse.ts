@@ -27,10 +27,16 @@ export class ResTimekeeper {
     'Aup': 'You can upload A data.',
     'im2': 'intermission (2)',
   }
+  public static roundDescrTbl = {
+    1: 'round 1, preliminary contest (予選, 事前協議, 「長時間用の問題」に挑戦)',
+    2: 'round 2, main contest (本戦, 本番競技, 「短時間用問題」と「参加者自作問題」に挑戦)',
+    999: 'round 999, test (自動運営システムのシステムの動作テスト中)'
+  };
 
   constructor(
     public enabled: number,
     public state: string,
+    public round: number,
     public lastUpdate: Date) { }
 }
 
