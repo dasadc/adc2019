@@ -168,7 +168,14 @@ rsync -avpr --delete ../server/static/ /DIR/dasadc.github.io/static/
 そのあと、git commit、git pushする
 
 
+### (TIP) GitHub Pages経由でWebアプリを使いつつ、Google AppEngine上で実行中のAPIサーバを使う
+
+My Accountメニューの、「(BETA test) API server」 のテキストボックスに`https://das-adc.appspot.com`と入力して、set API serverボタンをクリックする。
+
+
 ### Google App Engineへdeployする
+
+serverをdeployすればよい。client-appのファイルも同時にアップロードされる。
 
 ``` bash
 cd ../server/

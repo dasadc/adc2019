@@ -889,13 +889,13 @@ def timekeeper_round(new_value :int = None) -> int:
     """
     clk = timekeeper_clk()
     if new_value is None:
-        return clk['round']
+        return clk.get('round')
     else:
-        if new_value != clk['round']:
+        if new_value != clk.get('round'):
                 clk['round'] = new_value
                 clk['lastUpdate'] = datetime.utcnow()
                 client.put(clk)
-        return clk['round']
+        return clk.get('round')
 
 
 def timekeeper_set(value: dict = {}) -> dict:
