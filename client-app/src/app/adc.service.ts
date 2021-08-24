@@ -25,6 +25,7 @@ export class AdcService {
 
   // for ADC API
   api_server_origin: string = '';
+  default_api_server: string;
   username: string;
   access_token: string; // given from ADC server after login
   dummy_login_failed: boolean = false;
@@ -49,7 +50,13 @@ export class AdcService {
 
 
   //constructor(private messageService: MessageService) { }
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    // GitHub Pagesから、Google AppEngineのAPI serverにアクセスさせる
+    this.default_api_server = location.origin;
+    if (this.default_api_server == 'https://dasadc.github.io') {
+      this.set_API_server_origin('https://das-adc.appspot.com');
+    }
+  }
 
   get_API_server_origin(): string {
     return this.api_server_origin;

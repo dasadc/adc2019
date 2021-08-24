@@ -110,11 +110,11 @@ def adc_response_Q_data(result):
         text = "Not Found\r\n"
     elif len(result) == 1:
         code = 200
-        text = result[0]['text']
+        text = result[0].get('text')
     else:
         print('WARNING: adc_response_Q_data: too many data', len(result))
         code = 200
-        text = result[0]['text']
+        text = result[0].get('text')
     return adc_response_json({'text': text}, code)
 
 
@@ -208,20 +208,17 @@ def get_round() -> int:
     候補(1) request.args['round']  # (GET) URL encode
     候補(2) request.json['round']  # (POST, PUT)
     候補(3) datastoreのtimekeeperで保持しているround
+    候補(4) 999  # テスト用
     """
     if request.method in ('GET', 'DELETE'):
         round_count = request.args.get('round')  # type: str
-        #print('1: round_count=', round_count)
         if round_count is not None:
             round_count = int(round_count)
-            #print('2: round_count=', round_count)
     else:
         round_count = request.json.get('round')
 
     if round_count is None:
-        round_count = cds.timekeeper_clk()['round']
-        #print('4: round_count=', round_count)
-    #print('round_count=', round_count)
+        round_count = cds.timekeeper_clk().get('round', 999)  # とりあえず999を使う
     return round_count
     
 

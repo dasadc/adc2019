@@ -12,7 +12,7 @@
 
 
 # roundカウンタ値は、ここでは変更しない。事前に設定しておく。
-# adccli timekeeper-round round 999 # roundカウンタ値の設定
+# adccli timekeeper-round 999 # roundカウンタ値の設定
 adccli timekeeper-round  # roundカウンタ値の確認
 
 # 状態変数を初期化
