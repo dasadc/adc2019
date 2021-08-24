@@ -1,48 +1,44 @@
 indexes:
 
-- kind: log
+- kind: "log"
   properties:
-  - name: timestamp
-  - name: username
+  - name: "username"
+  - name: "timestamp"
+    direction: desc
 
-########
-    
-- kind: q_data
+- kind: "q_data"
   properties:
-  - name: author
-  - name: qnum
+  - name: "round"
+  - name: "author"
+  - name: "blocknum"
+  - name: "cols"
+  - name: "linenum"
+  - name: "qnum"
+  - name: "rows"
+- kind: "q_data"
+  properties:
+  - name: "author"
+  - name: "round"
+  - name: "qnum"
+  - name: "blocknum"
+  - name: "cols"
+  - name: "date"
+  - name: "linenum"
+  - name: "rows"
+- kind: "q_data"
+  properties:
+  - name: "author"
+  - name: "round"
+  - name: "qnum"
+  - name: "blocknum"
+  - name: "cols"
+  - name: "date"
+  - name: "filename"
+  - name: "linenum"
+  - name: "rows"
 
-- kind: q_data
+- kind: "a_data"
   properties:
-  - name: author
-  - name: qnum
-  - name: blocknum
-  - name: cols
-  - name: date
-  - name: filename
-  - name: linenum
-  - name: rows
-
-- kind: q_data
-  properties:
-  - name: author
-  - name: qnum
-  - name: blocknum
-  - name: cols
-  - name: date
-  - name: linenum
-  - name: rows
-
-- kind: q_data
-  properties:
-  - name: author
-  - name: blocknum
-  - name: cols
-  - name: linenum
-  - name: qnum
-  - name: rows
-
-- kind: a_data
-  properties:
-    - name: owner
-    - name: anum
+  - name: "round"
+  - name: "owner"
+  - name: "anum"
