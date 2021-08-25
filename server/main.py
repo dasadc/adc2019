@@ -296,7 +296,7 @@ def check_file():
         return jsonify(info2)
     except Exception as e:
         #traceback.print_exc()
-        errinfo = ['ADC2020 rule violation'] + [str(i) for i in e.args]
+        errinfo = [f'ADC{adcconfig.YEAR} rule violation'] + [str(i) for i in e.args]
         info = {'error': errinfo, 'stack_trace': traceback.format_exc()}
         return jsonify(info)
 
@@ -1059,7 +1059,7 @@ def q_check():
             Q = adc2019.read_Q(qdata)
             return jsonify({'check_file': 'Q-ok'})
     except Exception as e:
-        errinfo = ['ADC2020 rule violation'] + [str(i) for i in e.args]
+        errinfo = [f'ADC{adcconfig.YEAR} rule violation'] + [str(i) for i in e.args]
         info = {'error': errinfo, 'stack_trace': traceback.format_exc()}
         return jsonify(info)
     
