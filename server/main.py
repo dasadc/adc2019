@@ -479,9 +479,11 @@ def admin_Q_all():
     if not priv_admin():
         return adc_response('access forbidden', 403)
     log_request(username())
+    round_count = get_round()
     if request.method == 'GET':
-        msg = cds.get_admin_Q_all()
-        return adc_response_json({'msg': msg})
+        msg, qlist = cds.get_admin_Q_all(round_count=round_count)
+        return adc_response_json({'msg': msg,
+                                  'qlist': qlist})
     # DELETEの場合
     msg = cds.delete_admin_Q_all()
     return adc_response_json({'msg': msg})
@@ -1087,15 +1089,17 @@ def get_score():
     log_request(username())
     round_count = get_round()
     if app.config['VIEW_SCORE_MODE']:
-        score_board, ok_point, q_point, bonus_point, q_factors, misc = cds.calc_score_all(round_count)
+        score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point = cds.calc_score_all(round_count)
     else:
-        score_board, ok_point, q_point, bonus_point, q_factors, misc = {}, {}, {}, {}, {}, {}
+        score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point = {}, {}, {}, {}, {}, {}, {}, {}
     dat = {'score_board': score_board,
            'ok_point': ok_point,
            'q_point': q_point,
            'bonus_point': bonus_point,
            'q_factors': q_factors,
            'misc': misc,
+           'put_a_date': put_a_date,
+           'fastest_point': fastest_point,
            'round': round_count}
     return adc_response_json(dat)
     

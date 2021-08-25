@@ -131,10 +131,11 @@ Username、Passwordに、事前に通知されたユーザー名とパスワー�
 
 全チームの情報が表示される。
 
-#### "Score board (total)"、"OK point"、"Quality point"、"Bonus point"
+#### "Score board (total)"、"OK point"、"Quality point"、"Bonus point"、"Fastest point"、"put-a date"
 
 - 対戦中、全チームのスコアが表示される
 - 運営側のコントロールによって、スコアを非表示にできる
+- **(特別処理)** チーム名"ADC-0"(司会者用)は、"Quality point"の計算から除外される。"ADC-0"は運営側で出題した問題の模範解答例をViewerで表示させるために使う。
 
 #### Viewer (管理者専用)
 

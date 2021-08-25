@@ -5,7 +5,9 @@
 
 # ユーザーごとの全回答のリスト
 echo  "get-a"
-adccli get-a
+
+echo "user: ADC-0"
+adccli --alt-user ADC-0 get-a
 
 echo "user: test-01"
 adccli --alt-user test-01 get-a

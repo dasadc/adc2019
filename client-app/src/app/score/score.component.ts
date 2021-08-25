@@ -20,6 +20,8 @@ export class ScoreComponent implements OnInit {
   ok_point: Object;
   q_point: Object;
   bonus_point: Object;
+  put_a_date: Object;
+  fastest_point: Object;
   boardData: CheckResults;
   //userList: string[];
   userInfo: ResUserInfo[] = [];
@@ -68,6 +70,8 @@ export class ScoreComponent implements OnInit {
     this.ok_point = this.createArray(this.score['ok_point'], this.teams);
     this.q_point = this.createArray(this.score['q_point'], this.teams);
     this.bonus_point = this.createArray(this.score['bonus_point'], this.teams);
+    this.put_a_date = this.createArray(this.score['put_a_date'], this.teams);
+    this.fastest_point = this.createArray(this.score['fastest_point'], this.teams);
   }
 
   getScore() {
