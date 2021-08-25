@@ -642,6 +642,8 @@ class ADCClient:
             round数
         """
         path = '/user/%s/Q/%d' % (self.effective_username(), q_num)
+        if round_count is None:
+            round_count = self.get_round()
         with open(q_file, 'r') as f:
             q_text = f.read()
         filename = os.path.basename(q_file)
@@ -666,6 +668,8 @@ class ADCClient:
             round数
         """
         path = "/user/%s/Q/%d" % (self.effective_username(), q_num)
+        if round_count is None:
+            round_count = self.get_round()
         with open(q_file, "r") as f:
             q_text = f.read()
         filename = os.path.basename(q_file)
@@ -675,12 +679,14 @@ class ADCClient:
         res = self.http_request('PUT', path, params=json.dumps(info))
         return self.fin(res)
 
-    def delete_user_q(self, q_num):
+    def delete_user_q(self, round_count: int = None, q_num: int = None):
         """
         DELETE /user/<username>/Q/<Q-number>
         Qデータを削除する。
         """
         path = "/user/%s/Q/%d" % (self.effective_username(), q_num)
+        if round_count is not None:
+            path += '?' + urllib.parse.urlencode({'round': round_count})
         res = self.http_request('DELETE', path)
         return self.fin(res)
 
