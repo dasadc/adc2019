@@ -6,10 +6,9 @@
 
 
 echo  "get-user-q"
-adccli get-user-q
 
-echo "user: test-01"
-adccli --alt-user test-01 get-user-q
+echo "user: ADC-0"
+adccli --alt-user ADC-0 get-user-q
 
 echo "user: test-02"
 adccli --alt-user test-02 get-user-q

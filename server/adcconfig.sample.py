@@ -20,3 +20,7 @@ VIEW_SCORE_MODE = True     # Trueのとき、ユーザーは全チームのス�
 URL_CLIENT_APP_README = 'https://github.com/dasadc/adc2019/blob/adc2021-yt/client-app/README.md'
 
 LOG_TO_DATASTORE = False   # Datastoreにlogを記録する
+
+QUALITY_POINT = 5.0  # 品質ポイント。2020年まで10.0、2021年は5.0に変更
+
+FASTEST_POINT = 0.5  # 最速回答ポイント

@@ -30,7 +30,7 @@ import numpy as np
 
 import adc2019
 import adcutil
-from adcconfig import YEAR
+import adcconfig
 import main
 from tz import gae_datetime_JST
 
@@ -61,7 +61,7 @@ else:
     # 2020-08-21 バグ修正後
     client = datastore.Client()  # type: datastore.client.Client
 
-def qdata_key(year=YEAR):
+def qdata_key(year=adcconfig.YEAR):
     "問題データのparent"
     return ndb.Key('Qdata', str(year))
 
@@ -976,9 +976,66 @@ def timekeeper_transition(prev, now, prev_state) -> (bool, str):
 出題リスト
 """
 
-def admin_Q_list_get(round_count: int):
+def admin_Q_list_get(round_count: int) -> datastore.entity.Entity:
     """
     コンテストの出題リストを取り出す
+
+    Parameters
+    ----------
+    round_count : int
+        roundカウンタ値
+
+    Returns
+    -------
+    qla : datastore.entity.Entity
+        key = ['date', 'text_user', 'author_list', 'q_key_list', 'qnum_list', 'author_qnum_list', 'blocknum_list', 'rows_list', 'cols_list', 'text_admin', 'linenum_list']
+        listの長さは、出題数。
+        'date'             : datetime
+        'text_user'        : str
+        'author_list'      : list[str]
+        'q_key_list'       : list[datastore.key.Key] 
+        'qnum_list'        : list[int]
+        'author_qnum_list' : list[int]
+        'blocknum_list'    : list[int]
+        'rows_list'        : list[int]
+        'cols_list'        : list[int]
+        'text_admin'       : str
+        'linenum_list'     : list[int]
+
+    Examples
+    --------
+In [383]: qla['date']
+Out[383]: datetime.datetime(2021, 8, 23, 23, 44, 3, 483606, tzinfo=<UTC>)
+
+In [384]: qla['text_user']
+Out[384]: 'Q1\nQ2\nQ3\nQ4\nQ5\nQ6\nQ7\nQ8\nQ9\nQ10\nQ11\nQ12\nQ13\nQ14\nQ15\nQ16\nQ17\nQ18\nQ19\nQ20\nQ21\nQ22\nQ23\nQ24\n'
+
+In [399]: print(qla['author_list'])
+['test-03', 'administrator', 'test-02', 'test-03', 'administrator', 'administrator', 'administrator', 'test-04', 'test-04', 'administrator', 'administrator', 'administrator', 'test-01', 'test-02', 'test-03', 'administrator', 'administrator', 'test-01', 'test-04', 'test-02', 'administrator', 'test-01', 'administrator', 'administrator']
+
+In [400]: print(qla['q_key_list'])
+[<Key('q_data', 24), project=das-adc>, <Key('q_data', 9), project=das-adc>, <Key('q_data', 19), project=das-adc>, <Key('q_data', 23), project=das-adc>, <Key('q_data', 12), project=das-adc>, <Key('q_data', 13), project=das-adc>, <Key('q_data', 11), project=das-adc>, <Key('q_data', 26), project=das-adc>, <Key('q_data', 27), project=das-adc>, <Key('q_data', 7), project=das-adc>, <Key('q_data', 6), project=das-adc>, <Key('q_data', 10), project=das-adc>, <Key('q_data', 18), project=das-adc>, <Key('q_data', 20), project=das-adc>, <Key('q_data', 22), project=das-adc>, <Key('q_data', 8), project=das-adc>, <Key('q_data', 5), project=das-adc>, <Key('q_data', 16), project=das-adc>, <Key('q_data', 25), project=das-adc>, <Key('q_data', 21), project=das-adc>, <Key('q_data', 4), project=das-adc>, <Key('q_data', 17), project=das-adc>, <Key('q_data', 15), project=das-adc>, <Key('q_data', 14), project=das-adc>]
+
+In [390]: print(qla['qnum_list'])
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+
+In [389]: qla['author_qnum_list']
+Out[389]: [3, 6, 1, 2, 9, 10, 8, 2, 3, 4, 3, 7, 3, 2, 1, 5, 2, 1, 1, 3, 1, 2, 12, 11]
+
+In [393]: print(qla['blocknum_list'])
+[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+
+In [394]: print(qla['rows_list'])
+[72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72]
+
+In [395]: print(qla['cols_list'])
+[72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72]
+
+In [397]: qla['text_admin']
+Out[397]: 'Q1 test-03 3\nQ2 administrator 6\nQ3 test-02 1\nQ4 test-03 2\nQ5 administrator 9\nQ6 administrator 10\nQ7 administrator 8\nQ8 test-04 2\nQ9 test-04 3\nQ10 administrator 4\nQ11 administrator 3\nQ12 administrator 7\nQ13 test-01 3\nQ14 test-02 2\nQ15 test-03 1\nQ16 administrator 5\nQ17 administrator 2\nQ18 test-01 1\nQ19 test-04 1\nQ20 test-02 3\nQ21 administrator 1\nQ22 test-01 2\nQ23 administrator 12\nQ24 administrator 11\n'
+
+In [398]: print(qla['linenum_list'])
+[2, 2, 1, 2, 2, 1, 2, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1, 1, 2, 1, 2, 2, 2]
     """
     key = client.key('q_list_all', round_count)
     qla = client.get(key)
@@ -993,6 +1050,12 @@ def admin_Q_list_create(round_count: int) -> (bool, str, datastore.entity.Entity
     ----------
     round: int, default  None
         roundカウンタの値
+
+    Returns
+    -------
+    flag : bool
+    out_admin : str
+    qla : datastore.entity.Entity
     """
     qla = admin_Q_list_get(round_count)
     if qla is not None:
@@ -1121,11 +1184,43 @@ def get_admin_A_all(round_count: int) -> (str, list):
     return out, dat
 
 
-def get_A_data(round_count: int, a_num: int = None, username: str = None):
+def get_A_data(round_count: int, a_num: int = None, username: str = None) -> datastore.query.Iterator:
     """
     データベースから回答データを取り出す。
     a_numがNoneのとき、複数のデータを返す。
     a_numが数値のとき、その数値のデータを1つだけ返す。
+
+    Returns
+    -------
+    datastore.query.Iterator
+
+    Examples
+    --------
+    取り出されたデータ
+
+    In [439]: i
+    Out[439]: <Entity('a_data', 28) {'date': datetime.datetime(2021, 8, 23, 23, 44, 27, 18681, tzinfo=<UTC>), 'quality': 0.0, 'ainfo': <Entity {'cpu_sec': 12.345, 'misc_text': 'hello', 'mem_byte': 2048}>, 'round': 1, 'judge': False, 'owner': 'administrator', 'block_pos': [0, 0, 1, 0], 'size': [2, 4], 'ban_data': [1, 1, -1, -1, -1, -1, -1, -1], 'text': 'A1\nSIZE 2X4\n1,1\n+,+\n+,+\n+,+\nBLOCK#1 @(0,0)\nBLOCK#2 @(1,0)', 'anum': 1}>
+
+    In [440]: dict(i)
+    Out[440]: 
+    {'date': datetime.datetime(2021, 8, 23, 23, 44, 27, 18681, tzinfo=<UTC>),
+     'quality': 0.0,
+     'ainfo': <Entity {'cpu_sec': 12.345, 'misc_text': 'hello', 'mem_byte': 2048}>,
+     'round': 1,
+     'judge': False,
+     'owner': 'administrator',
+     'block_pos': [0, 0, 1, 0],
+     'size': [2, 4],
+     'ban_data': [1, 1, -1, -1, -1, -1, -1, -1],
+     'text': 'A1\nSIZE 2X4\n1,1\n+,+\n+,+\n+,+\nBLOCK#1 @(0,0)\nBLOCK#2 @(1,0)',
+     'anum': 1}
+
+    In [441]: i.key
+    Out[441]: <Key('a_data', 28), project=das-adc>
+
+    See also
+    --------
+    p_adata_from_A()   Aデータのプロパティ
     """
     query = query_a_data(round_count=round_count, a_num=a_num, owner=username)
     return query.fetch()
@@ -1165,12 +1260,14 @@ def put_A_data(round_count: int, a_num: int, username: str, a_text: str, cpu_sec
     put A, 回答データをデータベースに格納する
     """
     msg = ''
-    # 重複回答していないかチェック
-    adata = list(get_A_data(round_count=round_count, a_num=a_num, username=username))
-    # print('adata', adata)
-    if len(adata) != 0:
-        msg += 'ERROR: duplicated answer\n';
-        return False, msg
+    ## 重複回答していないかチェック
+    #adata = list(get_A_data(round_count=round_count, a_num=a_num, username=username))
+    #if len(adata) != 0:
+    #    msg += 'ERROR: duplicated answer\n';
+    #    return False, msg
+    # 2021年ルールでは、再回答を許可する。重複登録しないように、削除する
+    for i in get_A_data(round_count=round_count, a_num=a_num, username=username):
+        client.delete(i.key)
     # 出題データを取り出す
     q_dat = get_Q_data(round_count=round_count, q_num=a_num)
     if q_dat is None:
@@ -1323,7 +1420,7 @@ def get_Q_author_all():
     return authors
 
 
-def get_admin_Q_all(round_count: int = None) -> str:
+def get_admin_Q_all(round_count: int) -> (str, list):
     """
     データベースに登録されたすべての問題の一覧リストを返す。
 
@@ -1331,6 +1428,11 @@ def get_admin_Q_all(round_count: int = None) -> str:
     ----------
     round_count : int
         round数
+
+    Returns
+    -------
+    out : str
+    qlist : list
     """
     query = query_q_data(round_count=round_count, projection=['round', 'qnum', 'author', 'cols', 'rows', 'blocknum', 'linenum', 'date'])
     query.order = ['author', 'round', 'qnum']
@@ -1340,7 +1442,7 @@ def get_admin_Q_all(round_count: int = None) -> str:
         # print('i=', i)
         dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
         out += 'R%d Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['round'], i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], dt)
-    return out
+    return out, qlist
     
 
 def delete_admin_Q_all() -> str:
@@ -1361,9 +1463,87 @@ def delete_admin_Q_all() -> str:
 def calc_score_all(round_count: int):
     """
     スコア計算
+
+    Parameters
+    ----------
+    round_count : int
+        roundカウンタ値
+
+    Returns
+    -------
+    score_board     dict
+    ok_point :      dict
+        ok_point[anum: str][user: str] = int, 0 or 1 正解ポイント
+    q_point :       dict
+        q_point[anum: str][user: str] = float  品質ポイント
+    bonus_point :   dict
+        bonus_point[anum: str][user: str] = int, 0 or 1 出題ボーナスポイント
+    q_factors :     dict
+        q_factors[anum: str][user: str] = float  解の品質
+    misc :          dict
+        misc[anum: str][user: str] = list  回答の補足情報 [date, cpu_sec, mem_byte, misc_text]
+    put_a_date :    dict
+        put_a_date[anum: str][user: str] = datetime.datetime  回答した時刻。正解したときのみ
+    fastest_point : dict
+        fastest_point[anum: str][user: str] = float  最速回答ポイント
+
+    Examples
+    --------
+
+In [474]: score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point = cds.ca
+     ...: lc_score_all(round_count)
+
+In [475]: fastest_point
+Out[475]: 
+{'A03': {'administrator': 0.5},
+ 'A06': {'test-01': 0.5},
+ 'A10': {'test-01': 0.5},
+ 'A12': {'test-01': 0.5},
+ 'A15': {'test-01': 0.5},
+ 'A18': {'test-01': 0.5},
+ 'A19': {'test-01': 0.5},
+ 'A21': {'test-01': 0.5},
+ 'A01': {'administrator': 0.5}}
+
+In [476]: put_a_date
+Out[476]: 
+{'A03': {'administrator': datetime.datetime(2021, 8, 23, 23, 44, 27, 333809, tzinfo=<UTC>),
+  'test-01': datetime.datetime(2021, 8, 23, 23, 44, 28, 146520, tzinfo=<UTC>),
+  'test-02': datetime.datetime(2021, 8, 23, 23, 44, 32, 78828, tzinfo=<UTC>),
+  'test-03': datetime.datetime(2021, 8, 23, 23, 44, 35, 481227, tzinfo=<UTC>),
+  'test-04': datetime.datetime(2021, 8, 23, 23, 44, 38, 240419, tzinfo=<UTC>)},
+ 'A06': {'test-01': datetime.datetime(2021, 8, 23, 23, 44, 28, 691802, tzinfo=<UTC>),
+  'test-02': datetime.datetime(2021, 8, 23, 23, 44, 32, 773532, tzinfo=<UTC>),
+  'test-03': datetime.datetime(2021, 8, 23, 23, 44, 35, 824915, tzinfo=<UTC>),
+  'test-04': datetime.datetime(2021, 8, 23, 23, 44, 38, 550825, tzinfo=<UTC>)},
+ 'A10': {'test-01': datetime.datetime(2021, 8, 23, 23, 44, 29, 308799, tzinfo=<UTC>),
+  'test-02': datetime.datetime(2021, 8, 23, 23, 44, 33, 303852, tzinfo=<UTC>),
+  'test-03': datetime.datetime(2021, 8, 23, 23, 44, 36, 320967, tzinfo=<UTC>),
+  'test-04': datetime.datetime(2021, 8, 23, 23, 44, 39, 22459, tzinfo=<UTC>)},
+ 'A12': {'test-01': datetime.datetime(2021, 8, 23, 23, 44, 29, 614345, tzinfo=<UTC>),
+  'test-02': datetime.datetime(2021, 8, 23, 23, 44, 33, 519773, tzinfo=<UTC>),
+  'test-03': datetime.datetime(2021, 8, 23, 23, 44, 36, 522756, tzinfo=<UTC>),
+  'test-04': datetime.datetime(2021, 8, 23, 23, 44, 39, 261989, tzinfo=<UTC>)},
+ 'A15': {'test-01': datetime.datetime(2021, 8, 23, 23, 44, 30, 83553, tzinfo=<UTC>),
+  'test-02': datetime.datetime(2021, 8, 23, 23, 44, 33, 841513, tzinfo=<UTC>),
+  'test-03': datetime.datetime(2021, 8, 23, 23, 44, 36, 873794, tzinfo=<UTC>),
+  'test-04': datetime.datetime(2021, 8, 23, 23, 44, 39, 677887, tzinfo=<UTC>)},
+ 'A18': {'test-01': datetime.datetime(2021, 8, 23, 23, 44, 30, 499108, tzinfo=<UTC>),
+  'test-02': datetime.datetime(2021, 8, 23, 23, 44, 34, 226447, tzinfo=<UTC>),
+  'test-03': datetime.datetime(2021, 8, 23, 23, 44, 37, 218628, tzinfo=<UTC>),
+  'test-04': datetime.datetime(2021, 8, 23, 23, 44, 40, 19574, tzinfo=<UTC>)},
+ 'A19': {'test-01': datetime.datetime(2021, 8, 23, 23, 44, 30, 709877, tzinfo=<UTC>),
+  'test-02': datetime.datetime(2021, 8, 23, 23, 44, 34, 398649, tzinfo=<UTC>),
+  'test-03': datetime.datetime(2021, 8, 23, 23, 44, 37, 321604, tzinfo=<UTC>),
+  'test-04': datetime.datetime(2021, 8, 23, 23, 44, 40, 125108, tzinfo=<UTC>)},
+ 'A21': {'test-01': datetime.datetime(2021, 8, 23, 23, 44, 31, 18809, tzinfo=<UTC>),
+  'test-02': datetime.datetime(2021, 8, 23, 23, 44, 34, 691864, tzinfo=<UTC>),
+  'test-03': datetime.datetime(2021, 8, 23, 23, 44, 37, 609265, tzinfo=<UTC>),
+  'test-04': datetime.datetime(2021, 8, 23, 23, 44, 40, 331291, tzinfo=<UTC>)},
+ 'A01': {'administrator': datetime.datetime(2021, 8, 25, 6, 3, 53, 83090, tzinfo=<UTC>)}}
     """
     qla = admin_Q_list_get(round_count)
-    adata = query_a_data(round_count=round_count).fetch()
+    adata = query_a_data(round_count=round_count).fetch()  # type: datastore.query.Iterator
 
     authors = [None]
     if qla:
@@ -1373,11 +1553,30 @@ def calc_score_all(round_count: int):
     q_factors = {}    # q_factors  [番号][ユーザ名] = 小数の値
     q_point = {}      # q_point    [番号][ユーザ名] = 値
     bonus_point = {}  # bonus_point[番号][ユーザ名] = 0, 1=出題ボーナスをもらえる
+    put_a_date = {}   # put_a_date [番号][ユーザ名] = datetime.datetime
     misc = {}         # misc       [番号][ユーザ名] = list
     all_numbers = {}  # すべて数え上げる
     all_users = {}    # すべて数え上げる
 
     for i in adata:
+        """
+        In [409]: i
+        Out[409]: <Entity('a_data', 28) {'quality': 0.0, 'block_pos': [0, 0, 1, 0], 'date': datetime.datetime(2021, 8, 23, 23, 44, 27, 18681, tzinfo=<UTC>), 'size': [2, 4], 'round': 1, 'anum': 1, 'owner': 'administrator', 'text': 'A1\nSIZE 2X4\n1,1\n+,+\n+,+\n+,+\nBLOCK#1 @(0,0)\nBLOCK#2 @(1,0)', 'ban_data': [1, 1, -1, -1, -1, -1, -1, -1], 'judge': False, 'ainfo': <Entity {'mem_byte': 2048, 'misc_text': 'hello', 'cpu_sec': 12.345}>}>
+
+        In [410]: dict(i)
+        Out[410]: 
+        {'quality': 0.0,
+         'block_pos': [0, 0, 1, 0],
+         'date': datetime.datetime(2021, 8, 23, 23, 44, 27, 18681, tzinfo=<UTC>),
+         'size': [2, 4],
+         'round': 1,
+         'anum': 1,
+         'owner': 'administrator',
+         'text': 'A1\nSIZE 2X4\n1,1\n+,+\n+,+\n+,+\nBLOCK#1 @(0,0)\nBLOCK#2 @(1,0)',
+         'ban_data': [1, 1, -1, -1, -1, -1, -1, -1],
+         'judge': False,
+         'ainfo': <Entity {'mem_byte': 2048, 'misc_text': 'hello', 'cpu_sec': 12.345}>}
+        """
         anum = 'A%02d' % i['anum']
         username = i['owner']
         all_numbers[anum] = 1
@@ -1386,8 +1585,8 @@ def calc_score_all(round_count: int):
         if anum not in ok_point:
             ok_point[anum] = {}
         ok_point[anum][username] = int(i['judge'])  # True, False --> 1, 0
-        # 品質ポイント
-        if username != 'ADC-0':
+        # 品質ポイントを計算するための予備の計算
+        if username != 'ADC-0':  # hard-codingはよくない
             if anum not in q_factors:
                 q_factors[anum] = {}
             q_factors[anum][username] = i['quality']
@@ -1397,13 +1596,19 @@ def calc_score_all(round_count: int):
             if anum not in bonus_point:
                 bonus_point[anum] = {}
             bonus_point[anum][username] = int(i['judge'])
+        # 回答した時刻。正解したときのみ
+        if i['judge'] == True:
+            if anum not in put_a_date:
+                put_a_date[anum] = {}
+            if username != 'ADC-0':  # hard-codingはよくない
+                put_a_date[anum][username] = i['date']  # type: datetime
         # (その他) date, cpu_sec, mem_byte, misc_text
         if not(anum in misc):
             misc[anum] = {}
         ainfo = i['ainfo']
         misc[anum][username] = [i['date'], ainfo['cpu_sec'], ainfo['mem_byte'], ainfo['misc_text']]
     # 品質ポイントを計算する
-    q_pt = 10.0
+    q_pt = adcconfig.QUALITY_POINT
     for anum, values in q_factors.items():  # 問題番号ごとに
         qf_total = sum(values.values())  # Q_factorの合計
         for user, qf in values.items():
@@ -1415,6 +1620,17 @@ def calc_score_all(round_count: int):
             if not anum in q_point:
                 q_point[anum] = {}
             q_point[anum][user] = tmp
+    # 最速回答ポイントを計算する
+    fastest_point = {}  # [番号][ユーザ名] = 小数の値
+    for anum, values in put_a_date.items():  # 問題番号ごとに
+        if 0 < len(values):
+            fasteste_datetime = min(values.values())
+            who = [k for k, v in values.items() if v == fasteste_datetime]
+            point = float(adcconfig.FASTEST_POINT) / len(who)
+            if anum not in fastest_point:
+                fastest_point[anum] = {}
+            for user in who:
+                fastest_point[anum][user] = point
     # 集計する
     tmp = ['']*(len(all_numbers) + 1)
     i = 0
@@ -1434,9 +1650,10 @@ def calc_score_all(round_count: int):
             if anum in q_point:
                 p += q_point[anum].get(user, 0)
             p += bonus_point.get(anum, {}).get(user, 0)
+            p += fastest_point.get(anum, {}).get(user, 0)
             score_board[user][i] = p
             ptotal += p
             i += 1
         score_board[user][i] = ptotal
     #print "score_board=", score_board
-    return score_board, ok_point, q_point, bonus_point, q_factors, misc
+    return score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point

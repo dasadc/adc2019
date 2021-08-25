@@ -36,11 +36,13 @@ export class MyAccountComponent implements OnInit {
       this.username = res.msg;
     });
     // 開発時のテスト
+    /*
     this.adcService.devel_test_01()
     .subscribe((res: string) => {
       console.log('doWhoami: devel_test_01: res', res);
       console.log('origin:', location.origin);
     });
+    */
   }
 
   doGetUser(): void {

@@ -448,6 +448,9 @@ class ADCClient:
 
 
     def get_admin_q_all(self, round_count: int = None):
+        """
+        admin専用。出題リストの内訳（だれが出題した問題か）を取得
+        """
         if round_count is None:
             round_count = self.get_round()
         path = '/admin/Q/all?' + urllib.parse.urlencode({'round': round_count})

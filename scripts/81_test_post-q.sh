@@ -11,18 +11,12 @@ Q_dir="${top_dir}/samples/Q/"
 
 adccli timekeeper-state Qup  # Qup状態へ遷移
 
-adccli post-user-q 1 ${Q_dir}/sample_1_Q.txt
-adccli post-user-q 2 ${Q_dir}/sample_2_Q.txt
-adccli post-user-q 3 ${Q_dir}/sample_3_Q.txt
-adccli post-user-q 4 ${Q_dir}/sample_1_Q.txt
-adccli post-user-q 5 ${Q_dir}/sample_2_Q.txt
-adccli post-user-q 6 ${Q_dir}/sample_3_Q.txt
-adccli post-user-q 7 ${Q_dir}/sample_1_Q.txt
-adccli post-user-q 8 ${Q_dir}/sample_2_Q.txt
-adccli post-user-q 9 ${Q_dir}/sample_3_Q.txt
-adccli post-user-q 10 ${Q_dir}/sample_1_Q.txt
-adccli post-user-q 11 ${Q_dir}/sample_2_Q.txt
-adccli post-user-q 12 ${Q_dir}/sample_3_Q.txt
+# Q1..12
+a=1
+while [ $a -le 12 ]; do
+    adccli --alt-user ADC-0 post-user-q ${a} ${Q_dir}/sample_${a}_Q.txt
+    a=$((a+1))
+done
 
 adccli --alt-user test-01 post-user-q 1 ${Q_dir}/sample_1_Q.txt
 adccli --alt-user test-01 post-user-q 2 ${Q_dir}/sample_2_Q.txt
