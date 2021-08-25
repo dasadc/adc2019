@@ -693,6 +693,12 @@ def check_data(data_Q, data_A):
         w, h = block_size_Q[b]
         # print('block %d: xy(%d, %d) wh(%d, %d)' % (b, x, y, w, h))
         block_ban = ban_data_A[y:(y + h), x:(x + w)]
+        # issues #48 --> check-QA5
+        #print('DEBUG\n', block_ban, block_ban.shape)
+        #print('DEBUG\n', np_block[key], np_block[key].shape)
+        if ((block_ban.shape[0] < np_block[key].shape[0]) or
+            (block_ban.shape[1] < np_block[key].shape[1])):
+            raise RuntimeError('check-QA5: A-SIZE is smaller than Q-BLOCK size')
         block_ban_masked = block_ban * np_block[key]
         ban_check3[y:(y + h), x:(x + w)] += np_block[key]  # put block on ban_check3
         # Issues#17 https://github.com/dasadc/dasadc.github.io/issues/17

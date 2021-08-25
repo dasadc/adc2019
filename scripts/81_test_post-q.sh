@@ -11,6 +11,8 @@ Q_dir="${top_dir}/samples/Q/"
 
 adccli timekeeper-state Qup  # Qup状態へ遷移
 
+adccli timekeeper-round 999
+
 # Q1..12
 a=1
 while [ $a -le 12 ]; do

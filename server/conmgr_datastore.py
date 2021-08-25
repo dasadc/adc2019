@@ -1441,20 +1441,19 @@ def get_admin_Q_all(round_count: int) -> (str, list):
     for i in qlist:
         # print('i=', i)
         dt = gae_datetime_JST(datetime.fromtimestamp(i['date'] / 1e6))  # 射影クエリだと、なぜか数値が返ってくる
-        out += 'R%d Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['round'], i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], dt)
+        out += 'Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], dt)
     return out, qlist
     
 
-def delete_admin_Q_all() -> str:
+def delete_admin_Q_all(round_count: int) -> str:
     """
     データベースに登録されたすべての問題データを削除する。
     """
-    query = query_q_data()
-    qlist = list(query.fetch())
+    query = query_q_data(round_count=round_count)
     out = ''
-    for i in qlist:
+    for i in query.fetch():
         # print('i=', i)
-        out += 'R%d Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['round'], i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], i['date'])
+        out += 'Q%02d SIZE %dX%d BLOCK_NUM %d LINE_NUM %d (%s) %s\n' % (i['qnum'], i['cols'], i['rows'], i['blocknum'], i['linenum'], i['author'], i['date'])
         client.delete(i.key)
     return out
     

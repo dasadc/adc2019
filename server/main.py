@@ -485,7 +485,7 @@ def admin_Q_all():
         return adc_response_json({'msg': msg,
                                   'qlist': qlist})
     # DELETEの場合
-    msg = cds.delete_admin_Q_all()
+    msg = cds.delete_admin_Q_all(round_count=round_count)
     return adc_response_json({'msg': msg})
 
 @app.route('/admin/Q/list', methods=['GET','PUT','DELETE'])
