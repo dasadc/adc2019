@@ -10,7 +10,8 @@ import sys
 from adcclient import ADCClient
 from getpass import getpass
 from datetime import datetime
-
+import base64
+import os
 
 def cmd_help():
     print("""
@@ -23,6 +24,7 @@ def cmd_help():
   get-user-list
   get-user [USERNAME ...]
   get-q [NUMBER ...]
+  get-q-all                   # all-in-one Zip archive
   put-a NUMBER FILENAME [replace-A-number]
   put-a-info NUMBER CPU_SEC MEM_BYTE [MISC_TEXT]
   get-a-info [NUMBER]
@@ -71,10 +73,10 @@ def main():
         else:
             ff = open(cli.output_file, 'w')
         if len(args.arg) == 0:
-            ff.write(resx[6]['msg'] + '\n')
+            ff.write(resx[6]['msg'])
         else:
             for res1 in resx:
-                ff.write(res1[6]['text'] + '\n')
+                ff.write(res1[6]['text'])
         if cli.output_file is not None:
             ff.close()
 
@@ -196,6 +198,23 @@ def main():
             # Q番号を指定している場合
             resx = cli.get_q(args.arg)
             output()
+    elif a == 'get-q-all':
+        res = cli.get_q_all_in_one()
+        data = res[6]
+        if res[1] != 200:
+            print(data)
+        else:
+            file = cli.output_file
+            if file is None:
+                file = 'Q-all.zip'
+            print('Write to file:', file)
+            with open(file, 'wb') as f:
+                f.write(base64.b64decode(data['zip']))
+            dt = datetime.fromisoformat(data['date'])
+            print('Q-list created: ', dt.strftime('%Y-%m-%d %H:%M:%S %Z'))
+            t = dt.timestamp()
+            os.utime(file, times=(t, t))
+            
     elif a == 'get-a':
         resx = cli.get_a(args.arg)
         # print('resx=', resx)

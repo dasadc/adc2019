@@ -17,6 +17,8 @@ from werkzeug.middleware.dispatcher import DispatcherMiddleware
 import traceback
 import datetime
 import logging
+import pickle
+import base64
 
 import adc2019
 import adcconfig
@@ -1009,6 +1011,23 @@ def q_get(q_num):
     return adc_response_Q_data([qdat])
 
 
+@app.route('/Q/all_in_one', methods=['GET'])
+def q_get_all_in_one():
+    if not authenticated():
+        return adc_response('not login yet', 401)
+    if not priv_admin():
+        if g.state != 'Aup':
+            return adc_response('deadline passed', 503)
+    log_request(username())
+    round_count = get_round()
+    qzip = cds.get_all_Q_in_one(round_count)
+    if qzip is None:
+        return adc_response('no zip archive found', 404)
+    else:
+        return adc_response_json({'date': qzip['date'].isoformat(),
+                                  'zip': base64.b64encode(qzip['zip']).decode('utf-8')})
+
+
 @app.route('/Q', methods=['GET'])
 def q_get_list():
     if not authenticated():
@@ -1073,8 +1092,6 @@ def score_dump():
         return adc_response('access forbidden', 403)
     log_request(username())
     round_count = get_round()
-    import pickle
-    import base64
     res = cds.calc_score_all(round_count)
     bin = pickle.dumps(res)
     txt = base64.b64encode(bin).decode('utf-8')
