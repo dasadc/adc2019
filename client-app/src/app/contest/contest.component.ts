@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Buffer } from 'buffer';
 
 import { AdcService } from '../adc.service';
 import { QNumberList, ANumberList } from '../apiresponse';
@@ -77,6 +78,16 @@ export class ContestComponent implements OnInit {
           //console.log(res);
           this.qFilename = `Q${i}.txt`;
           this.qText = res['text'];
+      })
+  }
+
+  downloadZipFile() {
+    let username: string = this.adcService.getUsername();
+    let filename: string = `Q.zip`;
+    this.adcService.getQ_all_in_one()
+      .subscribe(res => {
+        const bin_data = Buffer.from(res['zip_b64'], 'base64');
+        this.adcService.downloadFile(bin_data, 'application/zip', filename);
       })
   }
 

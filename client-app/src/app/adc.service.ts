@@ -5,7 +5,7 @@ import { catchError, map, tap, filter, flatMap } from 'rxjs/operators';
 
 import { readFile } from './rx-file-reader';
 import { CheckResults } from './checkresults';
-import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList, QNumberList, QData, ANumberList, AdminQList, ResUserInfo } from './apiresponse';
+import { ResLogin, ResLogout, ResMsgOnly, ResTimekeeper, UserQEntry, ResUserQList, QNumberList, QData, QZipData, ANumberList, AdminQList, ResUserInfo } from './apiresponse';
 import { StatusBarComponent } from './status-bar/status-bar.component';
 
 const httpOptions = {
@@ -705,6 +705,17 @@ export class AdcService {
       			   res['text']);
       	})/*,
       	catchError(this.handleError<QData>('getQ'))*/
+      );
+  }
+
+  /** 出題された問題データ、すべてをZip形式でまとめて取得する。 */
+  getQ_all_in_one(): Observable<QZipData> {
+    return this.http.get<Object>(`${this.api_server_origin}/api/Q/all_in_one`, this.apiHttpOptions())
+      .pipe(
+      	map((res: Object[]) => {
+      	  //console.log('AdcService: getQ', res);
+      	  return new QZipData(res['date'], res['zip']);
+      	})
       );
   }
 

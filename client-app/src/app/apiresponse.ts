@@ -89,6 +89,13 @@ export class QData {
   ) { }
 }
 
+export class QZipData {
+  constructor(
+    public date: Date,
+    public zip_b64: string
+  ) { }
+}
+
 export class AdminQList { // API: '/admin/Q/list', datastore kind: 'q_list_all'
   constructor(
     public author_list: number[],
