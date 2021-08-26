@@ -3,6 +3,7 @@
 </div>
 
 <h3>Q list</h3>
+<button title="download zip" (click)="downloadZipFile()">Download zip</button>
 <div *ngIf="qNumberList && aPosted">
   <table>
     <tr>
@@ -27,7 +28,7 @@
     </tr>
   </table>
 </div>
-<button title="refresh Q list" (click)="getQNumberList(); getANumberList()">Refresh Q list</button>
+<Button Title="Refresh Q List" (Click)="getQNumberList(); getANumberList()">Refresh Q list</Button>
 
 <app-file-view [text]="qText" [filename]="qFilename"></app-file-view>
 
