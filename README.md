@@ -12,7 +12,7 @@ DA Symposium 2021 Algorithm Design Contest (DAS ADC 2021)
 最新情報 What's new
 -------------------
 
-- (2021-08-26) Qデータを、Zipアーカイブ形式で、一括ダウンロードできるようになりました。[adccli](../client/README.md#get-q-all) [client-app](../client-app/README.md#arena)
+- (2021-08-26) Qデータを、Zipアーカイブ形式で、一括ダウンロードできるようになりました。[adccli](client/README.md#get-q-all) [get-client-app](client-app/README.md#arena)
 
 
 問題データと回答データのチェックツール
