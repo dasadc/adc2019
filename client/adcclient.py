@@ -513,6 +513,10 @@ class ADCClient:
                 res2.append(self.fin(res))
             return res2
 
+    def get_q_all_in_one(self):
+        res = self.http_request('GET', '/Q/all_in_one')
+        return self.fin(res)
+
     def get_a(self, args):
         if len(args) == 0:
             path = '/A/%s' % self.effective_username()

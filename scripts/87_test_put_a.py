@@ -10,7 +10,7 @@ ADC-0が投稿したQデータに関して、正解のAデータを登録する�
 - ADC-0のQ1は、 samples/Q/sample_1_Q.txt
 - ADC-0のQ12は、samples/Q/sample_12_Q.txt
 
-get_admin_q_list()することで、出題リストの元データを特定することで、
+get_admin_q_list()の結果を利用して、出題リストの元データを特定することで、
 ADC-0が出題した問題については、確実に正解させることが可能である。
 """
 

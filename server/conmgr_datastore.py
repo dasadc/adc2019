@@ -19,6 +19,7 @@ kind
 - 'log'
 - 'clock'           id = 1(とくに意味はない)
 - 'q_list_all'      id = round数 (1,2, 999)
+- 'q_zip'           id = round数 (1,2, 999)
 - 'a_data'
 """
 
@@ -27,6 +28,8 @@ from google.cloud import datastore
 from datetime import datetime
 import random
 import numpy as np
+import io
+import zipfile
 
 import adc2019
 import adcutil
@@ -563,6 +566,76 @@ def get_Q_data(round_count: int, q_num: int) -> dict:
     return dict(client.get(key))
 
 
+def create_all_Q_in_one(round_count: int) -> datastore.entity.Entity:
+    """
+    すべてのQデータをZip形式アーカイブにする。
+
+    Parameters
+    ----------
+    round_count : int
+        round数
+    """
+    f = io.BytesIO()
+    z = zipfile.ZipFile(f, mode='w', compression=zipfile.ZIP_DEFLATED)
+    qla = admin_Q_list_get(round_count)
+    for i, qnum in enumerate(qla['qnum_list']):
+        qkey = qla['q_key_list'][i]
+        q = client.get(qkey)
+        """
+{'text': 'SIZE 72X72\r\nBLOCK_NUM 2\r\n\r\nBLOCK#1 1X4\r\n1\r\n2\r\n+\r\n+\r\n\r\nBLOCK#2 1X4\r\n1\r\n+\r\n+\r\n2\r\n',
+ 'linenum': 2,
+ 'filename': 'sample_3_Q.txt',
+ 'cols': 72,
+ 'date': datetime.datetime(2021, 8, 25, 11, 22, 58, 900644, tzinfo=<UTC>),
+ 'round': 999,
+ 'rows': 72,
+ 'blocknum': 2,
+ 'qnum': 3,
+ 'author': 'ADC-0'}
+        """
+        z.writestr(f'Q{qnum}.txt', q['text'])
+    z.close()
+    bin_data = f.getvalue()
+    f.close()
+    key = client.key('q_zip', round_count)
+    qzip = datastore.Entity(key, exclude_from_indexes=['date', 'zip'])
+    qzip.update({'date': datetime.utcnow(),
+                 'zip': bin_data})
+    client.put(qzip)
+    return qzip
+
+def get_all_Q_in_one(round_count: int) -> datastore.entity.Entity:
+    """
+    すべてのQデータが入ったZip形式アーカイブデータを返す。
+
+    Parameters
+    ----------
+    round_count : int
+        round数
+
+    Returns
+    -------
+    datastore.entity.Entity
+        データが未登録のときはNone
+        {'date': datetime, 'zip': bytes}
+    """
+    key = client.key('q_zip', round_count)
+    return client.get(key)
+
+
+def delete_all_Q_in_one(round_count: int):
+    """
+    すべてのQデータが入ったZip形式アーカイブデータを削除する。
+
+    Parameters
+    ----------
+    round_count : int
+        round数
+    """
+    key = client.key('q_zip', round_count)
+    client.delete(key)
+
+
 def p_qdata_from_Q(round_count: int, q_num: int , author: str, Q: tuple, filename: str = '') -> dict:
     """
     問題データのプロパティを作る。
@@ -1045,6 +1118,7 @@ In [398]: print(qla['linenum_list'])
 def admin_Q_list_create(round_count: int) -> (bool, str, datastore.entity.Entity):
     """
     コンテスト用の出題リストを作成する。
+    すべてのQデータを格納したZip形式アーカイブも作成する。
 
     Parameters
     ----------
@@ -1105,6 +1179,7 @@ def admin_Q_list_create(round_count: int) -> (bool, str, datastore.entity.Entity
     qla = datastore.Entity(key=key)  # qla means 'Q list all'
     qla.update(prop)
     client.put(qla)
+    create_all_Q_in_one(round_count)  # create Zip archive
     return True, out_admin, qla
 
 
@@ -1114,6 +1189,7 @@ def admin_Q_list_delete(round_count: int):
     """
     key = client.key('q_list_all', round_count)
     client.delete(key)
+    delete_all_Q_in_one(round_count)
     return 'DELETE Q-list'
 
 
