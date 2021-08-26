@@ -151,6 +151,7 @@ optional arguments:
 
 サブコマンド`cmd`のヘルプが、`adccli help`で表示されます。
 
+以下はadccli helpの実行例です。実際の実行結果とは異なる場合があります。
 
 ```
 $ adccli help
@@ -163,6 +164,7 @@ $ adccli help
   get-user-list
   get-user [USERNAME ...]
   get-q [NUMBER ...]
+  get-q-all                   # all-in-one Zip archive
   put-a NUMBER FILENAME [replace-A-number]
   put-a-info NUMBER CPU_SEC MEM_BYTE [MISC_TEXT]
   get-a-info [NUMBER]
@@ -357,6 +359,18 @@ $ adccli get-user-log
 
 
 [参考](#GETQ)
+
+
+<a name="get-q-all"></a>
+#### 出題問題をZipアーカイブ形式でまとめてダウンロードする
+
+ファイル名`Q-all.zip`として、ダウンロードできます。
+
+    adccli get-q-all
+
+Zipファイルのファイル名に出力したい場合
+
+    adccli --output ファイル名 get-q-all
 
 
 #### 出題問題をダウンロードする

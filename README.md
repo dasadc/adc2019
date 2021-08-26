@@ -9,9 +9,10 @@ DA Symposium 2021 Algorithm Design Contest (DAS ADC 2021)
 - [DAS ADC 2021 rules](https://dasadc.github.io/adc2021/rule.html)
 
 
-****
-以下の記述は、昔の内容のままで、更新されていない場合があります。
-****
+最新情報 What's new
+-------------------
+
+- (2021-08-26) Qデータを、Zipアーカイブ形式で、一括ダウンロードできるようになりました。[adccli](../client/README.md#get-q-all) [client-app](../client-app/README.md#arena)
 
 
 問題データと回答データのチェックツール
