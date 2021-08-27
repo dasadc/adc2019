@@ -329,10 +329,21 @@ class ADCClient:
         return self.fin(res)
 
 
-    def get_or_delete_log(self, args, a):
+    def get_or_delete_log(self, args: list, a: str, num: int = None):
         """
         ログを取得する、または、削除する。
         GET /admin/log
+
+        Parameters
+        ----------
+        args : list
+            args[0]: int,  数値
+            args[1]: str,  'days', 'seconds'のどちらか
+        a : str
+            コマンド名。
+            'get-log', 'get-user-log', 'delete-log', 'delete-user-log'のどれか
+        num : int, default None
+            ログの件数
         """
         if a in ('get-log', 'delete-log'):
             path0 = '/admin'
@@ -348,6 +359,8 @@ class ADCClient:
             path = '%s/log/%s/%d' % (path0, key, val)
         else:
             path = '%s/log' % path0
+        if num is not None:
+            path += '?' + urllib.parse.urlencode({'num': num})
         res = self.http_request(method, path)
         return self.fin(res)
 

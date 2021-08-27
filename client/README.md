@@ -929,12 +929,14 @@ adccliの管理者専用の機能
 ログを見たり、削除したりする。  
 サーバ側の設定により（データストア使用量を削減することで、クラウド利用料を節約するため）、ログが記録されていない場合があり、そのときは、このコマンドではログは見られない。
 
-    adccli get-log [数値 単位]
-    adccli delete-log [数値 単位]
-    adccli --username='USERNAME' get-user-log [数値 単位]
-    adccli --username='USERNAME' delete-user-log [数値 単位]
+    adccli [--number NUM] get-log [数値 単位]
+    adccli [--number NUM] delete-log [数値 単位]
+    adccli [--number NUM] --username='USERNAME' get-user-log [数値 単位]
+    adccli [--number NUM] --username='USERNAME' delete-user-log [数値 単位]
 
 数値は整数、単位は、`seconds` か `days` を指定する。
+
+`--number NUM`では、取得／削除するレコード数を指定する。デフォルトは100である。
 
 ### スコア表示
 

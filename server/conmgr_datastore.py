@@ -51,42 +51,42 @@ from tz import gae_datetime_JST
 #    )
 #else:
 #    client = datastore.Client()
-from google.auth.credentials import AnonymousCredentials
-from os import getenv
-# https://github.com/googleapis/python-datastore/issues/11
-if 0:
-    # 2019年8月に必要だったworkaround
-    client = datastore.Client(
-        credentials=AnonymousCredentials(),
-        project=getenv('PROJECT_ID')
-    )
-else:
-    # 2020-08-21 バグ修正後
-    client = datastore.Client()  # type: datastore.client.Client
+# from google.auth.credentials import AnonymousCredentials
+# from os import getenv
+# # https://github.com/googleapis/python-datastore/issues/11
+# if 0:
+#     # 2019年8月に必要だったworkaround
+#     client = datastore.Client(
+#         credentials=AnonymousCredentials(),
+#         project=getenv('PROJECT_ID')
+#     )
+# else:
+#     # 2020-08-21 バグ修正後
+client = datastore.Client()  # type: datastore.client.Client
 
-def qdata_key(year=adcconfig.YEAR):
-    "問題データのparent"
-    return ndb.Key('Qdata', str(year))
+# def qdata_key(year=adcconfig.YEAR):
+#     "問題データのparent"
+#     return ndb.Key('Qdata', str(year))
 
-def userlist_key():
-    "UserInfoのparent"
-    return ndb.Key('Users', 'all')
+# def userlist_key():
+#     "UserInfoのparent"
+#     return ndb.Key('Users', 'all')
 
 
-def p_userinfo(d):
+def p_userinfo(d: list) -> dict:
     """
     property userinfo
 
     Parameters
     ----------
     d : list
-        0:username      1:password       2:displayname         3:uid 4:gid
+        [username:str, password:str, displayname:str, uid:int, gid:int]
+         0             1             2                3        4
 
     Returns
     -------
-    p : dict
+    property : dict
     """
-
     return {'username': d[0],
             'password': d[1],
             'displayname': d[2],
@@ -94,25 +94,52 @@ def p_userinfo(d):
             'gid': d[4]}
 
 
-def get_userinfo(username):
+def get_userinfo(username: str) -> datastore.entity.Entity:
     """
     ユーザー情報をデータベースから取り出す
+
+    Returns
+    -------
+    エンティティ
+
+    Examples
+    --------
+
+    In [582]: dict(cds.get_userinfo('ADC-0'))
+    Out[582]: 
+    {'username': 'ADC-0',
+     'password': 'd4d8524383a1710a070f34a774b8dac40080ec56cdf829fe30175799afbbbabb',
+     'displayname': '司会者',
+     'gid': 2000,
+     'uid': 2000}
     """
     key = client.key('userinfo', username)
     return client.get(key)
 
 
-def get_username_list():
-    "ユーザー名の一覧リストをデータベースから取り出す"
-    query = client.query(kind='userinfo')
-    users = query.fetch()
-    res = []
-    for u in users:
-        res.append(u['username'])
-    return res
+def get_username_list() -> list[str]:
+    """
+    ユーザー名の一覧リストをデータベースから取り出す
+
+    Return
+    ------
+    list
+        ユーザー名のリスト
+
+    Examples
+    --------
+    ['ADC-0', 'ADC-1', 'ADC-2', 'ADC-3', 'administrator', 'test-01', 'test-02']
+    """
+    return [i['username'] for i in client.query(kind='userinfo').fetch()]
+    # query = client.query(kind='userinfo')
+    # users = query.fetch()
+    # res = []
+    # for u in users:
+    #     res.append(u['username'])
+    # return res
 
 
-def create_user(username, password, displayname, uid, gid, salt):
+def create_user(username: str, password: str, displayname: str, uid: int, gid: int, salt: str):
     """
     ユーザーをデータベースに登録
     """
@@ -123,7 +150,7 @@ def create_user(username, password, displayname, uid, gid, salt):
     client.put(entity)
 
 
-def delete_user(username):
+def delete_user(username: str):
     """
     ユーザーをデータベースから削除する
     """
@@ -131,9 +158,15 @@ def delete_user(username):
     client.delete(key)
 
 
-def change_password(username, password, salt):
+def change_password(username: str, password: str, salt: str) -> bool:
     """
     ユーザーのパスワードを変更する。
+
+    Returns
+    -------
+    bool
+        変更できたときTrue。
+        ユーザーが存在しないなどの理由で変更しなかったときはFalse
     """
     info = get_userinfo(username)
     if info is None:
@@ -143,12 +176,12 @@ def change_password(username, password, salt):
     return True
     
 
-def create_access_token(username, password):
+def create_access_token(username: str, password: str) -> str:
     """
     REST APIでのアクセス用トークンを生成して、データベースに保存する。
 
     Returns
-    =======
+    -------
     token : str
         トークン
     """
@@ -161,32 +194,36 @@ def create_access_token(username, password):
     return token
 
 
-def get_access_token(username):
+def get_access_token(username: str) -> datastore.entity.Entity:
     """
     REST APIでのアクセス用トークンを、データベースから取り出す。
 
     Returns
-    =======
-    token : str
-        トークン
+    --------
+    datastore.entity.Entity
+        {'token': 'e12e9c56...'}
     """
     key = client.key('access_token', username)
     return client.get(key)
 
 
-def check_access_token(username, token):
+def check_access_token(username: str, token: str) -> bool:
     """
     アクセス用トークンが正しいか、チェックする。
+
+    Returns
+    -------
+    bool
+        正しいときTrue、間違っていたらFalse
     """
     entity = get_access_token(username)
-    #print('check_access_token: entity', entity)
     if token and entity and entity.get('token'): # Noneでは無い
         if entity.get('token') == token:
             return True
     return False
 
 
-def delete_access_token(username, token):
+def delete_access_token(username: str):
     """
     アクセス用トークンを、データベースから削除する。
     """
@@ -724,32 +761,32 @@ def p_adata_from_A(round_count: int, a_num: int, owner: str, A: tuple, a_text: s
             'date':      datetime.utcnow()}
 
 
-class QuestionListAll():
-    """
-    コンテスト用の、出題問題リスト。Repeated Propetiyにしてみた
+# class QuestionListAll():
+#     """
+#     コンテスト用の、出題問題リスト。Repeated Propetiyにしてみた
 
-    qs = ndb.KeyProperty(kind=Question, repeated=True)
-    text_admin = ndb.StringProperty('a', indexed=False)
-    text_user = ndb.StringProperty('u', indexed=False)
-    date = ndb.DateTimeProperty(auto_now_add=True)
-    """
+#     qs = ndb.KeyProperty(kind=Question, repeated=True)
+#     text_admin = ndb.StringProperty('a', indexed=False)
+#     text_user = ndb.StringProperty('u', indexed=False)
+#     date = ndb.DateTimeProperty(auto_now_add=True)
+#     """
     
-class Answer():
-    """
-    回答データ
+# class Answer():
+#     """
+#     回答データ
 
-    anum = ndb.IntegerProperty(indexed=True)
-    text = ndb.StringProperty(indexed=False)
-    owner = ndb.StringProperty(indexed=True)
-    date = ndb.DateTimeProperty(auto_now_add=True)
-    # 回答データの補足情報
-    cpu_sec = ndb.FloatProperty(indexed=False)
-    mem_byte = ndb.IntegerProperty(indexed=False)
-    misc_text = ndb.StringProperty(indexed=False)
-    result = ndb.StringProperty()  # 採点結果
-    judge = ndb.IntegerProperty()  # True=1=正解, False=0=不正解
-    q_factor = ndb.FloatProperty() # 解の品質
-    """
+#     anum = ndb.IntegerProperty(indexed=True)
+#     text = ndb.StringProperty(indexed=False)
+#     owner = ndb.StringProperty(indexed=True)
+#     date = ndb.DateTimeProperty(auto_now_add=True)
+#     # 回答データの補足情報
+#     cpu_sec = ndb.FloatProperty(indexed=False)
+#     mem_byte = ndb.IntegerProperty(indexed=False)
+#     misc_text = ndb.StringProperty(indexed=False)
+#     result = ndb.StringProperty()  # 採点結果
+#     judge = ndb.IntegerProperty()  # True=1=正解, False=0=不正解
+#     q_factor = ndb.FloatProperty() # 解の品質
+#     """
 
 
 def log(username: str, what: str):
@@ -784,7 +821,6 @@ def log_get_or_delete(username=None, fetch_num=100, when=None, delete=False):
         before = datetime.utcnow() - when
         # print('before=', before)
         query.add_filter('timestamp', '>', before)
-        fetch_num = None
     q = query.fetch(limit=fetch_num)
     results = []
     for i in q:
@@ -1481,19 +1517,19 @@ def get_or_delete_A_info(round_count: int, a_num: int = None, username: str = No
 
 
 
-def get_Q_author_all():
-    "出題の番号から、authorを引けるテーブルを作る ---> もともとq_list_allに入ってるから不要"
-    qla = ndb.Key(QuestionListAll, 'master', parent=qdata_key()).get()
-    if qla is None:
-        return None
-    authors = ['']*(len(qla.qs)+1) # q_numは1から始まるので、+1しておく
-    qn = 1 # 出題番号
-    for q_key in qla.qs:
-        q = q_key.get()
-        authors[qn] = q.author
-        qn += 1
-        # q.qnum は、問題登録したときの番号であり、出題番号ではない
-    return authors
+# def get_Q_author_all():
+#     "出題の番号から、authorを引けるテーブルを作る ---> もともとq_list_allに入ってるから不要"
+#     qla = ndb.Key(QuestionListAll, 'master', parent=qdata_key()).get()
+#     if qla is None:
+#         return None
+#     authors = ['']*(len(qla.qs)+1) # q_numは1から始まるので、+1しておく
+#     qn = 1 # 出題番号
+#     for q_key in qla.qs:
+#         q = q_key.get()
+#         authors[qn] = q.author
+#         qn += 1
+#         # q.qnum は、問題登録したときの番号であり、出題番号ではない
+#     return authors
 
 
 def get_admin_Q_all(round_count: int) -> (str, list):

@@ -167,13 +167,13 @@ def authenticated():
 
 
 def adc_logout():
-    "ログアウトする"
+    "ログアウトする。すでに認証済みであると仮定している。"
     user = request.headers.get('ADC-USER')
     token = request.headers.get('ADC-TOKEN')
     #print('token:', token)
     #print('user:', user)
     if user and token:
-        cds.delete_access_token(user, token)
+        cds.delete_access_token(user)
         print('logout')
     for i in ['login', 'username', 'displayName', 'uid', 'gid', 'token']:
         del session[i]
@@ -811,7 +811,7 @@ def a_put(usernm, a_num):
         if not username_matched(usernm):  # ユーザ名が一致しない
             return adc_response('permission denied', 403)
         if g.state != 'Aup':
-            return adc_response('deadline passed', 503)
+            return adc_response('current state forbids the operation', 503)
     log_request(usernm)
     round_count = get_round()
     if request.method=='PUT':
@@ -847,7 +847,7 @@ def a_info_put(usernm, a_num):
             return adc_response('permission denied', 403)
     if not priv_admin():
         if request.methods != 'GET' and g.state != 'Aup':
-            return adc_response('deadline passed', 503)
+            return adc_response('current state forbids the operation', 503)
     log_request(usernm)
     round_count = get_round()
     if request.method == 'PUT':
@@ -896,7 +896,7 @@ def user_q(usernm: str, q_num: int):
         if q_num <= 0 or 4 <= q_num:  # 問題番号の範囲チェック
             return adc_response('Q number is out of range', 403)
         if g.state != 'Qup':
-            return adc_response('deadline passed', 503)
+            return adc_response('current state forbids the operation', 503)
     log_request(usernm)
     round_count = get_round()
     if request.method == 'GET':
@@ -957,12 +957,14 @@ def user_log(usernm):
 @app.route('/user/<usernm>/log/<key>/<int:val>', methods=['GET','DELETE'])
 def user_log_before(usernm, key, val):
     """
-    ログデータを取得する。
+    ログデータを取得する(GET)、または、削除する(DELETE)。
+
+    /user/ADC-0/log/10/days?num=10
     """
     if not priv_admin():                  # 管理者ではない
         if not username_matched(usernm):  # ユーザ名が一致しない
             return adc_response('permission denied', 403)
-    log_request(username()) # やめたほうがいい？
+    log_request(username())  # やめたほうがいい？
     if key == 'days':
         td = datetime.timedelta(days=val)
     elif key == 'seconds':
@@ -971,14 +973,15 @@ def user_log_before(usernm, key, val):
         td = None
     else:
         return adc_response('time format error', 404)
+    num = int(request.args.get('num', 100))
     if request.method == 'GET':
         delete = False
-    else: # DELETE
+    else:  # DELETE
         delete = True
         if not priv_admin():              # 管理者ではない
             return adc_response('permission denied', 403)
     msg = request.path
-    results = cds.log_get_or_delete(username=usernm, when=td, delete=delete)
+    results = cds.log_get_or_delete(username=usernm, when=td, delete=delete, fetch_num=num)
     tmp = {'msg': msg,  'results':results }
     return adc_response_json(tmp)
 
@@ -1004,7 +1007,7 @@ def q_get(q_num):
         return adc_response('not login yet', 401)
     if not priv_admin():
         if g.state != 'Aup':
-            return adc_response('deadline passed', 503)
+            return adc_response('current state forbids the operation', 503)
     log_request(username())
     round_count = get_round()
     qdat = cds.get_Q_data(round_count, q_num)  # type: dict
@@ -1017,7 +1020,7 @@ def q_get_all_in_one():
         return adc_response('not login yet', 401)
     if not priv_admin():
         if g.state != 'Aup':
-            return adc_response('deadline passed', 503)
+            return adc_response('current state forbids the operation', 503)
     log_request(username())
     round_count = get_round()
     qzip = cds.get_all_Q_in_one(round_count)
@@ -1034,7 +1037,7 @@ def q_get_list():
         return adc_response('not login yet', 401)
     if not priv_admin():
         if g.state != 'Aup':
-            return adc_response('deadline passed', 503)
+            return adc_response('current state forbids the operation', 503)
     log_request(username())
     round_count = get_round()
     qla = cds.admin_Q_list_get(round_count)
