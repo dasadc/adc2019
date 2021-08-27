@@ -43,7 +43,8 @@ export class StatusBarComponent implements OnInit {
   }
 
   updateStatus() { // update statusボタンをクリック。status-barを再描画させたい
-    this.updateUsername();
+    //this.updateUsername();
+    this.username = this.adcService.getUsername();
     this.getTimekeeper();
   }
   

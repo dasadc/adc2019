@@ -41,24 +41,6 @@ app.config.from_object(adcconfig)
 app.config.from_object(adcusers)
 app.secret_key = app.config['SECRET_KEY']
 
-state_str = {'init': 'initial',
-             'im0': 'intermediate_0',
-             'Qup': 'Q_upload',
-             'im1': 'intermediate_1',
-             'Aup': 'A_upload',
-             'im2': 'intermediate_2'}
-
-def valid_state(state: str) -> bool:
-    """
-    文字列stateが、状態の値として適切であれば、Trueを返す
-    """
-    return state in state_str.keys()
-
-def valid_round(round_count: int) -> bool:
-    """
-    round数が適切であれば、Trueを返す
-    """
-    return round_count in (1, 2, 999)  # hard-coded !!!
 
 def adc_response(msg, code=200, json_encoded=False):
     """
@@ -133,15 +115,10 @@ def priv_admin():
     ログイン中であり、admin権限をもったユーザか？
     """
     if authenticated():
-        info = adcutil.adc_get_user_info(username(), app.config['USERS'])
-        if info is None:
-            return False
-        if info[4] == 0: # gid
-            #print('priv_admin: True')
+        gid = adcutil.get_gid(username())
+        if (gid is not None) and (gid == 0):
             return True
-
-    return ('login' in session and session['login']==1 and
-            'gid' in session and session['gid']==0 )
+    return False
 
 
 def authenticated():
@@ -356,7 +333,7 @@ def login():
     # print('request.json', request.json)
     usernm = request.json.get('username', '')
     passwd = request.json.get('password', '')
-    u, token = adcutil.adc_login(app.config['SALT'], usernm, passwd, app.config['USERS'])
+    u, token = adcutil.adc_login(usernm, passwd)
     if u is None:
         return adc_response("login failed", 401)
     session['login'] = 1
@@ -416,12 +393,12 @@ def admin_user_list_get():
     """
     ユーザー一覧リストを取得する。
     """
-    if not authenticated():
+    if not authenticated() or not priv_admin():
         return adc_response("access forbidden", 403)
-    res = adcutil.adc_get_user_list(app.config['USERS'])
-    res.sort()
     log_request(username())
-    return adc_response_json(res)
+    adcutil.refresh_userinfo_cache()
+    users = adcutil.cached_usernames()
+    return adc_response_json(users)
 
 
 @app.route('/admin/user/<usernm>', methods=['GET'])
@@ -435,8 +412,10 @@ def admin_user_get(usernm):
     if ( not authenticated() or
          (not priv_admin() and username() != usernm) ):
         return adc_response('access forbidden', 403)
+    if not adcutil.valid_user(usernm):
+        return adc_response(f'unknown user: {usernm}', 403)
     log_request(usernm)
-    u = adcutil.adc_get_user_info(usernm, app.config['USERS'])
+    u = adcutil.adc_get_user_info(usernm)
     if u is None:
         return adc_response('not found', 404)
     else:
@@ -451,10 +430,12 @@ def admin_user_post(usernm):
     admin権限がある人だけ可能
     """
     if not priv_admin():
-        return adc_response('access forbidden', 403)
+        return adc_response('insufficient privilege', 403)
     log_request(username())
     # DELETEの場合、アカウント削除
     if request.method == 'DELETE':
+        if not adcutil.valid_user(usernm):
+            return adc_response(f'unknown user: {usernm}', 403)
         cds.delete_user(usernm)
         msg = 'delete user %s' % usernm
         return adc_response(msg)
@@ -465,9 +446,9 @@ def admin_user_post(usernm):
                     request.json['password'],
                     request.json['displayname'],
                     request.json['uid'],
-                    request.json['gid'],
-                    app.config['SALT'])
+                    request.json['gid'])
     msg = 'create user %s' % usernm
+    adcutil.refresh_userinfo_cache()
     return adc_response(msg)
 
 
@@ -599,7 +580,7 @@ def admin_timekeeper_state():
     if not priv_admin():
         return adc_response('access forbidden. admin only', 403)
     state = request.json.get('state')
-    if not valid_state(state):
+    if not adcutil.valid_state(state):
         return adc_response(f'ERROR: invalid state: {state}', 404)
     state2 = cds.timekeeper_state(state)
     dat = {'state': state2}
@@ -619,7 +600,7 @@ def admin_timekeeper_round():
         return adc_response('access forbidden. admin only', 403)
     round_count = request.json.get('round')
     round_count = int(round_count)
-    if not valid_round(round_count):
+    if not adcutil.valid_round(round_count):
         return adc_response(f'ERROR: out of range value: {round_count}', 404)
     dat = {'round': cds.timekeeper_round(round_count)}
     return adc_response_json(dat)
@@ -648,12 +629,12 @@ def admin_timekeeper():
             else:
                 return adc_response(f'ERROR: enabled is out of range: {enabled}', 404)
         if state is not None:
-            if valid_state(state):
+            if adcutil.valid_state(state):
                 dat['state'] = state
             else:
                 return adc_response(f'ERROR: invalid state: {state}', 404)
         if round_count is not None:
-            if valid_round(round_count):
+            if adcutil.valid_round(round_count):
                 dat['round'] = round_count
             else:
                 return adc_response(f'ERROR: round is out of range: {round_count}', 404)
@@ -697,19 +678,6 @@ def admin_config_test_mode():
     TEST_MODEの値を取得する(GET)、または、設定する(PUT)。
     """
     return _admin_config_common('test_mode', 'TEST_MODE')
-    # if request.method == 'GET':
-    #     dat = {'test_mode': app.config['TEST_MODE']}
-    #     return adc_response_json(dat)
-    # else:  # PUTの場合
-    #     if not priv_admin():
-    #         return adc_response('access forbidden. admin only', 403)
-    #     i = request.json.get('test_mode')
-    #     if i in (0, 1):
-    #         app.config['TEST_MODE'] = bool(i)
-    #         dat = {'test_mode': app.config['TEST_MODE']}
-    #         return adc_response_json(dat)
-    #     else:
-    #         return adc_response('illeagal argument %s' % i, 400)
 
     
 @app.route('/admin/config/view_score_mode', methods=['GET', 'PUT'])
@@ -718,19 +686,6 @@ def admin_config_view_score_mode():
     VIEW_SCORE_MODEの値を取得する(GET)、または、設定する(PUT)。
     """
     return _admin_config_common('view_score_mode', 'VIEW_SCORE_MODE')
-    # if request.method == 'GET':
-    #     dat = {'view_score_mode': app.config['VIEW_SCORE_MODE']}
-    #     return adc_response_json(dat)
-    # else:  # PUTの場合
-    #     if not priv_admin():
-    #         return adc_response('access forbidden. admin only', 403)
-    #     i = request.json.get('view_score_mode')
-    #     if i in (0, 1):
-    #         app.config['VIEW_SCORE_MODE'] = bool(i)
-    #         dat = {'view_score_mode': app.config['VIEW_SCORE_MODE']}
-    #         return adc_response_json(dat)
-    #     else:
-    #         return adc_response('illeagal argument %s' % i, 400)
 
     
 @app.route('/admin/config/log_to_datastore', methods=['GET', 'PUT'])
@@ -739,19 +694,6 @@ def admin_config_log_to_datastore():
     LOG_TO_DATASTOREの値を取得する(GET)、または、設定する(PUT)。
     """
     return _admin_config_common('log_to_datastore', 'LOG_TO_DATASTORE')
-    # if request.method == 'GET':
-    #     dat = {'log_to_datastore': app.config['LOG_TO_DATASTORE']}
-    #     return adc_response_json(dat)
-    # else:  # PUTの場合
-    #     if not priv_admin():
-    #         return adc_response('access forbidden. admin only', 403)
-    #     i = request.json.get('log_to_datastore')
-    #     if i in (0, 1):
-    #         app.config['LOG_TO_DATASTORE'] = bool(i)
-    #         dat = {'log_to_datastore': app.config['LOG_TO_DATASTORE']}
-    #         return adc_response_json(dat)
-    #     else:
-    #         return adc_response('illeagal argument %s' % i, 400)
 
     
 @app.route('/A', methods=['GET', 'DELETE'])
@@ -783,6 +725,8 @@ def admin_A_username(usernm):
     if not priv_admin():                    # 管理者ではない
         if not username_matched(usernm):    # ユーザ名が一致しない
             return adc_response('permission denied', 403)
+    if not adcutil.valid_user(usernm):
+        return adc_response(f'unknown user: {usernm}', 403)
     log_request(usernm)
     round_count = get_round()
     msg, anum_list = cds.get_user_A_all(round_count=round_count, username=usernm)
@@ -812,6 +756,8 @@ def a_put(usernm, a_num):
             return adc_response('permission denied', 403)
         if g.state != 'Aup':
             return adc_response('current state forbids the operation', 503)
+    if not adcutil.valid_user(usernm):
+        return adc_response(f'unknown user: {usernm}', 403)
     log_request(usernm)
     round_count = get_round()
     if request.method=='PUT':
@@ -848,6 +794,8 @@ def a_info_put(usernm, a_num):
     if not priv_admin():
         if request.methods != 'GET' and g.state != 'Aup':
             return adc_response('current state forbids the operation', 503)
+    if not adcutil.valid_user(usernm):
+        return adc_response(f'unknown user: {usernm}', 403)
     log_request(usernm)
     round_count = get_round()
     if request.method == 'PUT':
@@ -878,6 +826,8 @@ def get_user_q_list(usernm):
     if not priv_admin():  # 管理者以外の場合
         if not username_matched(usernm):  # ユーザ名チェック
             return adc_response('permission denied. admin or self-access only', 403)
+    if not adcutil.valid_user(usernm):
+        return adc_response(f'unknown user: {usernm}', 403)
     log_request(usernm)
     round_count = get_round()
     result = cds.get_user_Q_list(author=usernm, round_count=round_count)
@@ -897,6 +847,8 @@ def user_q(usernm: str, q_num: int):
             return adc_response('Q number is out of range', 403)
         if g.state != 'Qup':
             return adc_response('current state forbids the operation', 503)
+    if not adcutil.valid_user(usernm):
+        return adc_response(f'unknown user: {usernm}', 403)
     log_request(usernm)
     round_count = get_round()
     if request.method == 'GET':
@@ -941,6 +893,8 @@ def user_alive(usernm):
     if not priv_admin():                        # 管理者ではない
         if not username_matched(usernm):      # ユーザ名が一致しない
             return adc_response('permission denied', 403)
+    if not adcutil.valid_user(usernm):
+        return adc_response(f'unknown user: {usernm}', 403)
     alive = request.json.get('alive')
     print('alive=', alive)
     cds.log(usernm, 'alive: %s' % json.dumps(alive))
@@ -964,6 +918,9 @@ def user_log_before(usernm, key, val):
     if not priv_admin():                  # 管理者ではない
         if not username_matched(usernm):  # ユーザ名が一致しない
             return adc_response('permission denied', 403)
+    # 管理者は、usernm=Noneを指定して、全ユーザーのログを取得可能
+    if (usernm is not None) and (not adcutil.valid_user(usernm)):
+        return adc_response(f'unknown user: {usernm}', 403)
     log_request(username())  # やめたほうがいい？
     if key == 'days':
         td = datetime.timedelta(days=val)
@@ -996,7 +953,9 @@ def user_password(usernm):
     if not priv_admin():                  # 管理者ではない
         if not username_matched(usernm):  # ユーザ名が一致しない
             return adc_response('permission denied', 403)
-    res, msg = adcutil.adc_change_password(app.config['SALT'], usernm, app.config['USERS'], request.json, priv_admin())
+    if not adcutil.valid_user(usernm):
+        return adc_response(f'unknown user: {usernm}', 403)
+    res, msg = adcutil.adc_change_password(usernm, request.json, priv_admin())
     code = 200 if res else 403
     return adc_response(msg, code)
 
@@ -1163,6 +1122,8 @@ def dummy_2019():
 
 
 app.wsgi_app = DispatcherMiddleware(dummy_app, {app.config['APPLICATION_ROOT']: app.wsgi_app})
+
+adcutil.refresh_userinfo_cache()
 
 if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App

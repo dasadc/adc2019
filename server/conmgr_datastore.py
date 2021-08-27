@@ -18,8 +18,8 @@ kind
 - 'q_data'
 - 'log'
 - 'clock'           id = 1(とくに意味はない)
-- 'q_list_all'      id = round数 (1,2, 999)
-- 'q_zip'           id = round数 (1,2, 999)
+- 'q_list_all'      id = round数 (1,2,3, 999)
+- 'q_zip'           id = round数 (1,2,3, 999)
 - 'a_data'
 """
 
@@ -117,6 +117,41 @@ def get_userinfo(username: str) -> datastore.entity.Entity:
     return client.get(key)
 
 
+def get_userinfo_list() -> list[tuple]:
+    """
+    ユーザー情報をデータベースから取り出す
+
+    Return
+    ------
+    list of tuple
+        ユーザー情報のリスト。ユーザー情報は、以下の通り。
+        (username:str, password:str, displayname:str, uid:int, gid:int)
+
+    Examples
+    --------
+    [('test-07',
+      '07ede57...',
+      'レオポンさんチーム',
+      1007,
+      1000),
+     ('test-08',
+      'ddaea48...',
+      'アリクイさんチーム',
+      1008,
+      1000),
+     ('test-09',
+      '1ee1a2c...',
+      'サメさんチーム',
+      1009,
+      1000)]
+    """
+    return [(i['username'],
+             i['password'],
+             i['displayname'],
+             i['uid'],
+             i['gid'])
+            for i in client.query(kind='userinfo').fetch()]
+
 def get_username_list() -> list[str]:
     """
     ユーザー名の一覧リストをデータベースから取り出す
@@ -131,19 +166,13 @@ def get_username_list() -> list[str]:
     ['ADC-0', 'ADC-1', 'ADC-2', 'ADC-3', 'administrator', 'test-01', 'test-02']
     """
     return [i['username'] for i in client.query(kind='userinfo').fetch()]
-    # query = client.query(kind='userinfo')
-    # users = query.fetch()
-    # res = []
-    # for u in users:
-    #     res.append(u['username'])
-    # return res
 
 
-def create_user(username: str, password: str, displayname: str, uid: int, gid: int, salt: str):
+def create_user(username: str, password: str, displayname: str, uid: int, gid: int):
     """
     ユーザーをデータベースに登録
     """
-    hashed = adcutil.hashed_password(username, password, salt)
+    hashed = adcutil.hashed_password(username, password)
     key = client.key('userinfo', username)
     entity = datastore.Entity(key=key)
     entity.update(p_userinfo([username, hashed, displayname, uid, gid]))
@@ -158,7 +187,7 @@ def delete_user(username: str):
     client.delete(key)
 
 
-def change_password(username: str, password: str, salt: str) -> bool:
+def change_password(username: str, password: str) -> bool:
     """
     ユーザーのパスワードを変更する。
 
@@ -171,10 +200,10 @@ def change_password(username: str, password: str, salt: str) -> bool:
     info = get_userinfo(username)
     if info is None:
         return False
-    info['password'] = adcutil.hashed_password(username, password, salt)
+    info['password'] = adcutil.hashed_password(username, password)
     client.put(info)
     return True
-    
+
 
 def create_access_token(username: str, password: str) -> str:
     """
@@ -187,7 +216,7 @@ def create_access_token(username: str, password: str) -> str:
     """
     key = client.key('access_token', username)
     entity = datastore.Entity(key=key)
-    token = adcutil.hashed_password(username, password, str(datetime.now()))
+    token = adcutil.hashed_password(username, password+str(datetime.now()))
     data = {'token': token}
     entity.update(data)
     client.put(entity)
@@ -869,7 +898,7 @@ def timekeeper_prop(dt: datetime = None, state: str = 'init', enabled: int = 1, 
     -------
     dict
     """
-    assert main.valid_state(state)
+    assert adcutil.valid_state(state)
     if dt is None:
         dt = datetime.utcnow()
     return {'lastUpdate': dt,
@@ -974,7 +1003,7 @@ def timekeeper_state(new_value :str = None) -> str:
     if new_value is None:
         return clk['state']
     else:
-        if main.valid_state(new_value):
+        if adcutil.valid_state(new_value):
             if new_value != clk['state']:
                 clk['state'] = new_value
                 clk['lastUpdate'] = datetime.utcnow()
@@ -1013,7 +1042,7 @@ def timekeeper_set(value: dict = {}) -> dict:
     """
     clk = timekeeper_clk()
     state = value.get('state')
-    if main.valid_state(state):
+    if adcutil.valid_state(state):
         clk['state'] = state
     enabled = value.get('enabled')
     if enabled != 0:
@@ -1697,7 +1726,7 @@ Out[476]:
             ok_point[anum] = {}
         ok_point[anum][username] = int(i['judge'])  # True, False --> 1, 0
         # 品質ポイントを計算するための予備の計算
-        if username != 'ADC-0':  # hard-codingはよくない
+        if adcutil.get_gid(username) not in (0, 3000):  # 特定groupを対象外にする
             if anum not in q_factors:
                 q_factors[anum] = {}
             q_factors[anum][username] = i['quality']
@@ -1711,7 +1740,7 @@ Out[476]:
         if i['judge'] == True:
             if anum not in put_a_date:
                 put_a_date[anum] = {}
-            if username != 'ADC-0':  # hard-codingはよくない
+            if adcutil.get_gid(username) not in (0, 3000):  # 特定groupを対象外にする
                 put_a_date[anum][username] = i['date']  # type: datetime
         # (その他) date, cpu_sec, mem_byte, misc_text
         if not(anum in misc):

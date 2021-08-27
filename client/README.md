@@ -67,6 +67,11 @@ adcclient.pyでは、ユーザー名とアクセストークンをそれぞれ�
 
 curlなどで、HTTPプロトコルでアクセスするときは、`ADC-USER`ヘッダ、`ADC-TOKEN`ヘッダを付加します。
 
+``` bash
+curl -H "ADC-USER: administrator" -H "ADC-TOKEN: acbfacf7dbe922d84c58aa8314ac6e98324639106d3bddf9808f633894a20cd6" -H "Accept: application/json" -H "Content-Type: application/json" http://localhost:4200/api/whoami
+```
+
+
 入出力データのフォーマットがまちまちだったのが、JSONで統一しています。ウェブブラウザからアクセスしたときのための、HTMLを出力する機能は、すべて廃止しました。
 ウェブアプリ部分は、Angularを使って、新規に作り直しました。
 
@@ -503,6 +508,40 @@ adccliは実行のためにPythonの実行環境が必要となりますが、�
 
 ### loginする
 
+2021年方式
+
+コマンドの書式
+
+``` bash
+curl -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d '{"username":"USERNAME", "password":"PASSWORD"}' http://localhost:4200/api/login
+```
+
+具体的には
+
+``` bash
+curl -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d '{"username":"test-06", "password":"cagI....8"}' http://localhost:4200/api/login
+```
+
+以下のような結果が返ってきます。
+
+``` json
+{"msg": "login OK", "token": "dada66aa3eec5933f82582f83715d5771684fddef9c605a39cf898c515f7f37a"}
+```
+
+このtokenを使って、API実行をテストします。API '/api/whoami'は、ユーザー名を返します。
+
+``` bash
+curl -H "ADC-USER: test-06" -H "ADC-TOKEN: dada66aa3eec5933f82582f83715d5771684fddef9c605a39cf898c515f7f37a" -H "Accept: application/json" -H "Content-Type: application/json" http://localhost:4200/api/whoami
+```
+
+以下のような結果が返ってきます。
+
+``` json
+{"msg": "test-06"}
+```
+
+以下、クッキーを使った旧方式。※ 以下の記述は、2021年方式に修正されていないようなので注意!!
+
     curl -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d '{"username":"USERNAME", "password":"PASSWORD"}' --cookie-jar CURL_COOKIES --cookie CURL_COOKIES https://das-adc.appspot.com/login
 
 - `USERNAME`と`PASSWORD`の部分を、実際のアカウントのものへ差し換えてください。
@@ -524,7 +563,7 @@ loginに成功した場合、以下のような応答が来ます。JSON形式�
 
 HTML形式で応答を得る方法
 
-    curl --cookie-jar CURL_COOKIES --cookie CURL_COOKIES https://das-adc.appspot.com/logout
+    curl --cookie-jar CURL_COOKIES --cookie CURL_COOKIES https://das-adc.appspot.com/whoami
 
 JSON形式で応答を得る方法
 
@@ -865,6 +904,17 @@ adccliの管理者専用の機能
 
 一般ユーザー権限では利用できません。
 
+### 実効ユーザー名を`--alt-username`オプションで指定する
+
+RESTful APIのパス名に、ユーザー名を含むもの(例: `/user/ADC-1/Q/1`)について、管理者は、そのユーザー名(例では`ADC-1`)を`adccli --alt-username USERNAME ...`のように引数で指定することができる。
+
+`--alt-username`を指定せず、`--username`オプションで指定した場合はそのユーザー名が使われる。
+
+しかし、`--username`オプションを使うと、設定保存ファイルにて、以降のデフォルト値として使われるようになってしまうので、使い勝手が悪く、不便である。
+
+`--alt-username`も`--username`も指定しなかった場合は、設定保存ファイルに保存されているユーザー名が使われる。
+
+
 ### ユーザー作成
 
 (備考: 2020年バージョンから、[ウェブアプリでユーザー作成が可能](../client-app/README.md))
@@ -886,6 +936,15 @@ adccliの管理者専用の機能
 ### ユーザー削除
 
     adccli delete-user ユーザー名1 [ユーザー名2 ...]
+
+### ユーザー一覧リスト
+
+	adccli get-user-list
+
+ユーザー情報は、データストアから毎回取り出すのではなく、APIサーバ上でオンメモリで保持している。
+`adccli get-user-list`を実行することで、データストアから取り出して、オンメモリの情報が、更新される。
+
+なお、ユーザー作成・削除時にも、オンメモリの情報が、更新される。
 
 
 ### 問題データへのアクセス

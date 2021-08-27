@@ -13,6 +13,7 @@ DA Symposium 2021 Algorithm Design Contest (DAS ADC 2021)
 最新情報 What's new
 -------------------
 
+- (2021-08-27) [スケジュールを更新しました。](conmgr.md#schedule)
 - (2021-08-26) Qデータを、Zipアーカイブ形式で、一括ダウンロードできるようになりました。[adccli](client/README.md#get-q-all) [client-app](client-app/README.md#arena)
 - (2021-08-25) ADC 2021年ルールに対応しました。
     - 得点計算式を変更しました。
