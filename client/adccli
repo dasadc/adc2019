@@ -37,8 +37,8 @@ def cmd_help():
   delete-user-q [NUMBER ...]
   check-q FILENAME
   put-user-alive MSG
-  get-user-log [NUMBER (seconds|days)]
-  delete-user-log [NUMBER (seconds|days)]
+  get-user-log [NUMBER (seconds|days)]                # use with [--number NUM]
+  delete-user-log [NUMBER (seconds|days)]             # use with [--number NUM]
   score
   score-dump
   get-root
@@ -54,8 +54,8 @@ admin command:
   delete-admin-q-all
   get-admin-a-all
   delete-admin-a-all
-  get-log [NUMBER (seconds|days)]
-  delete-log [NUMBER (seconds|days)]
+  get-log [NUMBER (seconds|days)]                     # use with [--number NUM]
+  delete-log [NUMBER (seconds|days)]                  # use with [--number NUM]
   timekeeper-enabled [0|1]                            # Get/Set enabled flag
   timekeeper-state [init|im0|Qup|im1|Aup|im2]         # Get/Set state
   timekeeper-round [1|2|999]                          # Get/Set round counter
@@ -94,6 +94,7 @@ def main():
     parser.add_argument('-u', '--username', default=cli.username, help='set username (default: %(default)s)')
     parser.add_argument('--alt-username', help='set alternative username. admin only')
     parser.add_argument('--round', metavar='NUM', type=int, help='specify round number. admin only')
+    parser.add_argument('--number', metavar='NUM', type=int, help='specify number')
     parser.add_argument('-p', '--password', help='set password')
     parser.add_argument('-U', '--URL', default=url_default, help='set server URL (default: %(default)s)')
     parser.add_argument('-o', '--output', metavar='FILE', default=cli.output_file,
@@ -250,6 +251,9 @@ def main():
         if len(args.arg) == 0:
             res = cli.get_user_q_list(round_count=args.round)
             # print(res)
+            if res is None:
+                print('error')
+                return
             for i in res:
                 size = 'SIZE %dX%d' % (i['cols'], i['rows'])
                 block_num = 'BLOCK_NUM %d' % i['blocknum']
@@ -333,15 +337,16 @@ def main():
         res = cli.get_root()
         print(res[6]['msg'])
     elif a in ('get-log', 'get-user-log', 'delete-log', 'delete-user-log'):
-        res = cli.get_or_delete_log(args.arg, a)
+        res = cli.get_or_delete_log(args.arg, a, args.number)
         delete = (a.split('-')[0] == 'delete')
-        # print res[6]['msg']
         if 'results' in res[6]:
             for i in res[6]['results']:
                 if delete:
                     print('%s' % (i['date']))
                 else:
                     print('%s %s: %s' % (i['date'], i['username'], i['what']))
+        else:
+            print(res[6]['msg'])
     elif a == 'score':
         res = cli.score(round_count=args.round)
         print(res[6])

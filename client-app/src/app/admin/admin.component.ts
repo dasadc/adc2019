@@ -31,7 +31,7 @@ export class AdminComponent implements OnInit {
   tk: ResTimekeeper;
   tk_enabled_values = [0, 1];
   tk_state_values = ['init', 'im0', 'Qup', 'im1', 'Aup', 'im2'];
-  tk_round_values = [1, 2, 999];
+  tk_round_values = [1, 2, 3,  999];
   enabledDescrTbl = ResTimekeeper.enabledDescrTbl;
   stateDescrTbl = ResTimekeeper.stateDescrTbl;
   roundDescrTbl = ResTimekeeper.roundDescrTbl;

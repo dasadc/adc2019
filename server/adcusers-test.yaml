@@ -9,103 +9,100 @@
 #   2000: ADC team users
 #   3000: オープン参加
 
-- displayname: ADCマネージャー
-  gid: 0
-  password: '@ADC_PASS_ADMIN@'
-  uid: 0
-  username: administrator
 - displayname: あんこうチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: idsIfAjkelvUk4
   uid: 1001
   username: test-01
 - displayname: カメさんチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: ioctebEcWytes4
   uid: 1002
   username: test-02
 - displayname: アヒルさんチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: hyctutPik7phlu
   uid: 1003
   username: test-03
 - displayname: カバさんチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: Vuom3DriEcsyag
   uid: 1004
   username: test-04
 - displayname: ウサギさんチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: WighRujAlbait8
   uid: 1005
   username: test-05
 - displayname: カモさんチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: cagIphgegcald8
   uid: 1006
   username: test-06
 - displayname: レオポンさんチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: yogUns2olriwak
   uid: 1007
   username: test-07
 - displayname: アリクイさんチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: Deellitdasyiv9
   uid: 1008
   username: test-08
 - displayname: サメさんチーム
   gid: 1000
-  password: '@ADC_PASS_USER@'
+  password: Mynupmackhiar9
   uid: 1009
   username: test-09
 - displayname: 司会者
   gid: 0  # (注意) administrator扱い
-  password: '@ADC_PASS_USER@'
+  password: DAS2021/tesT
   uid: 2000
   username: ADC-0
-- displayname: 聖グロ
+
+- displayname: チーム北九大
   gid: 2000
-  password: '@ADC_PASS_USER@'
+  password: 'ADC_PASS_USER1kk'
   uid: 2001
   username: ADC-1
-- displayname: サンダース
+- displayname: 農工大チーム
   gid: 2000
-  password: '@ADC_PASS_USER@'
+  password: 'ADC_PASS_USER2nk'
   uid: 2002
   username: ADC-2
-- displayname: アンツィオ
+- displayname: NEC-SAチーム
   gid: 2000
-  password: '@ADC_PASS_USER@'
+  password: 'ADC_PASS_USER3ne'
   uid: 2003
   username: ADC-3
-- displayname: プラウダ
+- displayname: 九州大学チーム
   gid: 2000
-  password: '@ADC_PASS_USER@'
+  password: 'ADC_PASS_USER4ky'
   uid: 2004
   username: ADC-4
-- displayname: 黒森峰
-  gid: 2000
-  password: '@ADC_PASS_USER@'
-  uid: 2005
-  username: ADC-5
-- displayname: 継続
-  gid: 2000
-  password: '@ADC_PASS_USER@'
-  uid: 2006
-  username: ADC-6
-- displayname: 知波単
-  gid: 2000
-  password: '@ADC_PASS_USER@'
-  uid: 2007
-  username: ADC-7
-- displayname: 大学選抜
-  gid: 2000
-  password: '@ADC_PASS_USER@'
-  uid: 2008
-  username: ADC-8
-- displayname: BC自由学園
-  gid: 2000
-  password: '@ADC_PASS_USER@'
-  uid: 2009
-  username: ADC-9
+
+- displayname: 'オーブン参加 1'
+  gid: 3000
+  password: siheakweeHyil6
+  uid: 3001
+  username: ad_hoc_1
+- displayname: 'オーブン参加 2'
+  gid: 3000
+  password: negridjav8Onor
+  uid: 3002
+  username: ad_hoc_2
+- displayname: 'オーブン参加 3'
+  gid: 3000
+  password: HyHaknimottEr3
+  uid: 3003
+  username: ad_hoc_3
+- displayname: 'オーブン参加 4'
+  gid: 3000
+  password: Veton4okVeOdLo
+  uid: 3004
+  username: ad_hoc_4
+- displayname: 'オーブン参加 5'
+  gid: 3000
+  password: ChadUkajejuch2
+  uid: 3005
+  username: ad_hoc_5
