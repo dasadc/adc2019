@@ -33,13 +33,26 @@ import conmgr_datastore as cds
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Cross Origin Resource Sharing
 #app.logger.setLevel(logging.INFO)
 app.config['JSON_AS_ASCII'] = False
 app.config['APPLICATION_ROOT'] = '/api'
 app.config.from_object(adcconfig)
 app.config.from_object(adcusers)
 app.secret_key = app.config['SECRET_KEY']
+
+def reload_config():
+    """
+    Datastoreに保存されているmode設定値を読み出して、app.configとadcconfigへ設定し直す。
+    """
+    clk = cds.timekeeper_clk()
+    logging.debug('reload_config: clk=%s', str(clk))
+    for key, config_key in [('test_mode', 'TEST_MODE'), ('view_score_mode', 'VIEW_SCORE_MODE'), ('log_to_datastore', 'LOG_TO_DATASTORE')]:
+        value = clk.get(key, getattr(adcconfig, key, False))  # from Datastore
+        app.config[config_key] = clk.get(key, getattr(adcconfig, config_key, False))
+        setattr(adcconfig, config_key, value)
+
+reload_config()  # モード初期化
 
 
 def adc_response(msg, code=200, json_encoded=False):
@@ -552,6 +565,7 @@ def admin_timekeeper_enabled():
     """
     timekeeperの有効、無効の状態を取得する(GET)、状態を変更する(PUT)。
     """
+    log_request(username())
     if request.method == 'GET':
         dat = {'enabled': cds.timekeeper_enabled()}
         return adc_response_json(dat)
@@ -573,6 +587,7 @@ def admin_timekeeper_state():
     """
     timekeeperのstate値を取得する(GET)、state値を変更する(PUT)。
     """
+    log_request(username())
     if request.method == 'GET':
         dat = {'state': cds.timekeeper_state()}
         return adc_response_json(dat)
@@ -592,6 +607,7 @@ def admin_timekeeper_round():
     """
     timekeeperのroundカウンタ値を取得する(GET)、roundカウンタ値を変更する(PUT)。
     """
+    log_request(username())
     if request.method == 'GET':
         dat = {'round': cds.timekeeper_round()}
         return adc_response_json(dat)
@@ -611,6 +627,7 @@ def admin_timekeeper():
     """
     timekeeperのを取得する(GET)、または、設定する(PUT)。
     """
+    log_request(username())
     if request.method == 'GET':
         clk = cds.timekeeper_clk()
         dat = dict(clk)
@@ -652,24 +669,27 @@ def _admin_config_common(key, config_key):
     ----------
     key : str
         key of dict(object).
-        'test_mode'
+        either of 'test_mode', 'view_score_mode', 'log_to_datastore'
     config_key : str
         Used as app.config[config_key].
-        'TEST_MODE', 
+        either of 'TEST_MODE', 'VIEW_SCORE_MODE', 'VIEW_SCORE_MODE'
     """
     if request.method == 'GET':
         dat = {key: app.config[config_key]}
         return adc_response_json(dat)
-    else:  # PUTの場合
+    elif request.method == 'PUT':
         if not priv_admin():
             return adc_response('access forbidden. admin only', 403)
         i = request.json.get(key)
         if i in (0, 1):
             app.config[config_key] = bool(i)
+            cds.timekeeper_mode_common(key, app.config[config_key])
             dat = {key: app.config[config_key]}
             return adc_response_json(dat)
         else:
-            return adc_response('illeagal argument %s' % i, 400)
+            return adc_response(f'illeagal argument value {i}', 400)
+    else:
+        return adc_response(f'unknown request', 400)
 
 
 @app.route('/admin/config/test_mode', methods=['GET', 'PUT'])
@@ -677,6 +697,7 @@ def admin_config_test_mode():
     """
     TEST_MODEの値を取得する(GET)、または、設定する(PUT)。
     """
+    log_request(username())
     return _admin_config_common('test_mode', 'TEST_MODE')
 
     
@@ -685,6 +706,7 @@ def admin_config_view_score_mode():
     """
     VIEW_SCORE_MODEの値を取得する(GET)、または、設定する(PUT)。
     """
+    log_request(username())
     return _admin_config_common('view_score_mode', 'VIEW_SCORE_MODE')
 
     
@@ -693,6 +715,7 @@ def admin_config_log_to_datastore():
     """
     LOG_TO_DATASTOREの値を取得する(GET)、または、設定する(PUT)。
     """
+    log_request(username())
     return _admin_config_common('log_to_datastore', 'LOG_TO_DATASTORE')
 
     

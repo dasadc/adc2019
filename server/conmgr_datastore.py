@@ -34,7 +34,6 @@ import zipfile
 import adc2019
 import adcutil
 import adcconfig
-import main
 from tz import gae_datetime_JST
 
 #import argparse
@@ -879,20 +878,26 @@ def timekeeper_key() -> datastore.key.Key:
     return client.key('clock', 1)
 
 
-def timekeeper_prop(dt: datetime = None, state: str = 'init', enabled: int = 1, round_counter: int = 1) -> dict:
+def timekeeper_prop(dt: datetime = None, state: str = 'init', enabled: int = 1, round_counter: int = 1, test_mode: bool = True, view_score_mode: bool = True, log_to_datastore: bool = False) -> dict:
     """
     property of timekeeper (kind: 'clock')
     
     Parameters
     ----------
-    dt : datetime
-       last update time
-    state : str
+    dt : datetime, default None
+       last update time. When None, datetime.utcnow() is used.
+    state : str, default 'init'
        state. ['init', 'im0', 'Qup', 'im1', 'Aup', 'im2']
     enabled : int, default 1
        enabled flag. 0=disabled, 1=enabled
     round_counter : int, default 1
        round counter. 1, 2, ...
+    test_mode : bool, default True
+       appconfig.TEST_MODE
+    view_score_mode : bool, default True
+       appconfig.VIEW_SCORE_MODE
+    log_to_datastore: bool, default False
+       appconfig.LOG_TO_DATASTORE
 
     Returns
     -------
@@ -901,10 +906,13 @@ def timekeeper_prop(dt: datetime = None, state: str = 'init', enabled: int = 1, 
     assert adcutil.valid_state(state)
     if dt is None:
         dt = datetime.utcnow()
-    return {'lastUpdate': dt,
-            'state':      state,
-            'enabled':    enabled,
-            'round':      round_counter}
+    return {'lastUpdate':       dt,
+            'state':            state,
+            'enabled':          enabled,
+            'round':            round_counter,
+            'test_mode':        test_mode,
+            'view_score_mode':  view_score_mode,
+            'log_to_datastore': log_to_datastore}
 
 
 def timekeeper_clk() -> datastore.entity.Entity:
@@ -920,7 +928,7 @@ def timekeeper_clk() -> datastore.entity.Entity:
     with client.transaction():
         clk = client.get(key)
         if clk is None:
-            p = timekeeper_prop(datetime.utcnow(), 'init', 1)
+            p = timekeeper_prop()
             clk = datastore.Entity(key=key)
             clk.update(p)
             client.put(clk)
@@ -1034,6 +1042,93 @@ def timekeeper_round(new_value :int = None) -> int:
                 clk['lastUpdate'] = datetime.utcnow()
                 client.put(clk)
         return clk.get('round')
+
+
+def timekeeper_mode_common(key: str, new_value: bool = None) -> bool:
+    """
+    timekeeperのtest_mode, view_score_mode, log_to_datastoreの値を、
+    取得する、または、設定する。
+
+    Parameters
+    ----------
+    key : str
+        'test_mode', 'view_score_mode', 'log_to_datastore'のどれかを指定する。
+    new_value : bool, default None
+        Noneのときは、値を取得する。
+        Noneでないときは、値を設定する。
+
+    Returns
+    -------
+        現在設定されている値 : bool
+    """
+    clk = timekeeper_clk()
+    if new_value is None:
+        return clk.get(key)
+    else:
+        if new_value != clk.get(key):
+                clk[key] = new_value
+                clk['lastUpdate'] = datetime.utcnow()
+                client.put(clk)
+        return clk.get(key)
+
+
+def timekeeper_test_mode(new_value: bool = None) -> bool:
+    """
+    timekeeperのtest_modeの値を、取得する、または、設定する。
+
+    Parameters
+    ----------
+    new_value : bool, default None
+        Noneのときは、値を取得する。
+        Noneでないときは、値を設定する。
+
+    Returns
+    -------
+        test_modeの値 : bool
+    """
+    return timekeeper_mode_common('test_mode', new_value)
+
+
+def timekeeper_view_score_mode(new_value: bool = None) -> bool:
+    """
+    timekeeperのview_score_modeの値を、取得する、または、設定する。
+
+    Parameters
+    ----------
+    new_value : bool, default None
+        Noneのときは、値を取得する。
+        Noneでないときは、値を設定する。
+
+    Returns
+    -------
+        view_score_modeの値 : bool
+    """
+    return timekeeper_mode_common('view_score_mode', new_value)
+
+
+def timekeeper_log_to_datastore(new_value: bool = None) -> bool:
+    """
+    timekeeperのlog_to_datastoreの値を、取得する、または、設定する。
+
+    Parameters
+    ----------
+    new_value : bool, default None
+        Noneのときは、値を取得する。
+        Noneでないときは、値を設定する。
+
+    Returns
+    -------
+        log_to_datastoreの値 : bool
+    """
+    clk = timekeeper_clk()
+    if new_value is None:
+        return clk.get('log_to_datastore')
+    else:
+        if new_value != clk.get('log_to_datastore'):
+                clk['log_to_datastore'] = new_value
+                clk['lastUpdate'] = datetime.utcnow()
+                client.put(clk)
+        return clk.get('log_to_datastore')
 
 
 def timekeeper_set(value: dict = {}) -> dict:
