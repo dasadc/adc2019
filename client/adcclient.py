@@ -463,6 +463,18 @@ class ADCClient:
     def get_admin_q_all(self, round_count: int = None):
         """
         admin専用。出題リストの内訳（だれが出題した問題か）を取得
+
+        Examples
+        --------
+
+           [
+            {'author': 'ADC-0',
+            'blocknum': 750,
+            'cols': 72,
+            'date': 1630286947665665,
+            'linenum': 750,
+            'qnum': 9,
+            'rows': 72}]
         """
         if round_count is None:
             round_count = self.get_round()
@@ -493,6 +505,9 @@ class ADCClient:
         return self.fin(res)
 
     def get_admin_q_list(self, round_count: int = None):
+        """
+        dict keys = ['author_list', 'author_qnum_list', 'blocknum_list', 'cols_list', 'linenum_list', 'msg', 'qnum_list', 'rows_list', 'text_admin', 'text_user']
+        """
         if round_count is None:
             round_count = self.get_round()
         path = '/admin/Q/list?' + urllib.parse.urlencode({'round': round_count})
