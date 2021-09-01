@@ -14,6 +14,8 @@ import urllib.error
 import urllib.request
 import yaml
 import re
+import base64
+import pickle
 
 
 class ADCClient:
@@ -913,3 +915,21 @@ class ADCClient:
             dat = {path: param}
             res = self.http_request('PUT', api_path, params=json.dumps(dat))
             return self.fin(res)
+
+
+    def dump_datastore(self, filename):
+        res = self.http_request('GET', '/admin/datastore')
+        res = self.fin(res)
+        bin_data = base64.b64decode(res[6]['datastore'])
+        with open(filename, 'wb') as f:
+            f.write(bin_data)
+        res[6] = pickle.loads(bin_data)
+        return res
+
+
+    def restore_datastore(self, filename):
+        with open(filename, 'rb') as f:
+            bin_data = f.read()  # pickle dump
+        params = json.dumps({'datastore': base64.b64encode(bin_data).decode('utf-8')})
+        res = self.http_request('PUT', '/admin/datastore', params=params)
+        return self.fin(res)

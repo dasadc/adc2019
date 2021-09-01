@@ -63,6 +63,8 @@ admin command:
   test-mode [True|False]
   view-score-mode [True|False]
   log-to-datastore [True|False]
+  dump-data FILENAME
+  restore-data FILENAME  # **DANGER!** This may overwrite all on Google Datastore.
 """)
 
 
@@ -379,6 +381,12 @@ def main():
         print(res[6])
     elif a == 'log-to-datastore':
         res = cli.log_to_datastore(args.arg)
+        print(res[6])
+    elif a == 'dump-data':
+        res = cli.dump_datastore(args.arg[0])  # データサイズが大きく、ファイルに書き出すので
+        print(res[6].keys())  # ここで出力しても意味がない
+    elif a == 'restore-data':
+        res = cli.restore_datastore(args.arg[0])
         print(res[6])
     else:
         print('Error: Unknown command:', a)
