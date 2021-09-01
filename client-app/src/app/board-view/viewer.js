@@ -35,146 +35,151 @@ var colors = [
 
 function checkBlockShape() {
     for (var n = 0; n < blockNum; ++n) {
-	var block = [];
-	blocks[n].forEach(function(row) {
-	    row.forEach(function(val) {
-		block.push(val != 0 ? 1 : 0);
-	    });
-	    block.push(0);
-	});
+		var block = [];
+		blocks[n].forEach(function(row) {
+	    	row.forEach(function(val) {
+				block.push(val != 0 ? 1 : 0);
+	    	});
+	    	block.push(0);
+		});
 	
-	switch(block.join('')) {
-	case '1':
-	    blockColor[n] = 0; // monomino
-	    blockContour[n] = 'eswn'
-	    break;
-	case '11110':
-	    blockColor[n] = 1; // I
-	    blockContour[n] = 'eeeeswwwwn'
-	    break;
-	case '10101010':
-	    blockColor[n] = 1; // I
-	    blockContour[n] = 'esssswnnnn'
-	    break;
-	case '110110':
-	    blockColor[n] = 2; // O
-	    blockContour[n] = 'eesswwnn'
-	    break;
-	case '01001110':
-	    blockColor[n] = 3; // T
-	    blockContour[n] = '>eseswwwnen'
-	    break;
-	case '100110100':
-	    blockColor[n] = 3; // T
-	    blockContour[n] = 'eseswswnnn'
-	    break;
-	case '11100100':
-	    blockColor[n] = 3; // T
-	    blockContour[n] = 'eeeswswnwn'
-	    break;
-	case '010110010':
-	    blockColor[n] = 3; // T
-	    blockContour[n] = '>essswnwnen'
-	    break;
-	case '010010110':
-	    blockColor[n] = 4; // J
-	    blockContour[n] = '>essswwnenn'
-	    break;
-	case '10001110':
-	    blockColor[n] = 4; // J
-	    blockContour[n] = 'eseeswwwnn'
-	    break;
-	case '110100100':
-	    blockColor[n] = 4; // J
-	    blockContour[n] = 'eeswsswnnn'
-	    break;
-	case '11100010':
-	    blockColor[n] = 4; // J
-	    blockContour[n] = 'eeesswnwwn'
-	    break;
-	case '100100110':
-	    blockColor[n] = 5; // L
-	    blockContour[n] = 'esseswwnnn'
-	    break;
-	case '11101000':
-	    blockColor[n] = 5; // L
-	    blockContour[n] = 'eeeswwswnn'
-	    break;
-	case '110010010':
-	    blockColor[n] = 5; // L
-	    blockContour[n] = 'eessswnnwn'
-	    break;
-	case '00101110':
-	    blockColor[n] = 5; // L
-	    blockContour[n] = '>>esswwwneen'
-	    break;
-	case '01101100':
-	    blockColor[n] = 6; // S
-	    blockContour[n] = '>eeswswwnen'
-	    break;
-	case '100110010':
-	    blockColor[n] = 6; // S
-	    blockContour[n] = 'esesswnwnn'
-	    break;
-	case '11000110':
-	    blockColor[n] = 7; // Z
-	    blockContour[n] = 'eeseswwnwn'
-	    break;
-	case '010110100':
-	    blockColor[n] = 7; // Z
-	    blockContour[n] = '>esswswnnen'
-	    break;
-	default:
-	    console.log("block shape error!");
-	}
+		switch(block.join('')) {
+		case '1':
+			blockColor[n] = 0; // monomino
+			blockContour[n] = 'eswn'
+			break;
+		case '11110':
+			blockColor[n] = 1; // I
+			blockContour[n] = 'eeeeswwwwn'
+			break;
+		case '10101010':
+			blockColor[n] = 1; // I
+			blockContour[n] = 'esssswnnnn'
+			break;
+		case '110110':
+			blockColor[n] = 2; // O
+			blockContour[n] = 'eesswwnn'
+			break;
+		case '01001110':
+			blockColor[n] = 3; // T
+			blockContour[n] = '>eseswwwnen'
+			break;
+		case '100110100':
+			blockColor[n] = 3; // T
+			blockContour[n] = 'eseswswnnn'
+			break;
+		case '11100100':
+			blockColor[n] = 3; // T
+			blockContour[n] = 'eeeswswnwn'
+			break;
+		case '010110010':
+			blockColor[n] = 3; // T
+			blockContour[n] = '>essswnwnen'
+			break;
+		case '010010110':
+			blockColor[n] = 4; // J
+			blockContour[n] = '>essswwnenn'
+			break;
+		case '10001110':
+			blockColor[n] = 4; // J
+			blockContour[n] = 'eseeswwwnn'
+			break;
+		case '110100100':
+			blockColor[n] = 4; // J
+			blockContour[n] = 'eeswsswnnn'
+			break;
+		case '11100010':
+			blockColor[n] = 4; // J
+			blockContour[n] = 'eeesswnwwn'
+			break;
+		case '100100110':
+			blockColor[n] = 5; // L
+			blockContour[n] = 'esseswwnnn'
+			break;
+		case '11101000':
+			blockColor[n] = 5; // L
+			blockContour[n] = 'eeeswwswnn'
+			break;
+		case '110010010':
+			blockColor[n] = 5; // L
+			blockContour[n] = 'eessswnnwn'
+			break;
+		case '00101110':
+			blockColor[n] = 5; // L
+			blockContour[n] = '>>esswwwneen'
+			break;
+		case '01101100':
+			blockColor[n] = 6; // S
+			blockContour[n] = '>eeswswwnen'
+			break;
+		case '100110010':
+			blockColor[n] = 6; // S
+			blockContour[n] = 'esesswnwnn'
+			break;
+		case '11000110':
+			blockColor[n] = 7; // Z
+			blockContour[n] = 'eeseswwnwn'
+			break;
+		case '010110100':
+			blockColor[n] = 7; // Z
+			blockContour[n] = '>esswswnnen'
+			break;
+		default:
+			console.log("block shape error!");
+		}
     }
 }
 
 function initBoard() {
     for (var y = 0; y < boardH; ++y) {
-	board[y] = [];
-	blockMap[y] = [];
-	for (var x = 0; x < boardW; ++x) {
-	    board[y][x] = 0;
-	    blockMap[y][x] = -1;
-	}
+		board[y] = [];
+		blockMap[y] = [];
+		for (var x = 0; x < boardW; ++x) {
+			board[y][x] = 0;
+			blockMap[y][x] = -1;
+		}
     }
 }
 
 function placeBlock() {
+	//console.log(`blockNum=${blockNum} `)
     for (var n = 0; n < blockNum; ++n) {
-	blocks[n].forEach(function(row,y) {
-	    var yy = blockLoc[n][1] + y;
-	    row.forEach(function(val,x) {
-		var xx = blockLoc[n][0] + x;
-		if (blocks[n][y][x] != 0) {
-		    board[yy][xx] = val;
-		    if (blockMap[yy][xx] < 0) {
-			blockMap[yy][xx] = n;
-		    }
-		    else {
-			console.log("block overlap error!");
-		    }
-		}
-	    });
-	});
+		//console.log(`n=${n}, blocks[n]=${blocks[n]}, blockLoc[n]=${blockLoc[n]}`);
+		blocks[n].forEach(function(row, y) {
+			//console.log(`row=${row}, y=${y}`);
+			var yy = blockLoc[n][1] + y;
+			row.forEach(function(val,x) {
+				var xx = blockLoc[n][0] + x;
+				if (blocks[n][y][x] != 0) {
+					board[yy][xx] = val;
+					if (blockMap[yy][xx] < 0) {
+						blockMap[yy][xx] = n;
+					} else {
+						console.log("block overlap error!");
+					}
+				}
+			});
+		});
     }
 }
 
 function placeLine() {
     for (var y = 0; y < boardH; ++y) {
-	for (var x = 0; x < boardW; ++x) {
-	    if (blockMap[y][x] < 0) {
-		board[y][x] = lineMap[y][x];
-	    }
-	}
+		for (var x = 0; x < boardW; ++x) {
+			if (blockMap[y][x] < 0) {
+				board[y][x] = lineMap[y][x];
+			}
+		}
     }
 }
 
 function drawBoard() {
     initBoard();
+	//console.log('initBoard done');
     placeBlock();
+	//console.log('placeBlock done');
     placeLine();
+	//console.log('placeLine done');
     
     // draw board
     ctx.strokeStyle = 'gray';
@@ -187,62 +192,62 @@ function drawBoard() {
     ctx.strokeStyle = 'gray';
     ctx.lineWidth = 1;
     for (var x = 1; x < boardW; ++x) {
-	ctx.beginPath();
-	ctx.moveTo(boardOrigX + x * gridSize, boardOrigY);
-	ctx.lineTo(boardOrigX + x * gridSize, boardOrigY + boardH * gridSize);
-	ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(boardOrigX + x * gridSize, boardOrigY);
+		ctx.lineTo(boardOrigX + x * gridSize, boardOrigY + boardH * gridSize);
+		ctx.stroke();
     }
     for (var y = 1; y < boardH; ++y) {
-	ctx.beginPath();
-	ctx.moveTo(boardOrigX,                     boardOrigY + y * gridSize);
-	ctx.lineTo(boardOrigX + boardW * gridSize, boardOrigY + y * gridSize);
-	ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(boardOrigX,                     boardOrigY + y * gridSize);
+		ctx.lineTo(boardOrigX + boardW * gridSize, boardOrigY + y * gridSize);
+		ctx.stroke();
     }
 
     // draw blocks
     for (var n = 0; n < blockNum; ++n) {
-	ctx.strokeStyle = 'rgba(50%, 50%, 50%, 0.2)';
-	ctx.fillStyle = colors[blockColor[n]];
-	ctx.lineWidth = 2;
-	var blockX = boardOrigX + blockLoc[n][0] * gridSize;
-	var blockY = boardOrigY + blockLoc[n][1] * gridSize
-	// fill blocks
-	blocks[n].forEach(function(row,y) {
-	    row.forEach(function(val,x) {
-		if (blocks[n][y][x] != 0) {
-		    ctx.fillRect(blockX + x * gridSize, blockY + y * gridSize, gridSize, gridSize);
-		    ctx.strokeRect(blockX + x * gridSize, blockY + y * gridSize, gridSize, gridSize);
-		}
-	    });
-	});
-	// draw contour
-	ctx.beginPath();
-	var curX = blockX
-	var curY = blockY
-	ctx.moveTo(curX, curY);
-	for (var i = 0; i < blockContour[n].length; ++i) {
-	    switch(blockContour[n][i]) {
-	    case 'e':
-		curX = curX + gridSize;
-		break;
-	    case 'w':
-		curX = curX - gridSize;
-		break;
-	    case 's':
-		curY = curY + gridSize;
-		break;
-	    case 'n':
-		curY = curY - gridSize;
-		break;
-	    case '>':
-		curX = curX + gridSize;
+		ctx.strokeStyle = 'rgba(50%, 50%, 50%, 0.2)';
+		ctx.fillStyle = colors[blockColor[n]];
+		ctx.lineWidth = 2;
+		var blockX = boardOrigX + blockLoc[n][0] * gridSize;
+		var blockY = boardOrigY + blockLoc[n][1] * gridSize
+		// fill blocks
+		blocks[n].forEach(function(row,y) {
+			row.forEach(function(val,x) {
+				if (blocks[n][y][x] != 0) {
+					ctx.fillRect(blockX + x * gridSize, blockY + y * gridSize, gridSize, gridSize);
+					ctx.strokeRect(blockX + x * gridSize, blockY + y * gridSize, gridSize, gridSize);
+				}
+			});
+		});
+		// draw contour
+		ctx.beginPath();
+		var curX = blockX
+		var curY = blockY
 		ctx.moveTo(curX, curY);
-		break;
-	    }
-	    ctx.lineTo(curX, curY);
-	}
-	ctx.strokeStyle = 'black';
-	ctx.stroke();
+		for (var i = 0; i < blockContour[n].length; ++i) {
+			switch(blockContour[n][i]) {
+				case 'e':
+				curX = curX + gridSize;
+				break;
+				case 'w':
+				curX = curX - gridSize;
+				break;
+				case 's':
+				curY = curY + gridSize;
+				break;
+				case 'n':
+				curY = curY - gridSize;
+				break;
+				case '>':
+				curX = curX + gridSize;
+				ctx.moveTo(curX, curY);
+				break;
+			}
+			ctx.lineTo(curX, curY);
+		}
+		ctx.strokeStyle = 'black';
+		ctx.stroke();
     }
 
     // draw number
@@ -251,22 +256,21 @@ function drawBoard() {
     ctx.strokeStyle = 'white';
     ctx.fillStyle = 'black';
     for (var y = 0; y < boardH; ++y) {
-	for (var x = 0; x < boardW; ++x) {
-	    if (board[y][x] > 0) {
-		var str = String(board[y][x]);
-		var xx = boardOrigX + (x + 0.5) * gridSize;
-		var yy = boardOrigY + (y + 0.5) * gridSize
-		ctx.strokeText(str, xx, yy);
-		ctx.fillText(str, xx, yy);
-	    }
-	}
+		for (var x = 0; x < boardW; ++x) {
+			if (board[y][x] > 0) {
+				var str = String(board[y][x]);
+				var xx = boardOrigX + (x + 0.5) * gridSize;
+				var yy = boardOrigY + (y + 0.5) * gridSize
+				ctx.strokeText(str, xx, yy);
+				ctx.fillText(str, xx, yy);
+			}
+		}
     }
 
     // draw bbox
     ctx.strokeStyle = 'rgba(100%, 0%, 0%, 0.6)';
     ctx.lineWidth = 2;
     ctx.strokeRect(boardOrigX, boardOrigY, bboxW * gridSize, bboxH * gridSize);
-
 }
 
 function parseQFile(text) {
@@ -275,29 +279,25 @@ function parseQFile(text) {
     var parseBlock = false;
     var n;
     lines.forEach(function(line) {
-	if (parseBlock) {
-	    if (/^\s*$/.exec(line)) {
-		parseBlock = false;
-	    }
-	    else {
-		blocks[n].push(line.replace(/\+/g, '-1').split(',').map(Number));
-	    }
-	}
-	else if (m = /SIZE\s+(\d+)X(\d+)/.exec(line)) {
-	    boardW = Number(m[1]);
-	    boardH = Number(m[2]);
-	}
-	else if (m = /BLOCK_NUM\s+(\d+)/.exec(line)) {
-	    blockNum = Number(m[1]);
-	    blocks = new Array(blockNum);
-	}
-	else if (m = /BLOCK#(\d+)\s+(\d+)X(\d+)/.exec(line)) {
-	    n = Number(m[1]) - 1;
-	    var blockW = Number(m[2]);
-	    var blockH = Number(m[3]);
-	    blocks[n] = [];
-	    parseBlock = true;
-	}
+		if (parseBlock) {
+			if (/^\s*$/.exec(line)) {
+				parseBlock = false;
+			} else {
+				blocks[n].push(line.replace(/\+/g, '-1').split(',').map(Number));
+			}
+		} else if (m = /SIZE\s+(\d+)X(\d+)/.exec(line)) {
+			boardW = Number(m[1]);
+			boardH = Number(m[2]);
+		} else if (m = /BLOCK_NUM\s+(\d+)/.exec(line)) {
+			blockNum = Number(m[1]);
+			blocks = new Array(blockNum);
+		} else if (m = /BLOCK#(\d+)\s+(\d+)X(\d+)/.exec(line)) {
+			n = Number(m[1]) - 1;
+			var blockW = Number(m[2]);
+			var blockH = Number(m[3]);
+			blocks[n] = [];
+			parseBlock = true;
+		}
     });
 }
 
@@ -307,41 +307,47 @@ function parseAFile(text) {
     var parseMap = false;
     var lineCount = 0;
     var n;
+	var Anum;
+	blockLoc = [];
 
     // reset lineMap
     for (var y = 0; y < boardH; ++y) {
-	lineMap[y] = [];
-	for (var x = 0; x < boardW; ++x) {
-	    lineMap[y][x] = 0;
-	}
+		lineMap[y] = [];
+		for (var x = 0; x < boardW; ++x) {
+			lineMap[y][x] = 0;
+		}
     }
     
     lines.forEach(function(line) {
-	if (parseMap) {
-	    var mapLine = line.replace('+', '-1').split(',').map(Number);
-	    for (var x = 0; x < bboxW; ++x) {
-		if (mapLine[x] > 0) {
-		    lineMap[lineCount][x] = mapLine[x];
+		if (parseMap) {
+			var mapLine = line.replace('+', '-1').split(',').map(Number);
+			for (var x = 0; x < bboxW; ++x) {
+				if (mapLine[x] > 0) {
+					lineMap[lineCount][x] = mapLine[x];
+				}
+			}
+			++lineCount;
+			if (lineCount >= bboxH) {
+				parseMap = false;
+			}
+		} else if (m = /A(\d+)/.exec(line)) {
+			Anum = Number(m[1]);
+		} else if (m = /SIZE\s+(\d+)X(\d+)/.exec(line)) {
+			bboxW = Number(m[1]);
+			bboxH = Number(m[2]);
+			parseMap = true;
+			if (1) { // only draw within bbox
+				boardW = bboxW;
+				boardH = bboxH;
+			}
+		} else if (m = /BLOCK#(\d+)\s+@\(\s*(\d+)\s*,\s*(\d+)\s*\)/.exec(line)) {
+			n = Number(m[1]) - 1;
+			blockLoc[n] = [Number(m[2]), Number(m[3])];
+		} else if (m = /^\s*$/.exec(line)) {
+			// skip empty line
+		} else {
+			console.log(`parseAFile: unknown: ${line}`)
 		}
-	    }
-	    ++lineCount;
-	    if (lineCount >= bboxH) {
-		parseMap = false;
-	    }
-	}
-	else if (m = /SIZE\s+(\d+)X(\d+)/.exec(line)) {
-	    bboxW = Number(m[1]);
-	    bboxH = Number(m[2]);
-	    parseMap = true;
-	    if (1) { // only draw within bbox
-		boardW = bboxW;
-		boardH = bboxH;
-	    }
-	}
-	else if (m = /BLOCK#(\d+)\s+@\((\d+),(\d+)\)/.exec(line)) {
-	    n = Number(m[1]) - 1;
-	    blockLoc[n] = [Number(m[2]), Number(m[3])];
-	}
     });
 }
 
@@ -355,33 +361,31 @@ qform.qfile.addEventListener('change', function(e) {
     var result = e.target.files[0];
     var reader = new FileReader();
     if (result) {
-	reader.readAsText(result);
-    }
-    else {
-	qfile_load = false;
+		reader.readAsText(result);
+    } else {
+		qfile_load = false;
     }
     reader.onload = function(ev) {
-	parseQFile(reader.result);
-	qfile_load = true;
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
+		parseQFile(reader.result);
+		qfile_load = true;
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 });
 aform.afile.addEventListener('change', function(e) {
     var result = e.target.files[0];
     var reader = new FileReader();
     if (result) {
-	reader.readAsText(result);
-    }
-    else {
-	afile_load = false;
+		reader.readAsText(result);
+    } else {
+		afile_load = false;
     }
     reader.onload = function(ev) {
-	parseAFile(reader.result);
-	afile_load = true;
-	if (qfile_load) {
-	    checkBlockShape();
-	    drawBoard();
-	}
+		parseAFile(reader.result);
+		afile_load = true;
+		if (qfile_load) {
+			checkBlockShape();
+			drawBoard();
+		}
     }
 });
 */
