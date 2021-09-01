@@ -13,6 +13,9 @@ DA Symposium 2021 Algorithm Design Contest (DAS ADC 2021)
 最新情報 What's new
 -------------------
 
+- (2021-09-01) [ソフトウェアを更新しました。](https://github.com/dasadc/adc2019/commits/master)以下の運営側にとってのバグ修正がメインです。すでに競技開始後ですので、コンテスト参加者のみなさんは、更新しなくてもOKです。
+    - [Google App Engineで実行中のAPIサーバから返ってくる、いくつかのモード設定値が、コロコロ変化する](https://github.com/dasadc/adc2019/issues/66)
+    - [File checkerおよびScoreメニューでの盤面表示にバグがある](https://github.com/dasadc/adc2019/issues/70)
 - (2021-08-27) [ソフトウェアを更新しました。](https://github.com/dasadc/adc2019/commits/master)
 - (2021-08-27) [スケジュールを更新しました。](conmgr.md#schedule)
 - (2021-08-26) Qデータを、Zipアーカイブ形式で、一括ダウンロードできるようになりました。[adccli](client/README.md#get-q-all) [client-app](client-app/README.md#arena)
