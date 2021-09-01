@@ -675,11 +675,13 @@ def _admin_config_common(key, config_key):
         either of 'TEST_MODE', 'VIEW_SCORE_MODE', 'VIEW_SCORE_MODE'
     """
     if request.method == 'GET':
+        log_request(username())
         dat = {key: app.config[config_key]}
         return adc_response_json(dat)
     elif request.method == 'PUT':
         if not priv_admin():
             return adc_response('access forbidden. admin only', 403)
+        log_request(username())
         i = request.json.get(key)
         if i in (0, 1):
             app.config[config_key] = bool(i)
@@ -689,7 +691,7 @@ def _admin_config_common(key, config_key):
         else:
             return adc_response(f'illeagal argument value {i}', 400)
     else:
-        return adc_response(f'unknown request', 400)
+        return adc_response(f'unknown request', 404)
 
 
 @app.route('/admin/config/test_mode', methods=['GET', 'PUT'])
@@ -697,7 +699,6 @@ def admin_config_test_mode():
     """
     TEST_MODEの値を取得する(GET)、または、設定する(PUT)。
     """
-    log_request(username())
     return _admin_config_common('test_mode', 'TEST_MODE')
 
     
@@ -706,7 +707,6 @@ def admin_config_view_score_mode():
     """
     VIEW_SCORE_MODEの値を取得する(GET)、または、設定する(PUT)。
     """
-    log_request(username())
     return _admin_config_common('view_score_mode', 'VIEW_SCORE_MODE')
 
     
@@ -715,10 +715,32 @@ def admin_config_log_to_datastore():
     """
     LOG_TO_DATASTOREの値を取得する(GET)、または、設定する(PUT)。
     """
-    log_request(username())
     return _admin_config_common('log_to_datastore', 'LOG_TO_DATASTORE')
 
     
+@app.route('/admin/datastore', methods=['GET', 'PUT'])
+def admin_datastore():
+    """
+    export(GET) or import(PUT) datastore
+    """
+    if not priv_admin():
+        return adc_response('access forbidden', 403)
+    log_request(username())
+    if request.method == 'GET':
+        data = cds.dump_data()
+        bindata = pickle.dumps(data)
+        txt = base64.b64encode(bindata).decode('utf-8')
+        return adc_response_json({'datastore': txt})
+    elif request.method == 'PUT':
+        txt = request.json.get('datastore')
+        bin_data = base64.b64decode(txt)
+        data = pickle.loads(bin_data)
+        cds.restore_data(data)
+        return adc_response(f'restored to datastore')
+    else:
+        return adc_response(f'unknown request', 404)
+
+
 @app.route('/A', methods=['GET', 'DELETE'])
 def admin_A_all():
     """
@@ -1078,8 +1100,8 @@ def score_dump():
     log_request(username())
     round_count = get_round()
     res = cds.calc_score_all(round_count)
-    bin = pickle.dumps(res)
-    txt = base64.b64encode(bin).decode('utf-8')
+    bindata = pickle.dumps(res)
+    txt = base64.b64encode(bindata).decode('utf-8')
     return adc_response_json({'score': txt})
     
 

@@ -5,8 +5,12 @@ adc2019 command line tool addcli
 
 
 
-test
-----
+test client
+-----------
+
+``` bash
+export ADCCLIENT_JSON=$HOME/adcclient_devel.json
+```
 
 ``` python
 from importlib import reload

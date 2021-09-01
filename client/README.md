@@ -1100,3 +1100,44 @@ adccli test-mode [True|False]
 adccli view-score-mode [True|False]
 adccli log-to-datastore [True|False]
 ```
+
+
+### Datastoreのデータをダンプする
+
+ファイル形式は、Python pickleである。
+
+コマンドの書式
+
+``` bash
+adccli dump-data FILENAME
+```
+
+実行例
+
+``` bash
+adccli dump-data dump-20210901_1109.pickle
+```
+
+### Datastoreのデータをリストアする
+
+**注意** Datastore上のデータがすべて上書きされる。
+
+- コンテスト本番データを上書きして消してしまわないように注意が必要である。
+- とくに、アクセス先APIサーバに注意すること。
+- アカウント情報もリストアされるが、同一パスワードを利用可能にするためには、ダンプ元環境と、リストア先環境とで、adcconfig.SALTが一致している必要がある。
+
+この、データのダンプ＆リストアのユースケースとしては、Google App Engine上で動作しているAPIサーバのデータをダンプして、ローカル環境で実行しているAPIサーバへデータをリストアする、というものである。
+Google App Engine上のAPIサーバへリストアするユースケースは、想定していないが、エラーにはしていないので、くれぐれも注意が必要である。
+
+
+コマンドの書式
+
+``` bash
+adccli restore-data FILENAME
+```
+
+実行例
+
+``` bash
+adccli restore-data dump-20210901_1109.pickle
+```

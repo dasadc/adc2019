@@ -1892,3 +1892,44 @@ Out[476]:
         score_board[user][i] = ptotal
     #print "score_board=", score_board
     return score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point
+
+
+def dump_data() -> dict:
+    """
+    Datastoreの必須データを、ダンプする。
+    必須でないデータとは、kind = 'access_token', 'log'
+
+    Returns
+    -------
+    dict
+        key = (kind, id_or_name): tuple (str, int or str)
+        values = data: list[dict]
+    """
+    res = {}
+    for kind in ['userinfo', 'q_data', 'clock', 'q_list_all', 'q_zip', 'a_data']:
+
+        res[kind] = [(i.key.id_or_name, dict(i)) for i in client.query(kind=kind).fetch()]
+    return res
+
+
+def restore_data(data: dict):
+    """
+    ダンプしたデータを、Datastoreへリストアする。
+    (注意) userinfoに含まれる、ハッシュ化されたpasswordは、
+    ダンプ元環境とリストア先環境とで、adcconfig.SALTの値が一致している必要がある。
+
+    Parameters
+    ----------
+    data : dict
+        dump_data()が返したダンプ・データ。
+    """
+    for kind in ['userinfo', 'q_data', 'clock', 'q_list_all', 'q_zip', 'a_data']:
+        for id_or_name, value in data[kind]:
+            if kind in ('q_data', 'a_data'):
+                entity = datastore.Entity(key=client.key(kind, id_or_name), exclude_from_indexes=['text'])
+            elif kind == 'q_zip':
+                entity = datastore.Entity(key=client.key(kind, id_or_name), exclude_from_indexes=['date', 'zip'])
+            else:
+                entity = datastore.Entity(key=client.key(kind, id_or_name))
+            entity.update(value)
+            client.put(entity)
