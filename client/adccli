@@ -11,6 +11,7 @@ from adcclient import ADCClient
 from getpass import getpass
 from datetime import datetime
 import base64
+import pickle
 import os
 
 def cmd_help():
@@ -66,6 +67,29 @@ admin command:
   dump-data FILENAME
   restore-data FILENAME  # **DANGER!** This may overwrite all on Google Datastore.
 """)
+
+
+def view_score(txt: str):
+    """
+    score_dump()の結果を出力する
+    """
+    import pandas as pd
+    tmp = base64.b64decode(txt)
+    score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point = pickle.loads(tmp)
+    print('score_board')
+    print(pd.DataFrame(score_board))
+    print('ok_point')
+    print(pd.DataFrame(ok_point))
+    print('q_point')
+    print(pd.DataFrame(q_point))
+    print('fastest_point')
+    print(pd.DataFrame(fastest_point))
+    print('*'*72)
+    print('q_factors')
+    print(pd.DataFrame(q_factors))
+    print('put_a_data')
+    print(pd.DataFrame(put_a_date))
+    return score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point
 
 
 def main():
@@ -354,7 +378,8 @@ def main():
         print(res[6])
     elif a == 'score-dump':
         res = cli.score_dump(round_count=args.round)
-        print(res[6])
+        #print(res[6])
+        view_score(res[6]['score'])
     elif a == 'timekeeper-enabled':
         res = cli.timekeeper_enabled(args.arg)
         print(res[6])
