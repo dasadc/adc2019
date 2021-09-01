@@ -547,7 +547,7 @@ class ADCClient:
         res = self.http_request('GET', '/Q/all_in_one')
         return self.fin(res)
 
-    def get_a(self, args):
+    def get_a(self, args: list) -> list:
         if len(args) == 0:
             path = '/A/%s' % self.effective_username()
             res = self.http_request('GET', path)

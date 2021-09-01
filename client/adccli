@@ -74,21 +74,24 @@ def view_score(txt: str):
     score_dump()の結果を出力する
     """
     import pandas as pd
+    pd.set_option('display.max_rows', 400)
+    pd.set_option('display.max_columns', 4000)
+    pd.set_option("display.width", 4000)
     tmp = base64.b64decode(txt)
     score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point = pickle.loads(tmp)
     print('score_board')
-    print(pd.DataFrame(score_board))
+    print(pd.DataFrame(score_board).sort_index().sort_index(axis=1))
     print('ok_point')
-    print(pd.DataFrame(ok_point))
+    print(pd.DataFrame(ok_point).sort_index().sort_index(axis=1))
     print('q_point')
-    print(pd.DataFrame(q_point))
+    print(pd.DataFrame(q_point).sort_index().sort_index(axis=1))
     print('fastest_point')
-    print(pd.DataFrame(fastest_point))
+    print(pd.DataFrame(fastest_point).sort_index().sort_index(axis=1))
     print('*'*72)
     print('q_factors')
-    print(pd.DataFrame(q_factors))
+    print(pd.DataFrame(q_factors).sort_index().sort_index(axis=1))
     print('put_a_data')
-    print(pd.DataFrame(put_a_date))
+    print(pd.DataFrame(put_a_date).sort_index().sort_index(axis=1))
     return score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point
 
 
@@ -105,6 +108,13 @@ def main():
                 ff.write(res1[6]['text'])
         if cli.output_file is not None:
             ff.close()
+
+    def output_text(msg):
+        if cli.output_file is None:
+            ff = sys.stdout
+        else:
+            ff = open(cli.output_file, 'w')
+        ff.write(msg)
 
     #
     cli = ADCClient()
@@ -246,9 +256,12 @@ def main():
         resx = cli.get_a(args.arg)
         # print('resx=', resx)
         for res1 in resx:
-            print(res1[6]['msg'])
-            if 'text' in res1:
-                output()
+            #print(res1[6]['msg'])
+            if 'msg' in res1[6]:
+                tmp = res1[6]['msg']
+                tmp = tmp.splitlines()[1:]  # 1行目が"GET A1"とかなっているので削除
+                tmp = '\r\n'.join(tmp) + '\r\n'
+                output_text(tmp)
     elif a == 'delete-a':
         for i in args.arg:
             res = cli.delete_a(int(i))
