@@ -325,7 +325,7 @@ def main():
         print(res[6]['msg'])
     elif a == 'delete-user-q':
         for i in args.arg:
-            res = cli.delete_user_q(int(i))
+            res = cli.delete_user_q(round_count=args.round, q_num=int(i))
             print(res[6]['msg'])
     elif a == 'check-q':
         for file in args.arg:
