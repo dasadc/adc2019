@@ -51,7 +51,7 @@ for t in USERS:
         tmp = SALT + t[0] + t[1]
         h = sha256(tmp.encode('utf-8')).hexdigest()
         u +="    ('%s', '%s', u'%s', %4d, %4d),\n" % (t[0], h, t[2], t[3], t[4])
-        u += "]\n"
+u += "]\n"
 
 with open(output_filename, 'w') as f:
     f.write(u)

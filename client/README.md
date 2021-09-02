@@ -1129,6 +1129,13 @@ adccli dump-data dump-20210901_1109.pickle
 この、データのダンプ＆リストアのユースケースとしては、Google App Engine上で動作しているAPIサーバのデータをダンプして、ローカル環境で実行しているAPIサーバへデータをリストアする、というものである。
 Google App Engine上のAPIサーバへリストアするユースケースは、想定していないが、エラーにはしていないので、くれぐれも注意が必要である。
 
+リストア前に、Qデータ、Aデータは削除しておくこと。
+
+``` bash
+adccli delete-admin-q-list
+adccli delete-admin-q-all
+adccli delete-admin-a-all
+```
 
 コマンドの書式
 

@@ -59,7 +59,7 @@ RUN	/bin/sh /tmp/Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3 -u && \
 	cd /home/adc/ && \
 	git clone -b adc2021-yt --single-branch https://github.com/dasadc/adc2019.git && \
 	gcloud config set project das-adc
-RUN	/opt/miniforge3/bin/conda create -n adc2019dev python=3.9 flask=1.1.2 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs=14 google-cloud-datastore
+RUN	/opt/miniforge3/bin/conda create -n adc2019dev python=3.9 flask=1.1.2 flask-cors=3.0.10 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs=14 google-cloud-datastore pandas openpyxl
 
 USER    root
 RUN	cp /home/adc/adc2019/server/adc-datastore.service /etc/systemd/system/ && \
