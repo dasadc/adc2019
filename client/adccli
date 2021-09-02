@@ -101,8 +101,14 @@ def view_score(txt: str, output_file: str = 'score.xlsx'):
         ws.append(r)
     print('q_point\n', df_q_point)
 
+    df_bonus_point = pd.DataFrame(bonus_point).sort_index().sort_index(axis=1).T
+    ws = wb.create_sheet('bonus_point', 3)
+    for r in dataframe_to_rows(df_bonus_point, index=True, header=True):
+        ws.append(r)
+    print('bonus_point\n', df_bonus_point)
+
     df_fastest_point = pd.DataFrame(fastest_point).sort_index().sort_index(axis=1).T
-    ws = wb.create_sheet('fastest_point', 3)
+    ws = wb.create_sheet('fastest_point', 4)
     for r in dataframe_to_rows(df_fastest_point, index=True, header=True):
         ws.append(r)
     print('fastest_point\n', df_fastest_point)
@@ -110,14 +116,14 @@ def view_score(txt: str, output_file: str = 'score.xlsx'):
     print('*'*72)
    
     df_q_factors = pd.DataFrame(q_factors).sort_index().sort_index(axis=1).T
-    ws = wb.create_sheet('q_factors', 4)
+    ws = wb.create_sheet('q_factors', 5)
     for r in dataframe_to_rows(df_q_factors, index=True, header=True):
         ws.append(r)
     print('q_factors\n', df_q_factors)
 
     df_put_a_date = pd.DataFrame(put_a_date).sort_index().sort_index(axis=1).T
     tmp = df_put_a_date.applymap(lambda x: '' if isinstance(x, float) else x.to_pydatetime().isoformat() )  # 型変換のうまいやりかたを忘れた。直したい
-    ws = wb.create_sheet('put_a_date', 5)
+    ws = wb.create_sheet('put_a_date', 6)
     for r in dataframe_to_rows(tmp, index=True, header=True):
         ws.append(r)
     print('put_a_date\n', df_put_a_date)

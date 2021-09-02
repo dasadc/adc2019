@@ -1821,7 +1821,7 @@ Out[476]:
             ok_point[anum] = {}
         ok_point[anum][username] = int(i['judge'])  # True, False --> 1, 0
         # 品質ポイントを計算するための予備の計算
-        if adcutil.get_gid(username) not in (0, 3000):  # 特定groupを対象外にする
+        if (adcutil.get_gid(username) not in (0, 3000)) or (round_count==3):  # 特定groupを対象外にする
             if anum not in q_factors:
                 q_factors[anum] = {}
             q_factors[anum][username] = i['quality']
@@ -1835,7 +1835,7 @@ Out[476]:
         if i['judge'] == True:
             if anum not in put_a_date:
                 put_a_date[anum] = {}
-            if adcutil.get_gid(username) not in (0, 3000):  # 特定groupを対象外にする
+            if (adcutil.get_gid(username) not in (0, 3000)) or (round_count==3):  # 特定groupを対象外にする
                 put_a_date[anum][username] = i['date']  # type: datetime
         # (その他) date, cpu_sec, mem_byte, misc_text
         if not(anum in misc):
