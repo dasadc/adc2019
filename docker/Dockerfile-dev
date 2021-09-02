@@ -6,7 +6,7 @@ RUN	yum install -y \
 	    make
 
 USER	adc
-RUN	conda activate adc2019dev && \
+RUN	source /opt/miniforge3/bin/activate adc2019dev && \
 	cd /home/adc/adc2019/client-app/ && \
 	npm install
 

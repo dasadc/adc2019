@@ -3,7 +3,7 @@ Docker image "ipsjdasadc/adc"
 
 ADC serverをかんたんに起動できるようにするDocker iamgeについて説明する。
 
-- 2021-08-17現在、ADC2021にむけての作業中
+- 2021-09-02 ADC2021開催。みなさま、お疲れ様でした。
 - このDocker imageは、(1)ソフトウェア配布、(2)ADC serverの実行、の2点を容易にするために作成することが目的である。Dockerの利用は、必須ではない。
     - Dockerを使うことのメリットは、具体的には、git cloneの実行、Pythonの実行環境のセットアップ、Google Cloud SDKなど依存するソフトウェアのセットアップ、といった一連の作業を省略できることである。
     - Dockerを使える人は、使用を検討してもよい。
@@ -49,10 +49,10 @@ docker build
 - `Dockerfile-dev` ... 実行に加えて、ソフトウェア開発もできる
 
 ``` bash
-sudo docker build --tag ipsjdasadc/adc:20210817 --no-cache .
-sudo docker tag         ipsjdasadc/adc:20210817 ipsjdasadc/adc:latest
+sudo docker build --tag ipsjdasadc/adc:20210902 --no-cache .
+sudo docker tag         ipsjdasadc/adc:20210902 ipsjdasadc/adc:latest
 
-sudo docker build --tag ipsjdasadc/adc:20210817dev --file Dockerfile-dev .
+sudo docker build --tag ipsjdasadc/adc:20210902dev --file Dockerfile-dev .
 ```
 
 (備考) `--no-cache`は、確実にgit cloneを実行して、最新のコードをGitHubから取得させるための指定している。
