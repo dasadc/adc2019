@@ -71,10 +71,10 @@ sh Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3 -u
 /opt/miniforge3/bin/conda config --set auto_activate_base false  # 好みで
 ```
 
-##### 環境を作成する（server開発・実行ユーザー用, client-app開発用）
+##### 環境を作成する（server開発・実行ユーザー用, client-app開発用, administrator権限でadccli実行用）
 
 ``` bash
-/opt/miniforge3/bin/conda create -n adc2019dev python=3.9 flask=1.1.2 flask-cors=3.0.10 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs=14
+/opt/miniforge3/bin/conda create -n adc2019dev python=3.9 flask=1.1.2 flask-cors=3.0.10 numpy gunicorn grpcio pytz requests protobuf pyyaml nodejs=14 pandas openpyxl
 ```
 
 ##### 環境を作成する（ADC参加者、[adccli](client/README.md)を実行するだけのユーザー用）

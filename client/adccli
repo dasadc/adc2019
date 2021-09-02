@@ -41,7 +41,7 @@ def cmd_help():
   get-user-log [NUMBER (seconds|days)]                # use with [--number NUM]
   delete-user-log [NUMBER (seconds|days)]             # use with [--number NUM]
   score
-  score-dump
+  score-dump [FILENAME]                               # write xlsx as FILENAME
   get-root
 admin command:
   convert-users FILENAME_IN.py FILENAME_OUT.yaml
@@ -69,29 +69,61 @@ admin command:
 """)
 
 
-def view_score(txt: str):
+def view_score(txt: str, output_file: str = 'score.xlsx'):
     """
     score_dump()の結果を出力する
     """
     import pandas as pd
+    from openpyxl import Workbook
+    from openpyxl.utils.dataframe import dataframe_to_rows
     pd.set_option('display.max_rows', 400)
     pd.set_option('display.max_columns', 4000)
     pd.set_option("display.width", 4000)
+    wb = Workbook()
     tmp = base64.b64decode(txt)
     score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point = pickle.loads(tmp)
-    print('score_board')
-    print(pd.DataFrame(score_board).sort_index().sort_index(axis=1))
-    print('ok_point')
-    print(pd.DataFrame(ok_point).sort_index().sort_index(axis=1))
-    print('q_point')
-    print(pd.DataFrame(q_point).sort_index().sort_index(axis=1))
-    print('fastest_point')
-    print(pd.DataFrame(fastest_point).sort_index().sort_index(axis=1))
+
+    df_score_board = pd.DataFrame(score_board).sort_index().sort_index(axis=1)
+    ws = wb.create_sheet('score_board', 0)
+    for r in dataframe_to_rows(df_score_board, index=True, header=True):
+        ws.append(r)
+    print('score_board\n', df_score_board)
+
+    df_ok_point = pd.DataFrame(ok_point).sort_index().sort_index(axis=1)
+    ws = wb.create_sheet('ok_point', 1)
+    for r in dataframe_to_rows(df_ok_point, index=True, header=True):
+        ws.append(r)
+    print('ok_point\n', df_ok_point)
+    
+    df_q_point = pd.DataFrame(q_point).sort_index().sort_index(axis=1)
+    ws = wb.create_sheet('q_point', 2)
+    for r in dataframe_to_rows(df_q_point, index=True, header=True):
+        ws.append(r)
+    print('q_point\n', df_q_point)
+
+    df_fastest_point = pd.DataFrame(fastest_point).sort_index().sort_index(axis=1)
+    ws = wb.create_sheet('fastest_point', 3)
+    for r in dataframe_to_rows(df_fastest_point, index=True, header=True):
+        ws.append(r)
+    print('fastest_point\n', df_fastest_point)
+
     print('*'*72)
-    print('q_factors')
-    print(pd.DataFrame(q_factors).sort_index().sort_index(axis=1))
-    print('put_a_data')
-    print(pd.DataFrame(put_a_date).sort_index().sort_index(axis=1))
+   
+    df_q_factors = pd.DataFrame(q_factors).sort_index().sort_index(axis=1)
+    ws = wb.create_sheet('q_factors', 4)
+    for r in dataframe_to_rows(df_q_factors, index=True, header=True):
+        ws.append(r)
+    print('q_factors\n', df_q_factors)
+
+    df_put_a_date = pd.DataFrame(put_a_date).sort_index().sort_index(axis=1)
+    tmp = df_put_a_date.applymap(lambda x: '' if isinstance(x, float) else x.to_pydatetime().isoformat() )  # 型変換のうまいやりかたを忘れた。直したい
+    ws = wb.create_sheet('put_a_date', 5)
+    for r in dataframe_to_rows(tmp, index=True, header=True):
+        ws.append(r)
+    print('put_a_date\n', df_put_a_date)
+
+    wb.save(output_file)
+
     return score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point
 
 
@@ -392,7 +424,10 @@ def main():
     elif a == 'score-dump':
         res = cli.score_dump(round_count=args.round)
         #print(res[6])
-        view_score(res[6]['score'])
+        output_file = 'score-dump.xlsx'
+        if len(args.arg) == 1:
+            output_file = args.arg[0]
+        view_score(res[6]['score'], output_file=output_file)
     elif a == 'timekeeper-enabled':
         res = cli.timekeeper_enabled(args.arg)
         print(res[6])
