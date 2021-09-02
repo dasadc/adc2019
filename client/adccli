@@ -89,19 +89,19 @@ def view_score(txt: str, output_file: str = 'score.xlsx'):
         ws.append(r)
     print('score_board\n', df_score_board)
 
-    df_ok_point = pd.DataFrame(ok_point).sort_index().sort_index(axis=1)
+    df_ok_point = pd.DataFrame(ok_point).sort_index().sort_index(axis=1).T
     ws = wb.create_sheet('ok_point', 1)
     for r in dataframe_to_rows(df_ok_point, index=True, header=True):
         ws.append(r)
     print('ok_point\n', df_ok_point)
     
-    df_q_point = pd.DataFrame(q_point).sort_index().sort_index(axis=1)
+    df_q_point = pd.DataFrame(q_point).sort_index().sort_index(axis=1).T
     ws = wb.create_sheet('q_point', 2)
     for r in dataframe_to_rows(df_q_point, index=True, header=True):
         ws.append(r)
     print('q_point\n', df_q_point)
 
-    df_fastest_point = pd.DataFrame(fastest_point).sort_index().sort_index(axis=1)
+    df_fastest_point = pd.DataFrame(fastest_point).sort_index().sort_index(axis=1).T
     ws = wb.create_sheet('fastest_point', 3)
     for r in dataframe_to_rows(df_fastest_point, index=True, header=True):
         ws.append(r)
@@ -109,20 +109,21 @@ def view_score(txt: str, output_file: str = 'score.xlsx'):
 
     print('*'*72)
    
-    df_q_factors = pd.DataFrame(q_factors).sort_index().sort_index(axis=1)
+    df_q_factors = pd.DataFrame(q_factors).sort_index().sort_index(axis=1).T
     ws = wb.create_sheet('q_factors', 4)
     for r in dataframe_to_rows(df_q_factors, index=True, header=True):
         ws.append(r)
     print('q_factors\n', df_q_factors)
 
-    df_put_a_date = pd.DataFrame(put_a_date).sort_index().sort_index(axis=1)
+    df_put_a_date = pd.DataFrame(put_a_date).sort_index().sort_index(axis=1).T
     tmp = df_put_a_date.applymap(lambda x: '' if isinstance(x, float) else x.to_pydatetime().isoformat() )  # 型変換のうまいやりかたを忘れた。直したい
     ws = wb.create_sheet('put_a_date', 5)
     for r in dataframe_to_rows(tmp, index=True, header=True):
         ws.append(r)
     print('put_a_date\n', df_put_a_date)
 
-    wb.save(output_file)
+    if output_file is not None:
+        wb.save(output_file)
 
     return score_board, ok_point, q_point, bonus_point, q_factors, misc, put_a_date, fastest_point
 
@@ -424,7 +425,7 @@ def main():
     elif a == 'score-dump':
         res = cli.score_dump(round_count=args.round)
         #print(res[6])
-        output_file = 'score-dump.xlsx'
+        output_file = None
         if len(args.arg) == 1:
             output_file = args.arg[0]
         view_score(res[6]['score'], output_file=output_file)
