@@ -1,6 +1,6 @@
 [Unit]
 Description=DA Symposium Algorithm Design Contest (DAS ADC) API server
-After=network.target syslog.target nss-lookup.target
+After=network.target syslog.target nss-lookup.target after adc-datastore.service
 
 [Service]
 Type=simple
