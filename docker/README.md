@@ -166,6 +166,19 @@ $ curl http://localhost:30080/api/test_get
 {"msg":"こんにちは世界","my_url":"/api/test_get","test":"ok","value":9876}
 ```
 
+### datastore emulatorのサービスが開始される前に、APIサーバがdatastore emulatorにアクセスしてしまう問題
+
+https://github.com/dasadc/adc2019/issues/78
+
+コンテナの初回起動時、そうなることがある。systemdの制御方法がよくわからないので、解決できていない。
+
+とりあえずの復旧方法は、APIサーバを再起動すること。
+
+``` bash
+docker exec -it  adc2021 systemctl restart adc-server
+```
+
+
 
 ### コンテナ内のユーザーアカウント
 

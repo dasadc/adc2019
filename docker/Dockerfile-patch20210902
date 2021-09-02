@@ -1,0 +1,10 @@
+#docker build --tag ipsjdasadc/adc:20210902 --file Dockerfile-patch20210902 --no-cache .
+
+FROM	ipsjdasadc/adc:latest
+
+USER	adc
+RUN	cd /home/adc/adc2019/ && \
+	git config pull.rebase false && \
+	git pull
+
+USER	root

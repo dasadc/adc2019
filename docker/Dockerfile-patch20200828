@@ -1,7 +1,0 @@
-FROM	ipsjdasadc/adc:20200827
-
-USER	adc
-RUN	cd /home/adc/adc2019/ && \
-	git pull
-
-USER	root
