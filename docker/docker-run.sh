@@ -6,11 +6,14 @@
 # cp env.sample.conf env.conf
 # vi env.conf
 
+script=$(readlink -f "$0")
+dir=$(cd $(dirname "$script"); pwd)
+
 docker run \
        --name adc2021 \
        -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
        -v /tmp/adc2021:/run \
-       -v "./env.conf":/etc/systemd/system/adc-server.service.d/env.conf \
+       -v "${dir}/env.conf":/etc/systemd/system/adc-server.service.d/env.conf \
        -p 30022:22 \
        -p 30080:8888 \
        ipsjdasadc/adc:latest

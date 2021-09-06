@@ -85,6 +85,9 @@ sudo docker push        ipsjdasadc/adc:latest
 Dockerコンテナを実行する(docker run)
 -----------------------------------
 
+Dockerを使えるLinuxが必要である。無い場合は、[別途用意してある仮想マシンを使うのがよい](QUICKSTART.md)。
+
+
 TL;DR;
 
 1. `cp env.sample.conf env.conf`
