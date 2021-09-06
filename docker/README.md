@@ -61,9 +61,9 @@ sudo docker build --tag ipsjdasadc/adc:20210902dev --file Dockerfile-dev .
 
 ```
 sudo docker login  # when required
-sudo docker push ipsjdasadc/adc:20200827
+sudo docker push ipsjdasadc/adc:20210902
 sudo docker push ipsjdasadc/adc:latest
-sudo docker push ipsjdasadc/adc:20200827dev
+sudo docker push ipsjdasadc/adc:20210902dev
 ```
 
 Docker Hub  
