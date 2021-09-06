@@ -54,6 +54,7 @@ COPY	dot_bashrc            /home/adc/.bashrc
 COPY	dot_bash_profile      /home/adc/.bash_profile
 COPY	dot_bash_logout       /home/adc/.bash_logout
 RUN	/bin/sh /tmp/Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3 -u && \
+	rm /tmp/Miniforge3-Linux-x86_64.sh && \
 	/opt/miniforge3/bin/conda update --yes -n base -c defaults conda && \
 	/opt/miniforge3/bin/conda config --set auto_activate_base false && \
 	cd /home/adc/ && \
