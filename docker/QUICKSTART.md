@@ -63,6 +63,17 @@ scp -i ./id_rsa env.conf dump*.pickle scp://core@127.0.0.1:10022
 
 
 
+
+## 仮想マシンFedora CoreOSで、SELINUXを無効化する
+
+`/run`ディレクトリのラベル設定か、何かの理由で、うまく動かなかったので、とりあえず、selinuxを無効化する。
+
+```
+sudo sed -i -e 's/SELINUX=/SELINUX=disabled #/g' /etc/selinux/config
+sudo systemctl reboot
+```
+
+
 env.confを作成する
 -----------------
 
