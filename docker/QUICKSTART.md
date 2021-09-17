@@ -46,7 +46,7 @@ Linux仮想マシンを使えるようにする
 ssh -i ./id_rsa -l core -p 10022 127.0.0.1
 ```
 
-`WARNING: REMOTE HOST IDENDIFICATION HAS CHANG!`
+`WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!`
 
 と表示された場合は、以下のコマンドを実行する
 
