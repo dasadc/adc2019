@@ -68,7 +68,7 @@ export class StatusBarComponent implements OnInit {
     */
 
     //console.log('updateUserName (A)', this.updateUsername_error_count, 'username', this.username, 'authenticated', this.authenticated)
-    if (5 < this.updateUsername_error_count) {
+    if (3 < this.updateUsername_error_count) {
       return;
     }
     this.updateUsername_error_count ++;

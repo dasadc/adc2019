@@ -1,7 +1,7 @@
-Client Application "client-app" for DA Symposium 2021, Algorithm Design Contest (ADC2021)
+Client Application "client-app" for DA Symposium 2022, Algorithm Design Contest (ADC2022)
 ============================================================================
 
-ADC2021で使うウェブアプリ"client-app"について説明する。
+ADC2022で使うウェブアプリ"client-app"について説明する。
 
 参加ユーザー向け情報
 --------------------
@@ -10,8 +10,8 @@ ADC2021で使うウェブアプリ"client-app"について説明する。
 
 2つのURLから、アクセス可能である。
 
-1. https://das-adc.appspot.com/ が、ADC2021の公式バージョンである。
-2. https://dasadc.github.io/static/app/ はおもに、後述の、問題作成＆人力回答ツールである「テトロミノ・エディタ」（"Edit"メニュー）を使うために用意している。こちらも、`https://das-adc.appspot.com/`と同じAPIサーバにアクセスするように小細工をしてあるため、おそらく、1とほぼ同じ使い方ができるはずだが、2021-08-24現在、動作テストが不十分なため、ADC2021のコンテスト本番では使用しないでほしい。
+1. https://das-adc.appspot.com/ が、ADC2022の公式バージョンである。
+2. https://dasadc.github.io/static/app/ はおもに、後述の、問題作成＆人力回答ツールである「テトロミノ・エディタ」（"Edit"メニュー）を使うために用意している。こちらも、`https://das-adc.appspot.com/`と同じAPIサーバにアクセスするように小細工をしてあるため、おそらく、1とほぼ同じ使い方ができるはずだが、2022-08-04現在、動作テストが不十分なため、ADC2022のコンテスト本番では使用しないでほしい。
 
 ### ウェブアプリを使う
 
@@ -71,7 +71,7 @@ Username、Passwordに、事前に通知されたユーザー名とパスワー�
 - "whoami"ボタンをクリックすると、ユーザー名が表示される。ログインできているか動作確認用のための機能である。
 - "get-user"ボタンをクリックすると、ユーザー情報 `ユーザー名:説明:uid:gid` が表示される。同じく、動作確認用。
 - Change passwordのフォームに必要事項を入力することで、パスワードを変更できる
-- (betaテスト中)"API server"に、APIサーバのURLを指定する。2021-08-24時点で、ユーザーがここを変更する必要はない
+- (betaテスト中)"API server"に、APIサーバのURLを指定する。
 - "Logout"ボタンで、ログアウトできる
 
 ### "My Q" (自作問題の管理)
@@ -282,7 +282,7 @@ Username、Passwordに、事前に通知されたユーザー名とパスワー�
 - TimekeeperのRoundでは、Roundカウンタ値を変更できる。この値の意味は、999はテスト期間中、1は事前競技中、2は当日の本番競技中である。[参考](../conmgr.md#schedule)。QデータとAデータは、Roundカウンタの値ごとに、個別に管理されているので、Roundカウンタを変更すると、Qデータ、Aデータ、スコアの表示が切り替わる。
 - Test modeは、Trueのとき、Aデータをファイルとしてダウンロード可能になる、など
 - View score modeは、Trueのとき、"Score"画面でスコアが表示される。対戦中、前半ではTrueにしておいて、後半に入ったらFalseにするのがよい
-- Log to Datastoreは、2021-08-24現在、Falseにしておくことを推奨する。Trueにすると、アクセスログが、Datastoreに保存される。
+- Log to Datastoreは、Falseにしておくことを推奨する。Trueにすると、アクセスログが、Datastoreに保存される。
 
 
 ### Q-data, A-data management
