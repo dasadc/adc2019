@@ -1,9 +1,9 @@
 # coding: utf-8
 #
-# Copyright (C) 2020,2021 IPSJ DA Symposium
+# Copyright (C) 2020,2021,2022 IPSJ DA Symposium
 
 """
-DAシンポジウム 2021
+DAシンポジウム 2022
 アルゴリズムデザインコンテスト
 
 RESTもどき API server

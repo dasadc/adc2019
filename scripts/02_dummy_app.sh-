@@ -1,5 +1,7 @@
 #! /bin/bash
 
+echo "OBSOLETED"; exit 1
+
 cd $HOME/adc2019/hello_world/
 ln -s $HOME/adc2019/pip-dir /tmp/
 source $HOME/adc2019/venv27/bin/activate

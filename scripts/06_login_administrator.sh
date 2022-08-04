@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 script=$(readlink -f "$0")
 top_dir=$(cd $(dirname "$script")/../; pwd)
