@@ -356,7 +356,7 @@ export class AdcService {
       	}),
       	catchError(this.handleError<Object>('system_info', {
           url: {'client-app': {
-            README: 'https://github.com/dasadc/adc2019/blob/adc2021-yt/client-app/README.md'
+            README: 'https://github.com/dasadc/adc2019/blob/master/client-app/README.md'
         }}}))
       );
   }
@@ -394,7 +394,7 @@ export class AdcService {
       );
   }
 
-  /** API, GET /api/whoamiを実行する */
+  /** API, GET /api/admin/iamを実行する */
   iamadmin(): Observable<boolean> {
     //console.log('AdcService: iamadmin');
     return this.http.get<Object>(`${this.api_server_origin}/api/admin/iam`, this.apiHttpOptions())

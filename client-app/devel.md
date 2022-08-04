@@ -165,7 +165,10 @@ client-appの「Edit」機能（通称「テトリス・エディタ」）を、
 client-appのファイルをコピーする。
 
 ``` bash
-rsync -avpr --delete ../server/static/ /DIR/dasadc.github.io/static/
+    # ファイルコピー前の確認
+rsync -navpr --delete ../server/static/app/ ../../dasadc.github.io/static/app/
+    # 実際にファイルコピーする
+rsync  -avpr --delete ../server/static/app/ ../../dasadc.github.io/static/app/
 ```
 
 そのあと、git commit、git pushする
@@ -197,6 +200,17 @@ gcloud app deploy --project=das-adc
 
 ``` python
 YEAR = 2020
+```
+
+### Helpメニューのリンク先URLを変えたい
+
+1. デフォルトは、`src/app/adc.service.ts`にハードコーディングされている。
+2. サーバーからURLを取得するようになっているので、サーバーの設定ファイルを修正する。
+
+ファイル `adc2019/server/adcconfig.py`
+
+``` python
+URL_CLIENT_APP_README = 'https://github.com/dasadc/adc2019/blob/master/client-app/README.md'
 ```
 
 

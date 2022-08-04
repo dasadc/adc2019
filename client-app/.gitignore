@@ -44,3 +44,8 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+#
+/.angular/cache/
+/2021/
+/BAK/
