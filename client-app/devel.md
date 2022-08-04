@@ -1,7 +1,7 @@
-ADC2021 Web application (client-app)
+ADC2022 Web application (client-app)
 ====================================
 
-**(注意)** このドキュメントは、まだ、アルゴリズムデザインコンテスト2021年向けの更新漏れがあり、古い情報が書かれている可能性がある。
+**(注意)** このドキュメントは、まだ、アルゴリズムデザインコンテスト2022年向けの更新漏れがあり、古い情報が書かれている可能性がある。
 
 
 初期設定
@@ -9,12 +9,15 @@ ADC2021 Web application (client-app)
 
 [Anaconda(Miniconda)の環境を使う](../devel.md#miniconda)
 
+ADC201x当時使用していたUbuntu 18.04では、aptでインストールされるnode.jsが古かったので、Anacondaのnpmを使っていた。
 
-Ubuntu 18.04では、aptでインストールされるnode.jsが古い。anacondaのnpmを使う。
 
-``` bash
-conda install nodejs
-```
+#### 2022年7月5日時点でのメモ
+
+- [Node.js](https://nodejs.org/ja/about/releases/)のLTSは16
+- conda-forgeのnodejsパッケージのバージョンは、16.14.2だった
+- [ngx-file-drop](https://www.npmjs.com/package/ngx-file-drop)は、Angular 14に対応している
+- [Flask](https://flask.palletsprojects.com/en/2.1.x/)のバージョンが、2.1.2。conda-forgeでも同じ
 
 #### 2021年7月13日時点でのメモ
 

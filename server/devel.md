@@ -1,12 +1,12 @@
-adc2019 API server for ADC2021
+adc2019 API server for ADC2022
 ==============================
 
-**(注意)** このドキュメントは、まだ、アルゴリズムデザインコンテスト2021年向けの更新漏れがあり、古い情報が書かれている可能性がある。
+**(注意)** このドキュメントは、まだ、アルゴリズムデザインコンテスト2022年向けの更新漏れがあり、古い情報が書かれている可能性がある。
 
 「API server」とは、アルゴリズムデザインコンテストの自動運営システムにおいて、バックエンドで実行されるREST API serverのことである。
 [ウェブアプリ(client-app)](../client-app/README.md)と、コマンラインツール[adcclient](../client/README.md)は、このAPI serverにアクセスして、さまざまな機能を実行している。
 
-以下で説明する手順をスキップして、[Dockerコンテナでかんたんに動かすこともできる](../docker/README.md)。
+Dockerに詳しい人であれば、以下で説明する手順をスキップして、[Dockerコンテナでかんたんに動かすこともできる](../docker/README.md)。
 
 
 開発・実行のための環境構築
@@ -20,7 +20,7 @@ API server 設定ファイル`adcconfig.py`
 
 `adcconfig.py`は、API server起動時に読み込まれる設定ファイルである。
 
-1. `YEAR`を、今年の西暦年(e.g. 2021)にする。この値は、[ウェブアプリ(client-app)](../client-app/README.md)での画面表示にも反映される
+1. `YEAR`を、今年の西暦年(e.g. 2022)にする。この値は、[ウェブアプリ(client-app)](../client-app/README.md)での画面表示にも反映される
 2. `SECRET_KEY`を、設定する。これは他者には秘密にする情報である
 3. `SALT`を、設定する。これも秘密にする情報である
 4. `TEST_MODE`と`VIEW_SCORE_MODE`は、API serverのデフォルト値として使われるものであり、[client-app](../client-app/README.md)のAdminメニューでいつでも変更可能である
@@ -46,6 +46,11 @@ API serverにアクセスできるユーザーアカウントは、2箇所で管
 
 ウェブアプリを使ったユーザーアカウント登録手順については、[client-app/README.md](../client-app/README.md)を参照してほしい。
 
+### ファイル変換ツール `adcusers_gen.py`
+
+`adcusers_gen.py`は、  
+入力ファイル`adcusers_in.yaml`、もしくは`adcusers_in.py`を読み込んで、  
+出力ファイル`adcusers.yaml`と`adcusers.py`を書き出す。
 
 
 ローカル環境でAPI serverを実行する
@@ -53,7 +58,7 @@ API serverにアクセスできるユーザーアカウントは、2箇所で管
 
 2019年、Google Cloud PlatformにてPython 3がサポートされるようになって以降、`dev_appserver.py`の利用は非推奨となった。
 
-- ADC2021では、使っていない
+- ADC2021、ADC2022では、使っていない
 - ADC2020では、もう使うのをあきらめた（いろいろ、メンドクサすぎる…）
 - ADC2019では、まだ使っていた
 
@@ -80,7 +85,7 @@ gcloud beta emulators datastore --data-dir "${datastore_dir}" start
 
 ## API serverを実行する
 
-(参考) [API server実行シェルスクリプト](../scripts/04_server.sh)で実行可能
+(参考) [API server実行シェルスクリプト](../scripts/04_server.sh)で実行可能。その場合、ポート番号は8888である。
 
 ``` bash
 # datastoreのデータ保存場所を`../work/datastore/`とした場合

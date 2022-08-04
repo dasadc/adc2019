@@ -1,4 +1,4 @@
-FROM python:3.8-slim-buster
+FROM python:3.9-slim-buster   # "buster" = Debian 10
 
 ENV HOME /api/
 
@@ -14,4 +14,3 @@ RUN python ./adcusers_gen.py
 #ENTRYPOINT ["python", "./main.py", "--ip", "0.0.0.0", "--p", "4280", "--anonymous"]
 #ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:4280", "main:app"]
 ENTRYPOINT ["./entry.sh"]
-

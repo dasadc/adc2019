@@ -36,12 +36,12 @@ DAシンポジウム2021にて開催されるアルゴリズムデザインコ�
 
 |名称            |参考                    |
 |----------------|----------------------- |
-|Python 3.6以降  |https://www.python.org/ |
+|Python 3.9以降  |https://www.python.org/ |
 |curl            |http://curl.haxx.se/    |
 
 pythonとcurlは、LinuxやMacなどでは、ほぼ標準でインストールされています。Windowsでは、申し訳ありませんが各自でインストールをお願いします。
 
-Windows/Mac/Linuxともに、[Minicondaがおすすめです](../devel.md#miniconda)。
+Windows/Mac/Linuxともに、[Miniforgeがおすすめです](../devel.md#miniforge)。
 
 
 
