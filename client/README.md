@@ -169,6 +169,7 @@ $ adccli help
   logout
   version
   whoami
+  iamadmin
   password [NEWPASSWORD]
   get-user-list
   get-user [USERNAME ...]
@@ -186,10 +187,10 @@ $ adccli help
   delete-user-q [NUMBER ...]
   check-q FILENAME
   put-user-alive MSG
-  get-user-log [NUMBER (seconds|days)]
-  delete-user-log [NUMBER (seconds|days)]
+  get-user-log [NUMBER (seconds|days)]                # use with [--number NUM]
+  delete-user-log [NUMBER (seconds|days)]             # use with [--number NUM]
   score
-  score-dump
+  score-dump [FILENAME]                               # write xlsx as FILENAME
   get-root
 admin command:
   convert-users FILENAME_IN.py FILENAME_OUT.yaml
@@ -203,15 +204,17 @@ admin command:
   delete-admin-q-all
   get-admin-a-all
   delete-admin-a-all
-  get-log [NUMBER (seconds|days)]
-  delete-log [NUMBER (seconds|days)]
+  get-log [NUMBER (seconds|days)]                     # use with [--number NUM]
+  delete-log [NUMBER (seconds|days)]                  # use with [--number NUM]
   timekeeper-enabled [0|1]                            # Get/Set enabled flag
   timekeeper-state [init|im0|Qup|im1|Aup|im2]         # Get/Set state
-  timekeeper-round [1|2]                              # Get/Set round counter
-  timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2] [1|2]] # Get/Set all at once
+  timekeeper-round [1|2|999]                          # Get/Set round counter
+  timekeeper [[0|1] [init|im0|Qup|im1|Aup|im2] [1|2|999]] # Get/Set all at once
   test-mode [True|False]
   view-score-mode [True|False]
   log-to-datastore [True|False]
+  dump-data FILENAME
+  restore-data FILENAME  # **DANGER!** This may overwrite all on Google Datastore.
 ```
 
 #### 設定保存ファイル adcclient.json
