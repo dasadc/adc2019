@@ -149,7 +149,7 @@ def dump_q_all(cli: adcclient.ADCClient, filename: str):
 def main():
     import argparse    
     parser = argparse.ArgumentParser(
-        description='a tool to get all Q and A data')
+        description='a tool to get all Q data')
     parser.add_argument('-f', '--file', help='cache retrieved data from API server, in the file', default='dump_q_all.pickle')
     args = parser.parse_args()
     cli = adcclient.ADCClient()
