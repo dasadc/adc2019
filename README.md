@@ -17,7 +17,7 @@ DA Symposium 2022 Algorithm Design Contest (DAS ADC 2022)
 最新情報 What's new
 -------------------
 
-- (2022-08-02) ADC 2022の準備中です。
+- (2022-08-22) [コンテスト実施スケジュール](conmgr.md#schedule)を更新しました。
 
 
 ADC自動運営システム
