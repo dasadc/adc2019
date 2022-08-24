@@ -107,6 +107,13 @@ sh Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3 -u
 /opt/miniforge3/bin/conda create -n adc2019-2022 python=3.9 numpy pyyaml
 ```
 
+(補足) `adccli score-dump`コマンドを実行したい場合は、もう少し、追加のパッケージが必要になる。
+
+``` bash
+/opt/miniforge3/bin/conda create -n adc2019-2022 python=3.9 numpy pyyaml pandas openpyxl
+```
+
+
 ##### 環境を使う
 
 ``` bash
