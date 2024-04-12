@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/dasadc/adc2019#readme",
   "dependencies": {
-    "@angular-devkit/build-angular": "^14.1.1",
+    "@angular-devkit/build-angular": "^17.3.4",
     "@angular/cli": "^14.1.1",
     "@angular/common": "^14.1.1",
     "@angular/compiler": "^14.1.1",
